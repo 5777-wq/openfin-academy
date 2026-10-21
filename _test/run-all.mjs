@@ -265,8 +265,8 @@ function loadScripts(files) {
         ok(`术语 ${id} 有 number`, !!t.number);
         ok(`术语 ${id} 有 cat`, !!t.cat);
       }
-      // 九个分类都必须有词，否则速查页的分类切换会开天窗
-      const CATS = ['data', 'fund', 'asset', 'macro', 'basic', 'micro', 'player', 'risk', 'tech'];
+      // 十个分类都必须有词，否则速查页的分类切换会开天窗
+      const CATS = ['data', 'fund', 'asset', 'option', 'macro', 'basic', 'micro', 'player', 'risk', 'tech'];
       const byCat = {};
       Object.values(g.terms || {}).forEach((t) => { byCat[t.cat] = (byCat[t.cat] || 0) + 1; });
       for (const c of CATS) {
