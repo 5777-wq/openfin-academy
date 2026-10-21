@@ -470,6 +470,11 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
   padding: var(--s-3) 0; border-top: 1px solid var(--rule-2);
   border-bottom: 1px solid var(--rule-2);
 }
+/* 窄屏：跨站按钮竖排整行铺开，手指好按 */
+@media (max-width: 560px) {
+  .term-cross { flex-direction: column; align-items: stretch; }
+  .term-cross .btn { width: 100%; justify-content: center; }
+}
 
 /* ============================================================
    产业链强弱条
