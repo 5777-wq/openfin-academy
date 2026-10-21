@@ -30,12 +30,14 @@
     const y1 = Number(String(last.year).slice(0, 4));
     const span = Math.max(1, y1 - y0);
 
-    const nodes = list.map((e) => {
+    const nodes = list.map((e, i) => {
       const y = Number(String(e.year).slice(0, 4));
       const pos = ((y - y0) / span) * 100;
       // 端点稍微内缩，避免节点贴边被裁
       const left = 6 + pos * 0.88;
-      return `<a class="era-node${e.now ? ' now' : ''}" href="${esc(e.href)}" style="left:${left.toFixed(2)}%">
+      // 相邻年份（如 2020 / 2022）标签会相撞：奇偶交替下移一行
+      const lane = i % 2 ? ' lane-1' : '';
+      return `<a class="era-node${lane}${e.now ? ' now' : ''}" href="${esc(e.href)}" style="left:${left.toFixed(2)}%">
         <span class="en-tip"><b>${esc(e.year)} · ${esc(e.label)}</b><span>${esc(e.tip)}</span></span>
         <span class="en-year">${esc(e.year)}</span>
         <span class="en-dot"></span>

@@ -63,7 +63,7 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
   display: flex; align-items: baseline; gap: var(--s-3); margin-bottom: var(--s-6);
 }
 .era-head .hint { font-size: var(--t-micro); color: var(--ink-3); margin-left: auto; }
-.era-axis { position: relative; height: 168px; margin: 0 var(--s-2); }
+.era-axis { position: relative; height: 186px; margin: 0 var(--s-2); }
 .era-axis .axis-line {
   position: absolute; left: 0; right: 0; top: 52px; height: 1px; background: var(--rule);
 }
@@ -87,6 +87,10 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
   transition: all var(--dur-2) var(--ease-out);
 }
 .era-node .en-stem { width: 1px; height: 14px; background: var(--rule); }
+/* 相邻年份（如 2020 / 2022）标签会相撞：奇偶节点把标签整块下移一行。
+   下移量必须大于「标签高 + 统计行高」，否则会压到上一行的统计文字上。 */
+.era-node.lane-1 .en-stem { height: 44px; }
+.era-node.lane-1 .en-label { margin-top: 10px; }
 .era-node .en-label {
   font-size: 13px; color: var(--ink-2); margin-top: 8px; line-height: 1.4;
   transition: color var(--dur-1);
