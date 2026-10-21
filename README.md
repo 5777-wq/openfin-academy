@@ -95,7 +95,8 @@ node scripts/serve.mjs 8765   # → http://127.0.0.1:8765
 node _scripts/sync-core.mjs       # 从 OpenFinLens 同步共享代码到 vendor/
 node _scripts/build-content.mjs   # content/*.md → data/content/*.json
 node _scripts/collect-history.mjs # 拉长历史 → data/history/*.json
-node _test/run-all.mjs            # 测试
+node _test/run-all.mjs            # 引擎 / 数据契约 / 内容契约
+node _test/render-test.mjs        # 无浏览器渲染测试
 ```
 
 排障时给地址加上 `?debug=1`，页面左下角会显示启动轨迹（卡在哪一步一目了然）。
@@ -140,6 +141,8 @@ openfin-academy/
 ├── scripts/serve.mjs       # 零依赖本地静态服务器
 ├── _scripts/               # 同步 / 编译 / 采集
 └── _test/                  # node 直跑测试
+    ├── run-all.mjs         # 引擎 / 数据契约 / 内容契约
+    └── render-test.mjs     # 无浏览器渲染测试（DOM 桩跑真视图）
 ```
 
 ## 写作规范

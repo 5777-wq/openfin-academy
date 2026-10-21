@@ -14,8 +14,11 @@ jobs:
         with:
           node-version: '20'
 
-      - name: 测试
+      - name: 测试（引擎 / 数据契约 / 内容契约）
         run: node _test/run-all.mjs
+
+      - name: 渲染测试（无浏览器跑真视图）
+        run: node _test/render-test.mjs
 
       - name: 内容编译一致性（产物必须与源同步）
         run: |

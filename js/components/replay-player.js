@@ -8,6 +8,7 @@
   const F = () => window.Fmt;
 
   let pkg = null, dates = [], idx = 0, playing = null, host = null, rafId = null;
+  let pinned = null;   // 用户点选的事件：它的说明优先显示（游标离开 ±20 天后自动失效）
 
   /** 折线 → SVG path（viewBox 0 0 100 30） */
   function sparkPath(values) {
@@ -147,8 +148,16 @@
     return Math.round((d2 - d1) / 86400000);
   }
 
-  /** 跳到最接近的日期索引 */
+  /** 跳到最接近的日期索引；若是点事件，锁定该事件的说明 */
   function jumpTo(t) {
+    // 先找最近的事件并锁定：否则点"雷曼"却可能弹出更近的"AIG"说明
+    let ev = null, evd = Infinity;
+    (pkg.events || []).forEach((e) => {
+      const dd = Math.abs(daysBetween(e.t, t));
+      if (dd < evd) { evd = dd; ev = e; }
+    });
+    pinned = ev && evd <= 31 ? ev : null;
+
     let best = 0, bd = Infinity;
     dates.forEach((d, i) => {
       const dd = Math.abs(daysBetween(d, t));
@@ -208,10 +217,17 @@
     const note = document.getElementById('rp-note');
     if (note) {
       let hit = null, bestD = Infinity;
-      (pkg.events || []).forEach((ev) => {
-        const dd = Math.abs(daysBetween(ev.t, d));
-        if (dd < bestD) { bestD = dd; hit = ev; }
-      });
+      // 用户点选的事件优先
+      if (pinned) {
+        const pd = Math.abs(daysBetween(pinned.t, d));
+        if (pd <= 20) { hit = pinned; bestD = pd; }
+      }
+      if (!hit) {
+        (pkg.events || []).forEach((ev) => {
+          const dd = Math.abs(daysBetween(ev.t, d));
+          if (dd < bestD) { bestD = dd; hit = ev; }
+        });
+      }
       if (hit && bestD <= 31) {
         note.innerHTML = `<b>${esc(hit.t)} · ${esc(hit.title)}</b>${hit.note ? ' —— ' + esc(hit.note) : ''}`;
       } else if (pkg.readings && pkg.readings[d]) {
