@@ -84,10 +84,22 @@ async function main() {
       if (d.alias) rec.alias = d.alias;
       else delete rec.alias;
       rec.cat = d.cat || 'basic';
-      for (const k of ['one', 'metaphor', 'number', 'pit', 'source', 'sym', 'lens']) {
+      for (const k of ['one', 'name', 'metaphor', 'number', 'pit', 'source', 'sym', 'lens']) {
         if (d[k]) rec[k] = smartQuotes(d[k]);
       }
       if (d._links.length) rec.links = d._links.map((l) => ({ text: smartQuotes(l.text), href: l.href }));
+
+      // patch: yes —— 只改稿子里写了的字段，其余保留原样。
+      // 用来给老词条补一个字段（比如补「名称由来」），不必把整条重抄一遍。
+      if (d.patch && terms[d.id]) {
+        const base = terms[d.id];
+        const merged = Object.assign({}, base);
+        Object.keys(rec).forEach((k) => { merged[k] = rec[k]; });
+        if (!d.cat) merged.cat = base.cat;   // 没写 cat 就别把老的分类冲掉
+        terms[d.id] = merged;
+        updated++;
+        continue;
+      }
 
       if (terms[d.id]) updated++; else added++;
       terms[d.id] = rec;

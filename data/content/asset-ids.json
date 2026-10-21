@@ -1,0 +1,479 @@
+{
+  "generatedAt": "2026-10-21T13:48:00.599Z",
+  "note": "这些终端标的在「白话金融」有对应的标的页（#/assets/<symbol>，带真实月线数据卡）。不在表里的标的，终端只给术语页或搜索页——不给半空页。",
+  "count": 94,
+  "symbols": [
+    "EM:100.N225",
+    "EM:100.UDI",
+    "EM:101.GC00Y",
+    "EM:101.SI00Y",
+    "EM:102.CL00Y",
+    "EM:171.US10Y",
+    "EM:171.US2Y",
+    "EM:171.US30Y",
+    "EM:171.US3M",
+    "hk00005",
+    "hk00016",
+    "hk00027",
+    "hk00291",
+    "hk00386",
+    "hk00700",
+    "hk00857",
+    "hk00883",
+    "hk00939",
+    "hk00941",
+    "hk01024",
+    "hk01113",
+    "hk01299",
+    "hk01398",
+    "hk01810",
+    "hk02020",
+    "hk02318",
+    "hk03690",
+    "hk03988",
+    "hk06618",
+    "hk06862",
+    "hk09618",
+    "hk09988",
+    "hk09999",
+    "hkHSI",
+    "hkHSTECH",
+    "sh000001",
+    "sh000688",
+    "sh600028",
+    "sh600030",
+    "sh600036",
+    "sh600276",
+    "sh600519",
+    "sh600900",
+    "sh601012",
+    "sh601088",
+    "sh601138",
+    "sh601288",
+    "sh601318",
+    "sh601398",
+    "sh601857",
+    "sh601888",
+    "sh601899",
+    "sh601988",
+    "sh603288",
+    "sh688981",
+    "sz000002",
+    "sz000333",
+    "sz000725",
+    "sz000858",
+    "sz002415",
+    "sz002475",
+    "sz002594",
+    "sz300059",
+    "sz300750",
+    "sz300760",
+    "sz399001",
+    "sz399006",
+    "usAAPL",
+    "usAMD",
+    "usAMZN",
+    "usAVGO",
+    "usBA",
+    "usCOIN",
+    "usDIS",
+    "usDJI",
+    "usGOOG",
+    "usINTC",
+    "usINX",
+    "usIXIC",
+    "usJPM",
+    "usMETA",
+    "usMSFT",
+    "usMU",
+    "usNFLX",
+    "usNVDA",
+    "usORCL",
+    "usPFE",
+    "usPLTR",
+    "usQCOM",
+    "usTSLA",
+    "usTSM",
+    "usV",
+    "usWMT",
+    "usXOM"
+  ],
+  "detail": {
+    "sh000001": {
+      "series": "SH000001",
+      "label": "上证指数"
+    },
+    "sz399001": {
+      "series": "SZ399001",
+      "label": "深证成指"
+    },
+    "sz399006": {
+      "series": "SZ399006",
+      "label": "创业板指"
+    },
+    "sh000688": {
+      "series": "SH000688",
+      "label": "科创50"
+    },
+    "sh600519": {
+      "series": "sh600519",
+      "label": "贵州茅台"
+    },
+    "sz300750": {
+      "series": "sz300750",
+      "label": "宁德时代"
+    },
+    "sh601318": {
+      "series": "sh601318",
+      "label": "中国平安"
+    },
+    "sz000858": {
+      "series": "sz000858",
+      "label": "五粮液"
+    },
+    "sh600036": {
+      "series": "sh600036",
+      "label": "招商银行"
+    },
+    "sh601398": {
+      "series": "sh601398",
+      "label": "工商银行"
+    },
+    "sh601288": {
+      "series": "sh601288",
+      "label": "农业银行"
+    },
+    "sh601988": {
+      "series": "sh601988",
+      "label": "中国银行"
+    },
+    "sh600028": {
+      "series": "sh600028",
+      "label": "中国石化"
+    },
+    "sh601857": {
+      "series": "sh601857",
+      "label": "中国石油"
+    },
+    "sz002594": {
+      "series": "sz002594",
+      "label": "比亚迪"
+    },
+    "sh688981": {
+      "series": "sh688981",
+      "label": "中芯国际"
+    },
+    "sh601012": {
+      "series": "sh601012",
+      "label": "隆基绿能"
+    },
+    "sz000333": {
+      "series": "sz000333",
+      "label": "美的集团"
+    },
+    "sh603288": {
+      "series": "sh603288",
+      "label": "海天味业"
+    },
+    "sh600900": {
+      "series": "sh600900",
+      "label": "长江电力"
+    },
+    "sh601899": {
+      "series": "sh601899",
+      "label": "紫金矿业"
+    },
+    "sz000725": {
+      "series": "sz000725",
+      "label": "京东方A"
+    },
+    "sh601138": {
+      "series": "sh601138",
+      "label": "工业富联"
+    },
+    "sz300059": {
+      "series": "sz300059",
+      "label": "东方财富"
+    },
+    "sh600030": {
+      "series": "sh600030",
+      "label": "中信证券"
+    },
+    "sz000002": {
+      "series": "sz000002",
+      "label": "万科A"
+    },
+    "sh601888": {
+      "series": "sh601888",
+      "label": "中国中免"
+    },
+    "sz002415": {
+      "series": "sz002415",
+      "label": "海康威视"
+    },
+    "sh600276": {
+      "series": "sh600276",
+      "label": "恒瑞医药"
+    },
+    "sz300760": {
+      "series": "sz300760",
+      "label": "迈瑞医疗"
+    },
+    "sz002475": {
+      "series": "sz002475",
+      "label": "立讯精密"
+    },
+    "sh601088": {
+      "series": "sh601088",
+      "label": "中国神华"
+    },
+    "hkHSI": {
+      "series": "HSI",
+      "label": "恒生指数"
+    },
+    "hkHSTECH": {
+      "series": "HSTECH",
+      "label": "恒生科技"
+    },
+    "hk00700": {
+      "series": "hk00700",
+      "label": "腾讯控股"
+    },
+    "hk09988": {
+      "series": "hk09988",
+      "label": "阿里巴巴"
+    },
+    "hk03690": {
+      "series": "hk03690",
+      "label": "美团"
+    },
+    "hk00941": {
+      "series": "hk00941",
+      "label": "中国移动"
+    },
+    "hk00005": {
+      "series": "hk00005",
+      "label": "汇丰控股"
+    },
+    "hk01810": {
+      "series": "hk01810",
+      "label": "小米集团"
+    },
+    "hk09618": {
+      "series": "hk09618",
+      "label": "京东集团"
+    },
+    "hk09999": {
+      "series": "hk09999",
+      "label": "网易"
+    },
+    "hk02318": {
+      "series": "hk02318",
+      "label": "中国平安"
+    },
+    "hk01299": {
+      "series": "hk01299",
+      "label": "友邦保险"
+    },
+    "hk00939": {
+      "series": "hk00939",
+      "label": "建设银行"
+    },
+    "hk01398": {
+      "series": "hk01398",
+      "label": "工商银行"
+    },
+    "hk03988": {
+      "series": "hk03988",
+      "label": "中国银行"
+    },
+    "hk00883": {
+      "series": "hk00883",
+      "label": "中国海洋石油"
+    },
+    "hk00857": {
+      "series": "hk00857",
+      "label": "中国石油股份"
+    },
+    "hk00386": {
+      "series": "hk00386",
+      "label": "中国石油化工"
+    },
+    "hk01024": {
+      "series": "hk01024",
+      "label": "快手"
+    },
+    "hk02020": {
+      "series": "hk02020",
+      "label": "安踏体育"
+    },
+    "hk06618": {
+      "series": "hk06618",
+      "label": "京东健康"
+    },
+    "hk00291": {
+      "series": "hk00291",
+      "label": "华润啤酒"
+    },
+    "hk06862": {
+      "series": "hk06862",
+      "label": "海底捞"
+    },
+    "hk01113": {
+      "series": "hk01113",
+      "label": "长实集团"
+    },
+    "hk00016": {
+      "series": "hk00016",
+      "label": "新鸿基地产"
+    },
+    "hk00027": {
+      "series": "hk00027",
+      "label": "银河娱乐"
+    },
+    "usDJI": {
+      "series": "DJIA",
+      "label": "道琼斯"
+    },
+    "usIXIC": {
+      "series": "usIXIC",
+      "label": "纳斯达克"
+    },
+    "usINX": {
+      "series": "SPX",
+      "label": "标普500"
+    },
+    "usAAPL": {
+      "series": "usAAPL",
+      "label": "苹果"
+    },
+    "usNVDA": {
+      "series": "usNVDA",
+      "label": "英伟达"
+    },
+    "usMSFT": {
+      "series": "usMSFT",
+      "label": "微软"
+    },
+    "usTSLA": {
+      "series": "usTSLA",
+      "label": "特斯拉"
+    },
+    "usAMZN": {
+      "series": "usAMZN",
+      "label": "亚马逊"
+    },
+    "usGOOG": {
+      "series": "usGOOG",
+      "label": "谷歌"
+    },
+    "usMETA": {
+      "series": "usMETA",
+      "label": "Meta"
+    },
+    "usAVGO": {
+      "series": "usAVGO",
+      "label": "博通"
+    },
+    "usAMD": {
+      "series": "usAMD",
+      "label": "超威半导体"
+    },
+    "usNFLX": {
+      "series": "usNFLX",
+      "label": "奈飞"
+    },
+    "usINTC": {
+      "series": "usINTC",
+      "label": "英特尔"
+    },
+    "usQCOM": {
+      "series": "usQCOM",
+      "label": "高通"
+    },
+    "usTSM": {
+      "series": "usTSM",
+      "label": "台积电"
+    },
+    "usMU": {
+      "series": "usMU",
+      "label": "美光科技"
+    },
+    "usORCL": {
+      "series": "usORCL",
+      "label": "甲骨文"
+    },
+    "usJPM": {
+      "series": "usJPM",
+      "label": "摩根大通"
+    },
+    "usV": {
+      "series": "usV",
+      "label": "Visa"
+    },
+    "usWMT": {
+      "series": "usWMT",
+      "label": "沃尔玛"
+    },
+    "usDIS": {
+      "series": "usDIS",
+      "label": "迪士尼"
+    },
+    "usBA": {
+      "series": "usBA",
+      "label": "波音"
+    },
+    "usPFE": {
+      "series": "usPFE",
+      "label": "辉瑞"
+    },
+    "usXOM": {
+      "series": "usXOM",
+      "label": "埃克森美孚"
+    },
+    "usCOIN": {
+      "series": "usCOIN",
+      "label": "Coinbase"
+    },
+    "usPLTR": {
+      "series": "usPLTR",
+      "label": "Palantir"
+    },
+    "EM:100.UDI": {
+      "series": "UDI",
+      "label": "美元指数"
+    },
+    "EM:101.GC00Y": {
+      "series": "GC00Y",
+      "label": "COMEX黄金"
+    },
+    "EM:101.SI00Y": {
+      "series": "SI00Y",
+      "label": "COMEX白银"
+    },
+    "EM:102.CL00Y": {
+      "series": "CL00Y",
+      "label": "NYMEX原油"
+    },
+    "EM:171.US3M": {
+      "series": "US3M",
+      "label": "美债3月"
+    },
+    "EM:171.US2Y": {
+      "series": "US2Y",
+      "label": "美债2年"
+    },
+    "EM:171.US10Y": {
+      "series": "US10Y",
+      "label": "美债10年"
+    },
+    "EM:171.US30Y": {
+      "series": "US30Y",
+      "label": "美债30年"
+    },
+    "EM:100.N225": {
+      "series": "N225",
+      "label": "日经225"
+    }
+  }
+}

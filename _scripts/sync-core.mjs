@@ -23,6 +23,7 @@ const FILES = [
   ['js/data/universe.js',          'core/universe.js'],
   ['js/data/explain.js',           'core/explain.js'],
   ['js/data/industry-chains.js',   'core/industry-chains.js'],
+  ['js/data/academy-gloss.js',     'core/academy-gloss.js'],
   ['js/engine/types.js',           'core/engine/types.js'],
   ['js/engine/geo.js',             'core/engine/geo.js'],
   ['js/engine/news-engine.js',     'core/engine/news-engine.js'],

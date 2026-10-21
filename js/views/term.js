@@ -18,8 +18,9 @@
     { id: 'data', label: '研报数据', desc: '研报和行情软件里天天出现、却没人解释的数' },
     { id: 'fund', label: '基金与策略', desc: '基金产品与投资策略的门类' },
     { id: 'asset', label: '资产类别', desc: '钱能投在哪：股票、债券、商品、加密' },
+    { id: 'option', label: '期权与期权策略', desc: '期权是什么、怎么定价、经典组合怎么搭' },
     { id: 'macro', label: '宏观经济', desc: '整个经济的账' },
-    { id: 'basic', label: '基础概念', desc: '绕不开的概念' },
+    { id: 'basic', label: '基础概念', desc: '绕不开的概念：利率与定价、公司与商业模式、历史上的大泡沫' },
     { id: 'micro', label: '微观与行为', desc: '公司层面，与人的偏误' },
     { id: 'player', label: '机构与人物', desc: '谁在市场上' },
     { id: 'risk', label: '风险与交易', desc: '怎么算风险、怎么下注' },
@@ -32,6 +33,7 @@
     data: ['pe-ratio', 'roe', 'max-drawdown'],
     fund: ['etf', 'index-fund', 'hedge-fund'],
     asset: ['stock', 'gold', 'btc'],
+    option: ['option-call', 'option-put', 'implied-vol'],
     macro: ['cpi', 'lpr', 'yield-curve'],
     basic: ['risk-premium', 'discount-rate', 'moat'],
     micro: ['supply-demand', 'mean-reversion', 'herding'],
@@ -45,6 +47,7 @@
     data: ['指标', '是什么', '什么时候会骗人'],
     fund: ['产品或策略', '是什么', '最容易误解的地方'],
     asset: ['资产', '是什么', '常见的坑'],
+    option: ['概念', '是什么', '最容易误解的地方'],
     macro: ['指标', '是什么', '读数时的坑'],
     basic: ['概念', '一句话', '最容易搞错的地方'],
     micro: ['概念', '一句话', '常见的坑'],
@@ -53,10 +56,72 @@
     tech: ['指标', '是什么', '最容易误读的地方'],
   };
 
+  /**
+   * 组内排序：按「读者真会遇到的顺序」排，不是字母序。
+   * 以前是按 id 字母序排出来的——读者看到的是「ETF、ETF 费率、ETF 折溢价、事件驱动……」
+   * 这种顺序，看着像字典，不像一份读物。改成按信号分层：
+   *   0 站内有**专文**的（links 指向内容页）——读者最可能从它开始读
+   *   1 行情终端会链到它的（读 vendor/core/academy-gloss.js 的映射表）——在行情里能撞见
+   *   2 有 sym 的（能直接看行情）——有真实数据可以对账
+   *   3 其余按 id 升序（保证结果确定，不随运行环境变）
+   * 注意区分：links 里既有指向专文的，也有只是「这个词的相关词条」的，
+   * 只有指向内容页的才算专文，否则信号会被交叉引用冲淡。
+   */
+  const ARTICLE_ROUTES = ['#/concepts/', '#/crisis/', '#/cycles/', '#/chains/', '#/family/', '#/assets/'];
+
+  function hasArticle(g, id) {
+    const t = g[id] || {};
+    return (t.links || []).some((l) => ARTICLE_ROUTES.some((r) => String(l.href || '').indexOf(r) === 0));
+  }
+
+  function hotIds() {
+    const out = new Set();
+    const AG = window.AcademyGloss;
+    if (AG) {
+      Object.keys(AG.TERM_BY_SYMBOL || {}).forEach((k) => out.add(AG.TERM_BY_SYMBOL[k]));
+      Object.keys(AG.CONCEPT_BY_SYMBOL || {}).forEach((k) => {
+        const c = AG.CONCEPT_BY_SYMBOL[k];
+        if (c && c.id) out.add(c.id);
+      });
+    }
+    // 终端悬停时会解释的概念词（explain.js 的 CONCEPT_NOTES）——
+    // 这些正是「读者在行情里会撞见、然后过来查」的词，同样算热门。
+    const EX = window.Explain;
+    if (EX && EX.CONCEPT_NOTES) {
+      Object.keys(EX.CONCEPT_NOTES).forEach((k) => out.add(k));
+    }
+    return out;
+  }
+
+  function orderTerms(ids, g, hot) {
+    const score = (id) => {
+      const t = g[id] || {};
+      if (hasArticle(g, id)) return 0;
+      if (hot && hot.has(id)) return 1;
+      if (t.sym) return 2;
+      return 3;
+    };
+    return ids.slice().sort((a, b) => {
+      const d = score(a) - score(b);
+      if (d) return d;
+      return a < b ? -1 : a > b ? 1 : 0;
+    });
+  }
+
+  /** 入门三词卡：显示「比喻」而不是「一句话」——
+      下方列表和表格里已经有一句话了，再抄一遍就是重复；比喻是新的信息。 */
+  function starterCards(ids, g) {
+    return ids.filter((id) => g[id]).map((id) => `<a class="starter" href="${esc(linkOf(id))}">
+        <span class="st-t">${esc(g[id].term || id)}</span>
+        <span class="st-d">${esc(g[id].metaphor || g[id].one || '')}</span>
+      </a>`).join('');
+  }
+
   /** 术语库索引：按分类分组 */
   function renderIndex(view) {
     const g = window.Content.glossary();
     const ids = Object.keys(g);
+    const hot = hotIds();
     const byCat = {};
     ids.forEach((id) => {
       const c = (g[id].cat || 'basic');
@@ -64,7 +129,7 @@
     });
 
     const blocks = CATS.filter((c) => byCat[c.id] && byCat[c.id].length).map((c) => {
-      const rows = byCat[c.id].map((id) => {
+      const rows = orderTerms(byCat[c.id], g, hot).map((id) => {
         const t = g[id];
         return `<a class="entry" href="${esc(linkOf(id))}">
           <span>
@@ -76,12 +141,7 @@
       }).join('');
 
       // 入门三词：第一次读这一类，先读这三个
-      const starters = (STARTERS[c.id] || [])
-        .filter((id) => g[id])
-        .map((id) => `<a class="starter" href="${esc(linkOf(id))}">
-            <span class="st-t">${esc(g[id].term || id)}</span>
-            <span class="st-d">${esc(g[id].one || '')}</span>
-          </a>`).join('');
+      const starters = starterCards(STARTERS[c.id] || [], g);
 
       return `<div class="cat-block">
         <div class="eyebrow" style="margin:var(--s-6) 0 var(--s-2)">${esc(c.label)} · ${byCat[c.id].length}</div>
@@ -123,7 +183,7 @@
         ${esc(c.label)}<span class="ds-tab-n">${counts[c.id]}</span>
       </a>`).join('');
 
-    const ids = Object.keys(g).filter((id) => (g[id].cat || 'basic') === cur);
+    const ids = orderTerms(Object.keys(g).filter((id) => (g[id].cat || 'basic') === cur), g, hotIds());
     const cols = SHEET_COLS[cur] || SHEET_COLS.data;
     const rows = ids.map((id) => {
       const t = g[id];
@@ -134,11 +194,7 @@
       </tr>`;
     }).join('');
 
-    const starters = (STARTERS[cur] || []).filter((id) => g[id]).map((id) => `
-      <a class="starter" href="${esc(linkOf(id))}">
-        <span class="st-t">${esc(g[id].term || id)}</span>
-        <span class="st-d">${esc(g[id].one || '')}</span>
-      </a>`).join('');
+    const starters = starterCards(STARTERS[cur] || [], g);
 
     const cat = CAT_OF[cur];
     const dek = cur === 'data'
@@ -185,11 +241,13 @@
         <span class="e-m">读一篇 →</span>
       </a>`).join('');
 
-    // 站内其它术语：同类的先推（读者多半在同一条线上继续读）
+    // 站内其它术语：同类的先推（读者多半在同一条线上继续读），同类内部也按热度排
     const cat = t.cat || 'basic';
-    const others = Object.keys(g).filter((k) => k !== id)
-      .sort((a, b) => (g[b].cat === cat ? 1 : 0) - (g[a].cat === cat ? 1 : 0))
-      .slice(0, 10).map((k) => `
+    const hot = hotIds();
+    const ranked = orderTerms(Object.keys(g).filter((k) => k !== id), g, hot);
+    const sameCat = ranked.filter((k) => (g[k].cat || 'basic') === cat);
+    const rest = ranked.filter((k) => (g[k].cat || 'basic') !== cat);
+    const others = sameCat.concat(rest).slice(0, 10).map((k) => `
       <a class="entry" href="${esc(linkOf(k))}">
         <span><span class="e-t">${esc(g[k].term || k)}</span>
           <span class="e-d">${esc(g[k].one || '')}</span></span>

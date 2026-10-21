@@ -108,6 +108,13 @@ async function main() {
   // 产物必须确定性：不能带时间戳，否则 CI 的一致性校验每次都会误报
   await writeFile(path.join(OUT, 'index.json'), JSON.stringify({ items }, null, 2), 'utf8');
 
+  // 「哪些终端标的在本站真的有标的页」——终端靠它判断该不该给标的页（不给半空页）。
+  // 每次构建重新算：口径与页面完全一致，不手抄第二份映射。
+  const { buildAssetIds } = await import('./export-asset-ids.mjs');
+  const assetIds = await buildAssetIds();
+  await writeFile(path.join(ROOT, 'content', '_meta', 'asset-ids.json'), JSON.stringify(assetIds, null, 2) + '\n', 'utf8');
+  console.log(`[build] asset-ids.json（${assetIds.count} 个终端标的在本站有页）`);
+
   // 元数据目录里的 JSON 直接复制（术语库 / 新手路径）
   const metaDir = path.join(SRC, '_meta');
   if (existsSync(metaDir)) {

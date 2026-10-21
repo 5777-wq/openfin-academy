@@ -12,6 +12,9 @@
     const o = opts || {};
     const parts = [];
     if (term.one) parts.push(part('一句话', term.one));
+    // 「名称由来」放在最前面：读者看到「日经225」「标普500」第一反应就是
+    // 「225 是几家？500 是几家？」——这个答案比数字更重要，先给。
+    if (term.name) parts.push(part('名称由来', term.name));
     if (term.metaphor) parts.push(part('比喻', term.metaphor));
     if (term.number) parts.push(part('数字', term.number));
     if (term.pit) parts.push(part('坑', term.pit, true));

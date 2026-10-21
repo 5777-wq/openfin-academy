@@ -11,6 +11,7 @@
   const SERIES_OF = {
     sh000001: 'SH000001', sz399001: 'SZ399001', sz399006: 'SZ399006', sh000688: 'SH000688',
     usINX: 'SPX', usDJI: 'DJIA', hkHSI: 'HSI', hkHSTECH: 'HSTECH',
+    'EM:100.N225': 'N225',            // 终端「全球指数条」那一排里的日经225
     'EM:101.GC00Y': 'GC00Y', 'EM:101.SI00Y': 'SI00Y', 'EM:102.CL00Y': 'CL00Y',
     'EM:100.UDI': 'UDI', 'EM:171.US10Y': 'US10Y', 'EM:171.US2Y': 'US2Y',
     'EM:171.US3M': 'US3M', 'EM:171.US30Y': 'US30Y',

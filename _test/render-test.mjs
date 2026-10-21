@@ -138,6 +138,7 @@ const SCRIPTS = [
   'vendor/core/universe.js',
   'vendor/core/explain.js',
   'vendor/core/industry-chains.js',
+  'vendor/core/academy-gloss.js',
   'js/site/format.js',
   'js/site/cross.js',
   'js/store.js',
@@ -463,7 +464,7 @@ async function main() {
   sandbox.TermView.renderDataSheet(view(), {});
   const ds0 = view().innerHTML;
   has('速查页：默认是研报数据', ds0, '看研报时撞见的那些数');
-  ok('速查页：九个分类都能切', (ds0.match(/class="ds-tab[ "]/g) || []).length === 9,
+  ok('速查页：十个分类都能切', (ds0.match(/class="ds-tab[ "]/g) || []).length === 10,
     '实际 ' + (ds0.match(/class="ds-tab[ "]/g) || []).length);
   const G = sandbox.Content.glossary();
   const dataIds = Object.keys(G).filter((k) => G[k].cat === 'data');
@@ -482,6 +483,45 @@ async function main() {
     'player 类 ' + playerIds.length + ' 个，页面上 ' + ds1Ids.size + ' 个');
   sandbox.TermView.renderDataSheet(view(), { cat: '不存在的分类' });
   ok('速查页：非法分类退回研报数据', view().innerHTML.includes('看研报时撞见的那些数'));
+
+  // 期权分类：终端里没有期权数据，但读者读研报/看盘照样会撞上这些词
+  sandbox.TermView.renderDataSheet(view(), { cat: 'option' });
+  const dsOpt = view().innerHTML;
+  has('速查页：期权分类能打开', dsOpt, '期权与期权策略速查');
+  ok('速查页：期权分类有词条', idsOf(dsOpt).size >= 15, '实际 ' + idsOf(dsOpt).size);
+
+  // 组内排序：按「读者真会遇到的顺序」，不是字母序
+  sandbox.TermView.renderDataSheet(view(), { cat: 'fund' });
+  const dsFund = view().innerHTML;
+  // 只取表格里的行（入门三词的卡片也在页面上，会排在表格前面）
+  const tbody = (dsFund.match(/<tbody>([\s\S]*?)<\/tbody>/) || [])[1] || '';
+  const fundIds = [...idsOf(tbody)];
+  const G2 = sandbox.Content.glossary();
+  const ARTICLE = (id) => (G2[id] && (G2[id].links || []).some((l) => l.href.indexOf('#/concepts/') === 0 || l.href.indexOf('#/crisis/') === 0));
+  const HOT = (id) => {
+    const AG2 = sandbox.AcademyGloss;
+    const EX2 = sandbox.Explain;
+    const hot = new Set();
+    if (AG2) {
+      Object.keys(AG2.TERM_BY_SYMBOL || {}).forEach((k) => hot.add(AG2.TERM_BY_SYMBOL[k]));
+      Object.keys(AG2.CONCEPT_BY_SYMBOL || {}).forEach((k) => hot.add(AG2.CONCEPT_BY_SYMBOL[k].id));
+    }
+    if (EX2 && EX2.CONCEPT_NOTES) Object.keys(EX2.CONCEPT_NOTES).forEach((k) => hot.add(k));
+    return hot.has(id);
+  };
+  const sortedByAlpha = fundIds.slice().sort();
+  ok('速查页：组内不按字母序排', JSON.stringify(fundIds) !== JSON.stringify(sortedByAlpha),
+    '第一项 ' + fundIds[0]);
+  ok('速查页：第一项是「读者会撞见」的词（有专文，或行情里会解释）',
+    ARTICLE(fundIds[0]) || HOT(fundIds[0]), '第一项 ' + fundIds[0] + '（' + (G2[fundIds[0]] || {}).term + '）');
+
+  // 入门三词：显示比喻，不是把下面的一句话再抄一遍
+  sandbox.TermView.renderDataSheet(view(), { cat: 'fund' });
+  const dsSt = view().innerHTML;
+  const starterBlock = (dsSt.match(/<div class="starters">([\s\S]*?)<\/div>\s*<\/div>/) || [])[1] || '';
+  const stCard = (starterBlock.match(/<a class="starter"[^>]*>[\s\S]*?<\/a>/) || [])[0] || '';
+  ok('入门三词：不是把一句话重复一遍', stCard && !stCard.includes('一篮子股票打包成的一张可以在交易所随时买卖的凭证'),
+    stCard.slice(0, 120));
 
   // 与行情终端的双向跳转：术语页要能"去看历史数据"和"回到 OpenFinLens"
   sandbox.TermView.render(view(), 'gold', { from: 'lens', sym: 'EM:101.GC00Y' });
