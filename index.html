@@ -85,7 +85,29 @@ window.addEventListener('unhandledrejection', function (e) {
 <div class="shell">
   <nav class="rail" id="rail" aria-label="栏目导航"></nav>
   <main class="main" id="main" tabindex="-1">
-    <div class="reading" id="view"></div>
+    <!-- 首屏骨架：内容到达前先撑住版面，避免白屏。路由渲染时整块替换 -->
+    <div class="reading" id="view">
+      <section style="padding:var(--s-6) 0 0">
+        <div class="eyebrow">白话金融 · 金融科普</div>
+        <h1 style="font-size:var(--t-hero);line-height:1.32;letter-spacing:-.015em;margin-bottom:var(--s-3)">
+          把美债收益率、黄金、纳指、原油、A股<br>讲成你听得懂的话。
+        </h1>
+        <p class="art-dek">零后端、零密钥、零构建的金融科普站。每一句都能点开看真实数据，每一场危机都能拖动时间轴回放。</p>
+        <div style="display:flex;gap:var(--s-2);flex-wrap:wrap;margin-top:var(--s-4)">
+          <span class="btn" style="pointer-events:none">从零开始 · 8 课</span>
+          <span class="btn ghost" style="pointer-events:none">看一场危机复盘</span>
+          <span class="btn ghost" style="pointer-events:none">查一个概念</span>
+        </div>
+      </section>
+      <section style="margin-top:var(--s-7)">
+        <div class="eyebrow">实时仪表</div>
+        <div class="gauges">
+          <div class="dpanel"><div class="skel" style="height:12px;width:56%"></div><div class="skel" style="height:26px;width:42%;margin-top:10px"></div></div>
+          <div class="dpanel"><div class="skel" style="height:12px;width:56%"></div><div class="skel" style="height:26px;width:42%;margin-top:10px"></div></div>
+          <div class="dpanel"><div class="skel" style="height:12px;width:56%"></div><div class="skel" style="height:26px;width:42%;margin-top:10px"></div></div>
+        </div>
+      </section>
+    </div>
   </main>
 </div>
 

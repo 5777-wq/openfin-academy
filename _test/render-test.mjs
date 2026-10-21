@@ -357,6 +357,13 @@ async function main() {
 
   /* ---- 8. index.html 里的每个资源都真实存在 ---- */
   const html = await readFile(path.join(ROOT, 'index.html'), 'utf8');
+
+  // 首屏骨架：静态 HTML 里就撑住版面，路由渲染后被替换
+  ok('首屏骨架写在静态 HTML 里', html.includes('首屏骨架'));
+  ok('首屏骨架含主标题', html.includes('讲成你听得懂的话'));
+  ok('首屏骨架含占位卡', html.includes('class="skel"'));
+  ok('渲染后首屏骨架被替换', !view().innerHTML.includes('class="skel"'));
+
   const refs = [...html.matchAll(/(?:src|href)="([^"#:]+)"/g)]
     .map((m) => m[1])
     .filter((u) => !/^https?:/.test(u) && !u.startsWith('data:'));
