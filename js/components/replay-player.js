@@ -114,7 +114,7 @@
             <span><i class="lg lg-dd"></i>峰值到此刻的回撤</span>
             <span class="rp-legend-hint">右栏：现价 · 较起点 · 距峰值</span>
           </div>
-          <p class="rp-hint">纵轴按每条序列自己的最高、最低铺满整行——行与行之间可以直接比跌幅。</p>
+          <p class="rp-hint">纵轴按每条序列自己的最高、最低铺满整行——行与行之间可以直接比跌幅。金圈是本区间内的最高点；「距峰值」＝现在离那个最高点还差多少。</p>
           <div id="rp-rows"></div>
           <div class="rp-scrub">
             <input type="range" id="rp-range" min="0" max="${dates.length - 1}" value="0" step="1" aria-label="时间轴">
