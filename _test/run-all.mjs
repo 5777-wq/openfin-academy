@@ -253,6 +253,52 @@ function loadScripts(files) {
 }
 
 /* ============================================================
+   5.5 口径一致性：文章与术语库里的历史数字必须对得上站内数据
+   —— 防止"凭印象写数字"（2008 黄金 880.8→718.2、倒挂时点等）
+   ============================================================ */
+{
+  const crisisPath = path.join(ROOT, 'data', 'history', 'crisis-2008.json');
+  const gPath = path.join(ROOT, 'data', 'content', 'glossary.json');
+  if (existsSync(crisisPath) && existsSync(gPath)) {
+    const c = JSON.parse(await readFile(crisisPath, 'utf8'));
+    const g = JSON.parse(await readFile(gPath, 'utf8'));
+    const gold = c.series.find((s) => s.key === 'GC00Y');
+
+    if (gold) {
+      const at = (m) => {
+        const p = gold.points.find((x) => x.t.slice(0, 7) === m);
+        return p ? p.v : null;
+      };
+      const sep = at('2008-09'), oct = at('2008-10');
+      ok('危机包 2008-09 黄金月末价 = 880.8', sep === 880.8, `实际 ${sep}`);
+      ok('危机包 2008-10 黄金月末价 = 718.2', oct === 718.2, `实际 ${oct}`);
+
+      // 术语库与正文引用的数字必须与数据一致
+      const goldTerm = (g.terms || {}).gold;
+      ok('术语库 gold 引用了 880.8（与数据一致）', !!goldTerm && goldTerm.number.includes('880.8'));
+      ok('术语库 gold 引用了 718.2（与数据一致）', !!goldTerm && goldTerm.number.includes('718.2'));
+    }
+
+    // 美债 10Y：倒挂时点必须与财政部数据一致
+    const yPath = path.join(ROOT, 'data', 'history', 'US10Y.json');
+    const mPath = path.join(ROOT, 'data', 'history', 'US3M.json');
+    if (existsSync(yPath) && existsSync(mPath)) {
+      const y = JSON.parse(await readFile(yPath, 'utf8'));
+      const m = JSON.parse(await readFile(mPath, 'utf8'));
+      const at = (s, k) => {
+        const p = s.points.find((x) => x.t.slice(0, 7) === k);
+        return p ? p.v : null;
+      };
+      const gap = at(m, '2006-12') - at(y, '2006-12');
+      ok('2006-12 美债 3M−10Y 差约 60 个基点', Math.abs(gap - 0.60) < 0.05, `实际 ${gap}`);
+      const inv = (g.terms || {}).inversion;
+      ok('术语库 inversion 写的是 2006 年倒挂（与数据一致）',
+        !!inv && inv.number.includes('2006') && !inv.number.includes('2007年8月'));
+    }
+  }
+}
+
+/* ============================================================
    6. vendor 契约
    ============================================================ */
 {

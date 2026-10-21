@@ -25,21 +25,28 @@
     </div>`;
   }
 
-  function render(view) {
-    const G = window.Quotes;
-    const gauges = [
-      { name: '美债 10 年期收益率', unit: '%', key: 'EM:171.US10Y', digits: 2, hot: true, href: '#/concepts/risk-free-rate', link: '为什么它是全球无风险利率' },
-      { name: 'COMEX 黄金', unit: '美元/盎司', key: 'EM:101.GC00Y', digits: 1, href: '#/assets/gold', link: '黄金到底在防什么' },
-      { name: '纳斯达克 100', unit: '', key: 'usNDX', digits: 2, href: '#/assets', link: '纳指为什么对利率最敏感' },
-      { name: 'NYMEX 原油', unit: '美元/桶', key: 'EM:102.CL00Y', digits: 2, href: '#/assets', link: '原油是通胀的风向标' },
-      { name: '美元指数', unit: '', key: 'EM:100.UDI', digits: 2, href: '#/concepts', link: '美元为什么是世界的锚' },
-      { name: '上证指数', unit: '', key: 'sh000001', digits: 2, href: '#/assets', link: '大A 的「大盘」指什么' },
-    ];
+  const GAUGES = [
+    { name: '美债 10 年期收益率', unit: '%', key: 'EM:171.US10Y', digits: 2, hot: true, href: '#/concepts/risk-free-rate', link: '为什么它是全球无风险利率' },
+    { name: 'COMEX 黄金', unit: '美元/盎司', key: 'EM:101.GC00Y', digits: 1, href: '#/assets/gold', link: '黄金到底在防什么' },
+    { name: '纳斯达克 100', unit: '', key: 'usNDX', digits: 2, href: '#/assets', link: '纳指为什么对利率最敏感' },
+    { name: 'NYMEX 原油', unit: '美元/桶', key: 'EM:102.CL00Y', digits: 2, href: '#/assets', link: '原油是通胀的风向标' },
+    { name: '美元指数', unit: '', key: 'EM:100.UDI', digits: 2, href: '#/concepts', link: '美元为什么是世界的锚' },
+    { name: '上证指数', unit: '', key: 'sh000001', digits: 2, href: '#/assets', link: '大A 的「大盘」指什么' },
+  ];
 
-    const cards = gauges.map((g) => gaugeCard({
+  /** 只重绘仪表区：行情到达时补上，不动整页 */
+  function paintGauges() {
+    const box = document.getElementById('home-gauges');
+    if (!box) return;
+    const G = window.Quotes;
+    box.innerHTML = GAUGES.map((g) => gaugeCard({
       name: g.name, unit: g.unit, digits: g.digits, hot: g.hot, href: g.href, link: g.link,
       fetch: () => G.get(g.key),
     })).join('');
+  }
+
+  function render(view) {
+    const G = window.Quotes;
 
     const glossary = window.Content.glossary();
     const termIds = Object.keys(glossary);
@@ -68,7 +75,7 @@
 
       <section style="margin-top:var(--s-7)">
         <div class="eyebrow">实时仪表 <span class="muted" id="gauge-src" style="margin-left:auto;text-transform:none;letter-spacing:0"></span></div>
-        <div class="gauges">${cards}</div>
+        <div class="gauges" id="home-gauges"></div>
       </section>
 
       <section style="margin-top:var(--s-7)">
@@ -105,6 +112,9 @@
     const eraBox = document.getElementById('home-era');
     if (eraBox) window.EraTimeline.render(eraBox);
 
+    // 仪表：先画占位，行情到了再补
+    paintGauges();
+
     // 仪表数据源标注
     const src = document.getElementById('gauge-src');
     if (src && window.Quotes.state.source) {
@@ -122,5 +132,5 @@
     </a>`;
   }
 
-  window.HomeView = { render };
+  window.HomeView = { render, paintGauges };
 })();

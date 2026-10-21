@@ -297,6 +297,15 @@
     }
   }
 
+  /** 首页仪表：行情到达后补上读数（不重绘整页） */
+  function paintGauges() {
+    if (window.HomeView && window.HomeView.paintGauges) window.HomeView.paintGauges();
+    const src = document.getElementById('gauge-src');
+    if (src && window.Quotes.state.source) {
+      src.textContent = `来源 ${window.Quotes.state.source} · ${window.Quotes.state.degraded ? '（降级：缓存数据）' : '实时'}`;
+    }
+  }
+
   /* ---------------- 启动 ---------------- */
   // 启动轨迹：排查白屏时用。默认不显示，加 ?debug=1 才出现。
   const DEBUG = /(\?|&)debug=1/.test(location.search);
@@ -367,12 +376,14 @@
 
     await quotesReady;
     paintTicker();
+    paintGauges();
     step('boot:quotes ready');
 
     // 行情轮询
     setInterval(async () => {
       await window.Quotes.load();
       paintTicker();
+      paintGauges();
     }, 30000);
   }
 
