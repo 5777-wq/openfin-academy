@@ -325,14 +325,48 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
 }
 .replay-head .rp-btn:hover { border-color: var(--ink-3); color: var(--ink); }
 .replay-body { padding: var(--s-4); }
-.rp-track { display: grid; grid-template-columns: 84px 1fr 96px; gap: var(--s-3); align-items: center; padding: 5px 0; }
-.rp-track .rt-k { font-size: var(--t-micro); color: var(--ink-3); }
-.rp-track .rt-spark { width: 100%; height: 30px; display: block; }
+.rp-legend {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) var(--s-4);
+  padding-bottom: var(--s-3); margin-bottom: var(--s-2);
+  border-bottom: 1px solid var(--rule-2);
+  font-size: var(--t-micro); color: var(--ink-3);
+}
+.rp-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.rp-legend .lg { display: inline-block; flex: none; }
+.rp-legend .lg-base { width: 14px; height: 1px; background: var(--rule); }
+.rp-legend .lg-peak { width: 8px; height: 8px; border: 1.5px solid var(--gold); border-radius: 50%; }
+.rp-legend .lg-dd { width: 14px; height: 2px; background: var(--gold); }
+.rp-legend .rp-legend-hint { margin-left: auto; color: var(--ink-4); }
+.rp-hint { margin: 0 0 var(--s-2); font-size: var(--t-micro); color: var(--ink-4); line-height: 1.6; }
+.rp-track {
+  display: grid; grid-template-columns: 96px 1fr 120px; gap: var(--s-4);
+  align-items: center; padding: 8px 0; border-bottom: 1px solid var(--rule-3);
+}
+.rp-track:last-child { border-bottom: 0; }
+.rp-track .rt-k { font-size: var(--t-micro); color: var(--ink-2); line-height: 1.4; }
+.rp-track .rt-ku { font-family: var(--font-mono); font-size: 9.5px; color: var(--ink-4); margin-left: 4px; white-space: nowrap; }
+.rp-track .rt-chart { position: relative; display: block; }
+.rp-track .rt-spark { width: 100%; height: 76px; display: block; overflow: visible; }
+.rp-track .rt-base { stroke: var(--rule); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.rp-track .rt-peak,
+.rp-track .rt-trough,
+.rp-track .rt-now {
+  position: absolute; border-radius: 50%; transform: translate(-50%, -50%);
+  pointer-events: none; box-sizing: border-box;
+}
+.rp-track .rt-peak { width: 9px; height: 9px; border: 1.5px solid var(--gold); }
+.rp-track .rt-trough { width: 8px; height: 8px; border: 1.5px solid var(--ink-3); }
+.rp-track .rt-now {
+  width: 9px; height: 9px; background: var(--gold); border: 1.5px solid var(--sheet);
+  opacity: 0; transition: opacity var(--dur-1);
+}
 .rp-track .rt-v {
   font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: var(--t-small);
-  text-align: right; color: var(--ink);
+  text-align: right; color: var(--ink); line-height: 1.4;
 }
-.rp-track .rt-v .d { font-size: 10.5px; display: block; }
+.rp-track .rt-v b { display: block; font-weight: 500; }
+.rp-track .rt-v .d,
+.rp-track .rt-v .dd { display: block; font-size: 10.5px; }
 .rp-scrub { position: relative; padding: var(--s-4) 0 var(--s-2); }
 .rp-scrub input[type=range] {
   -webkit-appearance: none; appearance: none; width: 100%; height: 20px; background: none; margin: 0; cursor: pointer;
@@ -348,7 +382,10 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
   box-shadow: 0 0 0 3px var(--gold-soft);
 }
 .rp-marks { position: relative; height: 26px; margin: 0 8px; }
-.rp-mark { position: absolute; top: 0; transform: translateX(-50%); text-align: center; }
+.rp-mark {
+  position: absolute; top: 0; transform: translateX(-50%); text-align: center;
+  background: none; border: 0; padding: 0; cursor: pointer; font: inherit;
+}
 .rp-mark i { display: block; width: 1px; height: 7px; background: var(--gold); margin: 0 auto; }
 .rp-mark span { font-family: var(--font-mono); font-size: 9.5px; color: var(--ink-3); white-space: nowrap; }
 .rp-mark:hover span { color: var(--ink); }
@@ -368,6 +405,20 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
 .rp-event .re-t { color: var(--ink-2); }
 .rp-event.on .re-d { color: var(--gold); }
 .rp-event.on .re-t { color: var(--ink); font-weight: 500; }
+
+@media (max-width: 860px) {
+  .rp-track { grid-template-columns: 84px 1fr 108px; gap: var(--s-3); }
+  .rp-track .rt-spark { height: 62px; }
+  .rp-legend .rp-legend-hint { margin-left: 0; width: 100%; }
+}@media (max-width: 560px) {
+  .rp-track { grid-template-columns: 68px 1fr 88px; gap: var(--s-2); padding: 6px 0; }
+  .rp-track .rt-spark { height: 52px; }
+  .rp-track .rt-k { font-size: 10.5px; }
+  .rp-track .rt-ku { display: none; }
+  .rp-track .rt-v { font-size: 12px; }
+  .rp-track .rt-v .d,
+  .rp-track .rt-v .dd { font-size: 9.5px; }
+}
 
 /* ============================================================
    产业链强弱条

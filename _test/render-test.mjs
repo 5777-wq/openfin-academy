@@ -287,6 +287,16 @@ async function main() {
     has('回放器：游标', rows, 'id="cur-SPX"');
     has('回放器：事件列表', getElementById('rp-events').innerHTML, '雷曼兄弟破产');
 
+    // 纵向可读性：基准线、涨跌面积、峰谷标记、回撤段、现值点
+    has('回放器：基准线', rows, 'rt-base');
+    has('回放器：涨跌面积', rows, 'rt-area');
+    has('回放器：峰值圈', rows, 'rt-peak');
+    has('回放器：谷值圈', rows, 'rt-trough');
+    has('回放器：现值点', rows, 'rt-now');
+    has('回放器：回撤段', rows, 'id="dd-SPX"');
+    has('回放器：轨道用 100×100 坐标系', rows, 'viewBox="0 0 100 100"');
+    has('回放器：图例', getElementById('replay-host').innerHTML, '区间起点基准线');
+
     // 跳到 2008-09-30，读数必须与数据一致
     sandbox.ReplayPlayer.jumpTo('2008-09-30');
     const spx = getElementById('val-SPX').innerHTML;
@@ -307,10 +317,39 @@ async function main() {
     has('回放：雷曼当天标普 1,192.70', getElementById('val-SPX').innerHTML, '1,192.70');
     has('回放：雷曼当天黄金 787', getElementById('val-GC00Y').innerHTML, '787');
 
+    // 三行读数：现价 / 相对起点 / 距峰值——"距峰值"就是"跌了多少"
+    has('回放：标普距峰值 -23.80%', getElementById('val-SPX').innerHTML, '距峰值 -23.80%');
+    has('回放：标普较起点 -6.00%', getElementById('val-SPX').innerHTML, '较起点 -6.00%');
+    has('回放：收益率用百分点', getElementById('val-US10Y').innerHTML, 'pp');
+    has('回放：美债距峰值 -1.79pp', getElementById('val-US10Y').innerHTML, '距峰值 -1.79pp');
+    ok('回放：回撤段已画出', (getElementById('dd-SPX').attrs.d || '').startsWith('M'),
+      getElementById('dd-SPX').attrs.d || '(空)');
+    ok('回放：现值点跟随游标', /%$/.test(String(getElementById('now-SPX').style.left || '')),
+      String(getElementById('now-SPX').style.left));
+
     // 手动拖走之后，锁定自动解除
     sandbox.ReplayPlayer.jumpTo('2008-12-31');
     hasEl('回放：拖走后说明条跟随最近事件', getElementById('rp-note'), '12-16');
     hasEl('回放：12 月说明条', getElementById('rp-note'), '联邦基金利率');
+
+    // 远离所有事件的日期：说明条回落到本场第一个事件，而不是写死的 2008
+    sandbox.ReplayPlayer.jumpTo('2007-01-15');
+    hasEl('回放：默认说明指向本场第一个事件', getElementById('rp-note'), pkg.events[0].t);
+  }
+
+  // 1990：日经的"跌了多少"读数（用户最在意的那条）
+  const p90 = await sandbox.History.crisis('1990');
+  if (p90) {
+    sandbox.ReplayPlayer.render(getElementById('replay-1990'), p90);
+    sandbox.ReplayPlayer.jumpTo('1992-02-21');
+    const n225 = getElementById('val-N225').innerHTML;
+    has('回放：日经现价 21,291.81', n225, '21,291.81');
+    has('回放：日经距峰值 -45.29%', n225, '距峰值 -45.29%');
+    has('回放：日经较起点 -10.86%', n225, '较起点 -10.86%');
+    ok('回放：日经回撤段已画出', (getElementById('dd-N225').attrs.d || '').length > 10,
+      getElementById('dd-N225').attrs.d || '(空)');
+    ok('回放：日经峰值圈已定位', /rt-peak" style="left:\d+\.\d+%/.test(
+      getElementById('rp-rows').innerHTML), '峰值圈没定位');
   }
 
   // 其余四场危机包

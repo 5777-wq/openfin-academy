@@ -41,6 +41,10 @@
   --danger:       #A83A3A;
   --danger-soft:  rgba(168,58,58,.08);
 
+  /* ---------- 面积填充（回放器：基准线上方=涨，下方=跌） ---------- */
+  --fill-up:      rgba(194,64,47,.13);
+  --fill-down:    rgba(27,122,87,.15);
+
   /* ---------- 字体 ---------- */
   --font-sans: "PingFang SC", "Source Han Sans SC", "Noto Sans SC", "Hiragino Sans GB",
                "Microsoft YaHei", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -120,6 +124,8 @@ body[data-theme="night"] {
   --warn-soft:    rgba(214,165,78,.12);
   --danger:       #E06A6A;
   --danger-soft:  rgba(224,106,106,.12);
+  --fill-up:      rgba(228,102,90,.18);
+  --fill-down:    rgba(53,177,131,.20);
   --sh-1: 0 1px 2px rgba(0,0,0,.3);
   --sh-2: 0 4px 14px -6px rgba(0,0,0,.5);
   --sh-3: 0 16px 44px -16px rgba(0,0,0,.6);

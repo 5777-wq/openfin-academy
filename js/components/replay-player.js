@@ -1,44 +1,86 @@
 /* components/replay-player.js —— 危机回放器（签名交互）
    多资产同步时间轴 + 事件标注 + 可拖动游标。
-   数据来自 data/history/crisis-*.json（真实采集，非模拟）。 */
+   数据来自 data/history/crisis-*.json（真实采集，非模拟）。
+
+   视觉契约（v2）：纵向必须「看得出跌了多少」
+   —— 轨道加高，线不再挤成一条缝；
+   —— 以「区间起点」为基准线，线上方填涨色、下方填跌色（红涨绿跌），
+      面积大小直接等于涨跌多少；
+   —— 峰值画金圈，从峰值到游标拉一条金色回撤段，那根斜线就是跌幅；
+   —— 右栏三行：现价 / 相对起点 / 距峰值。
+   收益率类序列一律用「个百分点」，价格类用「%」，两者不混用。 */
 (function () {
   'use strict';
 
   const esc = (s) => window.Fmt.esc(s);
   const F = () => window.Fmt;
 
-  let pkg = null, dates = [], idx = 0, playing = null, host = null, rafId = null;
-  let pinned = null;   // 用户点选的事件：它的说明优先显示（游标离开 ±20 天后自动失效）
+  // SVG 用户坐标系：0..100 见方，preserveAspectRatio="none" 拉满容器
+  const VW = 100, VH = 100, VPAD = 5;
 
-  /** 折线 → SVG path（viewBox 0 0 100 30） */
-  function sparkPath(values) {
-    const vals = values.filter((v) => v !== null && v !== undefined);
-    if (vals.length < 2) return '';
-    let min = Math.min.apply(null, vals), max = Math.max.apply(null, vals);
+  let pkg = null, dates = [], idx = 0, playing = null, host = null;
+  let pinned = null;   // 用户点选的事件：它的说明优先显示（游标离开 ±20 天后自动失效）
+  let geoms = [];     // 每条序列的对齐值 + 画图几何（render 时算一次，setIdx 直接复用）
+
+  /** 收益率类序列：单位是 %，变化用「百分点」而不是「百分比」 */
+  const YIELD_RE = /^(US2Y|US3M|US5Y|US7Y|US10Y|US20Y|US30Y)$/;
+  function isYield(s) { return s.unit === '%' || YIELD_RE.test(s.key); }
+
+  /** 对齐到统一日期轴：每个日期取「当日或之前最近的一个值」；序列起点之前留空 */
+  function align(points, axis) {
+    const out = new Array(axis.length).fill(null);
+    let j = 0, cur = null;
+    for (let i = 0; i < axis.length; i++) {
+      while (j < points.length && points[j].t <= axis[i]) { cur = points[j].v; j++; }
+      out[i] = cur;
+    }
+    return out;
+  }
+
+  /**
+   * 算一条序列的画图几何。
+   * 纵轴按本序列自己的最高/最低铺满整行——这样各行之间可以直接比"跌了多少"。
+   */
+  function geomOf(vals) {
+    const pts = [];
+    let min = Infinity, max = -Infinity;
+    for (let i = 0; i < vals.length; i++) {
+      const v = vals[i];
+      if (v === null || v === undefined) continue;
+      pts.push({ i, v });
+      if (v < min) min = v;
+      if (v > max) max = v;
+    }
+    if (pts.length < 2) return null;
     if (min === max) { min -= 1; max += 1; }
     const pad = (max - min) * 0.08;
     min -= pad; max += pad;
-    const n = values.length;
-    let d = '', started = false;
-    for (let i = 0; i < n; i++) {
-      const v = values[i];
-      if (v === null || v === undefined) continue;
-      const x = (i / (n - 1)) * 100;
-      const y = 28 - ((v - min) / (max - min)) * 26;
-      d += (started ? 'L' : 'M') + x.toFixed(2) + ' ' + y.toFixed(2);
-      started = true;
-    }
-    return { d, min, max };
-  }
 
-  function aligned(series) {
-    return dates.map((d) => {
-      let v = null;
-      for (let i = 0; i < series.points.length; i++) {
-        if (series.points[i].t <= d) v = series.points[i].v; else break;
-      }
-      return v;
-    });
+    const n = vals.length;
+    const X = (i) => (i / (n - 1)) * VW;
+    const Y = (v) => VPAD + (1 - (v - min) / (max - min)) * (VH - VPAD * 2);
+
+    let d = '';
+    for (const p of pts) d += (d ? 'L' : 'M') + X(p.i).toFixed(2) + ' ' + Y(p.v).toFixed(2);
+
+    const first = pts[0], last = pts[pts.length - 1];
+    const baseY = Y(first.v);
+    const areaD = d
+      + 'L' + X(last.i).toFixed(2) + ' ' + baseY.toFixed(2)
+      + 'L' + X(first.i).toFixed(2) + ' ' + baseY.toFixed(2) + 'Z';
+
+    let peak = pts[0], trough = pts[0];
+    for (const p of pts) {
+      if (p.v > peak.v) peak = p;
+      if (p.v < trough.v) trough = p;
+    }
+
+    return {
+      vals, min, max, d, areaD, baseY, first, last, peak, trough, X, Y,
+      peakX: X(peak.i), peakY: Y(peak.v),
+      troughX: X(trough.i), troughY: Y(trough.v),
+      baseX1: X(first.i), baseX2: X(last.i),
+    };
   }
 
   /** 渲染整块回放器 */
@@ -53,6 +95,8 @@
     }
     idx = 0;
     host = container;
+    geoms = (data.series || []).map((s) => geomOf(align(s.points, dates)));
+
     container.innerHTML = `
       <div class="replay">
         <div class="replay-head">
@@ -64,6 +108,13 @@
           <span class="rp-date" id="rp-date">—</span>
         </div>
         <div class="replay-body">
+          <div class="rp-legend">
+            <span><i class="lg lg-base"></i>区间起点基准线</span>
+            <span><i class="lg lg-peak"></i>峰值</span>
+            <span><i class="lg lg-dd"></i>峰值到此刻的回撤</span>
+            <span class="rp-legend-hint">右栏：现价 · 较起点 · 距峰值</span>
+          </div>
+          <p class="rp-hint">纵轴按每条序列自己的最高、最低铺满整行——行与行之间可以直接比跌幅。</p>
           <div id="rp-rows"></div>
           <div class="rp-scrub">
             <input type="range" id="rp-range" min="0" max="${dates.length - 1}" value="0" step="1" aria-label="时间轴">
@@ -89,20 +140,45 @@
   function drawRows() {
     const box = document.getElementById('rp-rows');
     if (!box) return;
-    box.innerHTML = pkg.series.map((s) => {
-      const vals = aligned(s);
-      const sp = sparkPath(vals);
-      return `<div class="rp-track" data-key="${esc(s.key)}">
-        <span class="rt-k">${esc(s.name)}</span>
-        <svg class="rt-spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true">
-          <defs><clipPath id="clip-${esc(s.key)}"><rect id="cliprect-${esc(s.key)}" x="0" y="0" width="0" height="30"/></clipPath></defs>
-          <path d="${sp.d}" fill="none" stroke="var(--ink-4)" stroke-width="1" vector-effect="non-scaling-stroke"/>
-          <path d="${sp.d}" fill="none" stroke="var(--teal)" stroke-width="1.4" vector-effect="non-scaling-stroke"
-                clip-path="url(#clip-${esc(s.key)})"/>
-          <line x1="0" y1="0" x2="0" y2="30" stroke="var(--gold)" stroke-width="1" vector-effect="non-scaling-stroke" id="cur-${esc(s.key)}" opacity="0"/>
-          <circle r="1.8" fill="var(--gold)" id="dot-${esc(s.key)}" opacity="0"/>
-        </svg>
-        <span class="rt-v" id="val-${esc(s.key)}">--</span>
+    const f = F();
+    box.innerHTML = pkg.series.map((s, si) => {
+      const g = geoms[si];
+      if (!g) {
+        return `<div class="rp-track rp-track-empty" data-key="${esc(s.key)}">
+          <span class="rt-k">${esc(s.name)}</span><span class="rt-chart"></span>
+          <span class="rt-v">--</span></div>`;
+      }
+      const yld = isYield(s);
+      const tip = [
+        '峰值 ' + f.num(g.peak.v, s.digits) + '（' + g.peak.t + '）',
+        '谷值 ' + f.num(g.trough.v, s.digits) + '（' + g.trough.t + '）',
+        '峰谷 ' + (yld
+          ? (g.trough.v - g.peak.v).toFixed(2) + ' 个百分点'
+          : f.pct((g.trough.v / g.peak.v - 1) * 100, 1)),
+      ].join(' · ');
+
+      return `<div class="rp-track" data-key="${esc(s.key)}" title="${esc(tip)}">
+        <span class="rt-k">${esc(s.name)}${s.unit ? `<span class="rt-ku">${esc(s.unit)}</span>` : ''}</span>
+        <span class="rt-chart">
+          <svg class="rt-spark" viewBox="0 0 ${VW} ${VH}" preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+              <clipPath id="clip-${esc(s.key)}"><rect id="cliprect-${esc(s.key)}" x="0" y="0" width="0" height="${VH}"/></clipPath>
+              <clipPath id="clipup-${esc(s.key)}"><rect x="0" y="0" width="${VW}" height="${g.baseY.toFixed(2)}"/></clipPath>
+              <clipPath id="clipdn-${esc(s.key)}"><rect x="0" y="${g.baseY.toFixed(2)}" width="${VW}" height="${(VH - g.baseY).toFixed(2)}"/></clipPath>
+            </defs>
+            <path class="rt-area" d="${g.areaD}" fill="var(--fill-up)" clip-path="url(#clipup-${esc(s.key)})"/>
+            <path class="rt-area" d="${g.areaD}" fill="var(--fill-down)" clip-path="url(#clipdn-${esc(s.key)})"/>
+            <line class="rt-base" x1="${g.baseX1.toFixed(2)}" y1="${g.baseY.toFixed(2)}" x2="${g.baseX2.toFixed(2)}" y2="${g.baseY.toFixed(2)}"/>
+            <path class="rt-future" d="${g.d}" fill="none" stroke="var(--ink-4)" stroke-width="1" vector-effect="non-scaling-stroke"/>
+            <path class="rt-walked" d="${g.d}" fill="none" stroke="var(--teal)" stroke-width="1.4" vector-effect="non-scaling-stroke" clip-path="url(#clip-${esc(s.key)})"/>
+            <path class="rt-dd" id="dd-${esc(s.key)}" d="" fill="none" stroke="var(--gold)" stroke-width="2" vector-effect="non-scaling-stroke" opacity="0"/>
+            <line class="rt-cur" id="cur-${esc(s.key)}" x1="0" y1="0" x2="0" y2="${VH}" stroke="var(--gold)" stroke-width="1" vector-effect="non-scaling-stroke" opacity="0"/>
+          </svg>
+          <span class="rt-peak" style="left:${(g.peakX / VW * 100).toFixed(3)}%;top:${(g.peakY / VH * 100).toFixed(3)}%"></span>
+          <span class="rt-trough" style="left:${(g.troughX / VW * 100).toFixed(3)}%;top:${(g.troughY / VH * 100).toFixed(3)}%"></span>
+          <span class="rt-now" id="now-${esc(s.key)}" style="left:0%;top:0%"></span>
+        </span>
+        <span class="rt-v" id="val-${esc(s.key)}" title="现价 · 较区间起点的涨跌 · 距区间内最高点的回撤">--</span>
       </div>`;
     }).join('');
   }
@@ -115,8 +191,8 @@
     box.innerHTML = pkg.events.map((ev, i) => {
       const p = (daysBetween(first, ev.t) / span) * 100;
       if (p < 0 || p > 100) return '';
-      return `<button class="rp-mark" data-i="${i}" style="left:${p.toFixed(2)}%">
-        <i></i><span>${esc(ev.t.slice(0, 7))}</span></button>`;
+      return `<button class="rp-mark" data-i="${i}" style="left:${p.toFixed(2)}%"
+        title="${esc(ev.t + ' ' + ev.title)}"><i></i><span>${esc(ev.t.slice(0, 7))}</span></button>`;
     }).join('');
     box.querySelectorAll('.rp-mark').forEach((b) => {
       b.addEventListener('click', () => {
@@ -124,6 +200,40 @@
         jumpTo(ev.t);
       });
     });
+    scheduleMarkLayout(box);
+  }
+
+  /**
+   * 事件标签避让：事件挨得近时月份会叠字。
+   * 先量出每个标签的真实像素位置，再把和前一个保留标签打架的藏起来——刻度线本身留着，
+   * 标签只是次要信息，悬停仍有完整日期。
+   */
+  function layoutMarks(box) {
+    if (!box) return;
+    const items = [];
+    box.querySelectorAll('.rp-mark').forEach((m) => {
+      const span = m.querySelector('span');
+      if (!span) return;
+      span.style.visibility = '';
+      const r = span.getBoundingClientRect();
+      if (!r || !r.width) return;
+      items.push({ span, left: r.left, right: r.right });
+    });
+    let lastRight = -Infinity;
+    for (const it of items) {
+      if (it.left < lastRight + 8) it.span.style.visibility = 'hidden';
+      else lastRight = it.right;
+    }
+  }
+
+  function scheduleMarkLayout(box) {
+    const run = () => layoutMarks(box);
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run);
+    else setTimeout(run, 0);
+    // 宽度变了要重新避让：桌面和手机能排下的标签数完全不同
+    if (typeof ResizeObserver === 'function') {
+      try { new ResizeObserver(run).observe(box); } catch (e) { /* 观察不了就算了 */ }
+    }
   }
 
   function drawEvents() {
@@ -178,29 +288,66 @@
     const dateEl = document.getElementById('rp-date');
     if (dateEl) dateEl.textContent = d;
 
-    pkg.series.forEach((s) => {
-      const vals = aligned(s);
-      const v = vals[idx];
-      const start = vals[0];
+    pkg.series.forEach((s, si) => {
+      const g = geoms[si];
+      if (!g) return;
+      const yld = isYield(s);
+      const v = g.vals[idx];
+      const start = g.first.v;
+
+      let chg = null, dd = null;
+      if (v !== null && v !== undefined) {
+        chg = yld ? (v - start) : ((v / start - 1) * 100);
+        dd = yld ? (v - g.peak.v) : ((v / g.peak.v - 1) * 100);
+      }
+
       const el = document.getElementById('val-' + s.key);
       if (el) {
-        const chg = (v !== null && start) ? ((v / start - 1) * 100) : null;
-        el.innerHTML = `${f.num(v, s.digits)}<span class="d ${f.dir(chg)}" title="相对本区间起点的涨跌幅">${chg === null ? '--' : f.pct(chg)}</span>`;
+        const chgTxt = chg === null ? '--'
+          : (yld ? (chg > 0 ? '+' : '') + chg.toFixed(2) + 'pp' : f.pct(chg));
+        const ddTxt = dd === null ? '--'
+          : (yld ? (dd > 0 ? '+' : '') + dd.toFixed(2) + 'pp' : f.pct(dd));
+        el.innerHTML = `<b>${f.num(v, s.digits)}</b>`
+          + `<span class="d ${f.dir(chg)}">较起点 ${chgTxt}</span>`
+          + `<span class="dd ${f.dir(dd)}">距峰值 ${ddTxt}</span>`;
       }
-      // 游标
-      const x = (idx / (dates.length - 1)) * 100;
+
       const cur = document.getElementById('cur-' + s.key);
-      const dot = document.getElementById('dot-' + s.key);
-      if (cur) { cur.setAttribute('x1', x); cur.setAttribute('x2', x); cur.setAttribute('opacity', '1'); }
-      if (dot) {
-        const sp = sparkPath(vals);
-        if (sp && v !== null) {
-          const y = 28 - ((v - sp.min) / (sp.max - sp.min)) * 26;
-          dot.setAttribute('cx', x); dot.setAttribute('cy', y); dot.setAttribute('opacity', '1');
+      const now = document.getElementById('now-' + s.key);
+      const ddEl = document.getElementById('dd-' + s.key);
+      const clip = document.getElementById('cliprect-' + s.key);
+
+      if (v === null || v === undefined) {
+        if (cur) cur.setAttribute('opacity', '0');
+        if (now) now.style.opacity = '0';
+        if (ddEl) ddEl.setAttribute('opacity', '0');
+        return;
+      }
+
+      const x = (idx / (dates.length - 1)) * VW;
+      const y = g.Y(v);
+
+      if (cur) {
+        cur.setAttribute('x1', x.toFixed(3));
+        cur.setAttribute('x2', x.toFixed(3));
+        cur.setAttribute('opacity', '1');
+      }
+      if (now) {
+        now.style.left = (x / VW * 100).toFixed(3) + '%';
+        now.style.top = (y / VH * 100).toFixed(3) + '%';
+        now.style.opacity = '1';
+      }
+      // 回撤段：峰值 → 游标。那根斜线就是"跌了多少"。
+      if (ddEl) {
+        if (g.peak.i <= idx && v < g.peak.v) {
+          ddEl.setAttribute('d', 'M' + g.peakX.toFixed(2) + ' ' + g.peakY.toFixed(2)
+            + 'L' + x.toFixed(2) + ' ' + y.toFixed(2));
+          ddEl.setAttribute('opacity', '1');
+        } else {
+          ddEl.setAttribute('opacity', '0');
         }
       }
       // 已走过部分高亮：用 clipPath 裁剪，比 dash 更稳
-      const clip = document.getElementById('cliprect-' + s.key);
       if (clip) clip.setAttribute('width', x.toFixed(3));
     });
 
@@ -233,7 +380,10 @@
       } else if (pkg.readings && pkg.readings[d]) {
         note.innerHTML = esc(pkg.readings[d]);
       } else {
-        note.innerHTML = `<span class="muted">把滑块拖到 2008-09 附近，看看雷曼倒闭那天各资产的反应。</span>`;
+        const ev0 = (pkg.events || [])[0];
+        note.innerHTML = ev0
+          ? `<span class="muted">把滑块拖到 ${esc(ev0.t)} 附近，看看「${esc(ev0.title)}」那天各资产的反应。</span>`
+          : '<span class="muted">拖动滑块，看各资产在同一时刻的反应。</span>';
       }
     }
   }
