@@ -50,19 +50,24 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
 .tag.up { color: var(--up); border-color: rgba(194,64,47,.3); background: var(--up-soft); }
 .tag.down { color: var(--down); border-color: rgba(27,122,87,.3); background: var(--down-soft); }
 
-/* ============================================================
-   签名一：时代横轴（首页 hero）
-   ============================================================ */
+/* ---------- 时代横轴（两条时间带） ---------- */
 .era {
   position: relative; margin: var(--s-6) 0 0;
   padding: var(--s-6) 0 var(--s-5);
   border-top: 1px solid var(--rule);
   border-bottom: 1px solid var(--rule);
 }
-.era-head {
-  display: flex; align-items: baseline; gap: var(--s-3); margin-bottom: var(--s-6);
+.era-band + .era-band {
+  margin-top: var(--s-3); padding-top: var(--s-4);
+  border-top: 1px dashed var(--rule-2);
 }
-.era-head .hint { font-size: var(--t-micro); color: var(--ink-3); margin-left: auto; }
+.era-band-head {
+  display: flex; align-items: baseline; gap: var(--s-2);
+  margin-bottom: var(--s-4);
+}
+.era-band-label { font-size: 13px; color: var(--ink); font-weight: 500; letter-spacing: .04em; }
+.era-band-range { font-size: 11px; color: var(--ink-4); }
+.era-band-head .hint { margin-left: auto; font-size: var(--t-micro); color: var(--ink-3); }
 .era-axis { position: relative; height: 186px; margin: 0 var(--s-2); }
 .era-axis .axis-line {
   position: absolute; left: 0; right: 0; top: 52px; height: 1px; background: var(--rule);

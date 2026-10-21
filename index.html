@@ -86,7 +86,7 @@ window.addEventListener('unhandledrejection', function (e) {
   <nav class="rail" id="rail" aria-label="栏目导航"></nav>
   <main class="main" id="main" tabindex="-1">
     <!-- 首屏骨架：内容到达前先撑住版面，避免白屏。路由渲染时整块替换 -->
-    <div class="reading" id="view">
+    <div class="reading" id="view" data-skeleton="1">
       <section style="padding:var(--s-6) 0 0">
         <div class="eyebrow">白话金融 · 金融科普</div>
         <h1 style="font-size:var(--t-hero);line-height:1.32;letter-spacing:-.015em;margin-bottom:var(--s-3)">
@@ -163,6 +163,7 @@ window.addEventListener('unhandledrejection', function (e) {
 <script src="js/engine/spread.js"></script>
 <script src="js/engine/similarity.js"></script>
 <script src="js/engine/analogy.js"></script>
+<script src="js/engine/crisis.js"></script>
 <script src="js/sources/quotes.js"></script>
 <script src="js/sources/history.js"></script>
 <script src="js/site/content.js"></script>

@@ -6,28 +6,42 @@
 
   const esc = (s) => window.Fmt.esc(s);
 
-  /** 时代节点定义：可从内容里覆盖，这里是默认集合 */
-  const DEFAULT_ERAS = [
-    { year: '2000', label: '互联网泡沫', stat: '纳指 -78%', href: '#/cycles/2000-dotcom',
-      tip: '叙事先于盈利，估值先行崩塌。之后用了整整五年才回到起点。' },
-    { year: '2008', label: '次贷危机', stat: '标普 -57%', href: '#/crisis/2008',
-      tip: '房价、CDS、银行股、美股、美债——危机沿着资产负债表一路传导。' },
-    { year: '2013', label: '缩减恐慌', stat: '标普 -6%', href: '#/crisis/2013',
-      tip: '央行怎么说话，市场就能怎么抖。史上最温和的一次"崩盘"。' },
-    { year: '2020', label: '疫情熔断', stat: '标普 -34%', href: '#/crisis/2020',
-      tip: '10 个交易日的极速下跌，流动性危机而非基本面危机。' },
-    { year: '2022', label: '暴力加息', stat: '纳指 -33%', href: '#/crisis/2022',
-      tip: '40 年最狠通胀，利率从 0 拉到 5%，成长股被杀估值。' },
-    { year: '2026', label: 'AI 周期', stat: '进行中', href: '#/cycles/ai-cycle', now: true,
-      tip: '本轮由算力资本开支驱动。哪些像 2000，哪些不像——用数据来比。' },
+  /** 时代节点定义：分两带——近代与更早，各自有独立刻度 */
+  const DEFAULT_BANDS = [
+    {
+      label: '近代', range: '2000 – 2026', eras: [
+        { year: '2000', label: '互联网泡沫', stat: '纳指 -78%', href: '#/cycles/2000-dotcom',
+          tip: '叙事先于盈利，估值先行崩塌。之后用了整整五年才回到起点。' },
+        { year: '2008', label: '次贷危机', stat: '标普 -57%', href: '#/crisis/2008',
+          tip: '房价、CDS、银行股、美股、美债——危机沿着资产负债表一路传导。' },
+        { year: '2013', label: '缩减恐慌', stat: '标普 -6%', href: '#/crisis/2013',
+          tip: '央行怎么说话，市场就能怎么抖。史上最温和的一次「崩盘」。' },
+        { year: '2020', label: '疫情熔断', stat: '标普 -34%', href: '#/crisis/2020',
+          tip: '10 个交易日的极速下跌，流动性危机而非基本面危机。' },
+        { year: '2022', label: '暴力加息', stat: '纳指 -33%', href: '#/crisis/2022',
+          tip: '40 年最狠通胀，利率从 0 拉到 5%，成长股被杀估值。' },
+        { year: '2026', label: 'AI 周期', stat: '进行中', href: '#/cycles/ai-cycle', now: true,
+          tip: '本轮由算力资本开支驱动。哪些像 2000，哪些不像——用数据来比。' },
+      ],
+    },
+    {
+      label: '更早', range: '1987 – 1998', eras: [
+        { year: '1987', label: '黑色星期一', stat: '标普 -20.5%', href: '#/crisis/1987',
+          tip: '一天跌掉五分之一，没有预警，也没有解释。' },
+        { year: '1990', label: '日本泡沫', stat: '日经 -63%', href: '#/crisis/1990',
+          tip: '跌了三年才跌完。慢刀子割肉，才是最难受的那种。' },
+        { year: '1994', label: '比索危机', stat: '美债 7.9%', href: '#/crisis/1994',
+          tip: '一个小国引发的美元紧缩，代价由全世界分摊。' },
+        { year: '1998', label: '亚洲金融危机', stat: '恒指 -60%', href: '#/crisis/1998',
+          tip: '同一年，恒指单日 -13.7%，LTCM 逼得美联储下场救火。' },
+      ],
+    },
   ];
 
-  function render(container, eras) {
-    if (!container) return;
-    const list = eras && eras.length ? eras : DEFAULT_ERAS;
-    const first = list[0], last = list[list.length - 1];
-    const y0 = Number(String(first.year).slice(0, 4));
-    const y1 = Number(String(last.year).slice(0, 4));
+  function renderBand(band, opts) {
+    const list = band.eras;
+    const y0 = Number(list[0].year);
+    const y1 = Number(list[list.length - 1].year);
     const span = Math.max(1, y1 - y0);
 
     const nodes = list.map((e, i) => {
@@ -47,25 +61,34 @@
       </a>`;
     }).join('');
 
-    container.innerHTML = `
-      <div class="era-head">
-        <span class="eyebrow" style="margin:0">按时代进入</span>
-        <span class="hint">悬停看一句话，点进去看完整复盘</span>
+    return `<div class="era-band">
+      <div class="era-band-head">
+        <span class="era-band-label">${esc(band.label)}</span>
+        <span class="era-band-range num">${esc(band.range)}</span>
+        ${opts && opts.hint ? `<span class="hint">${esc(opts.hint)}</span>` : ''}
       </div>
-      <div class="era-axis" id="era-axis">
+      <div class="era-axis">
         <div class="axis-line"></div>
-        <div class="axis-fill" id="era-fill"></div>
+        <div class="axis-fill" data-fill></div>
         ${nodes}
-      </div>`;
-
-    // 金线随"当前时代"填充
-    const fill = document.getElementById('era-fill');
-    const nowNode = container.querySelector('.era-node.now');
-    if (fill && nowNode) {
-      const pos = parseFloat(nowNode.style.left) || 0;
-      fill.style.width = pos + '%';
-    }
+      </div>
+    </div>`;
   }
 
-  window.EraTimeline = { render, DEFAULT_ERAS };
+  function render(container, bands) {
+    if (!container) return;
+    const list = bands && bands.length ? bands : DEFAULT_BANDS;
+    container.innerHTML = list.map((band, i) => renderBand(band, {
+      hint: i === 0 ? '悬停看一句话，点进去看完整复盘' : '',
+    })).join('');
+
+    // 金线随"当前时代"填充
+    container.querySelectorAll('.era-axis').forEach((axis) => {
+      const fill = axis.querySelector('[data-fill]');
+      const nowNode = axis.querySelector('.era-node.now');
+      if (fill && nowNode) fill.style.width = parseFloat(nowNode.style.left) + '%';
+    });
+  }
+
+  window.EraTimeline = { render, DEFAULT_BANDS, DEFAULT_ERAS: DEFAULT_BANDS[0].eras };
 })();

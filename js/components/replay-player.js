@@ -185,7 +185,7 @@
       const el = document.getElementById('val-' + s.key);
       if (el) {
         const chg = (v !== null && start) ? ((v / start - 1) * 100) : null;
-        el.innerHTML = `${f.num(v, s.digits)}<span class="d ${f.dir(chg)}">${chg === null ? '--' : f.pct(chg)}</span>`;
+        el.innerHTML = `${f.num(v, s.digits)}<span class="d ${f.dir(chg)}" title="相对本区间起点的涨跌幅">${chg === null ? '--' : f.pct(chg)}</span>`;
       }
       // 游标
       const x = (idx / (dates.length - 1)) * 100;

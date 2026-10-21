@@ -265,13 +265,13 @@ function loadScripts(files) {
     const gold = c.series.find((s) => s.key === 'GC00Y');
 
     if (gold) {
-      const at = (m) => {
-        const p = gold.points.find((x) => x.t.slice(0, 7) === m);
+      const at = (d) => {
+        const p = gold.points.find((x) => x.t === d);
         return p ? p.v : null;
       };
-      const sep = at('2008-09'), oct = at('2008-10');
-      ok('危机包 2008-09 黄金月末价 = 880.8', sep === 880.8, `实际 ${sep}`);
-      ok('危机包 2008-10 黄金月末价 = 718.2', oct === 718.2, `实际 ${oct}`);
+      // 日频口径：直接取当天的收盘价
+      ok('危机包 2008-09-30 黄金收盘 = 880.8', at('2008-09-30') === 880.8, `实际 ${at('2008-09-30')}`);
+      ok('危机包 2008-10-31 黄金收盘 = 718.2', at('2008-10-31') === 718.2, `实际 ${at('2008-10-31')}`);
 
       // 术语库与正文引用的数字必须与数据一致
       const goldTerm = (g.terms || {}).gold;
@@ -295,6 +295,107 @@ function loadScripts(files) {
       ok('术语库 inversion 写的是 2006 年倒挂（与数据一致）',
         !!inv && inv.number.includes('2006') && !inv.number.includes('2007年8月'));
     }
+  }
+}
+
+/* ============================================================
+   5.6 全部危机包：日频 + 关键数字必须与数据一致
+   —— 锁死「文章里写的数字」与「回放器里能拖出来的数字」是同一个
+   ============================================================ */
+{
+  const CHECKS = [
+    { id: '1987', key: 'SPX', date: '1987-10-19', expect: 224.84, label: '黑色星期一标普收盘' },
+    { id: '1987', key: 'SPX', date: '1987-10-16', expect: 282.70, label: '崩盘前一日标普收盘' },
+    { id: '1990', key: 'N225', date: '1989-12-29', expect: 38915.87, label: '日经见顶点' },
+    { id: '1990', key: 'N225', date: '1992-08-18', expect: 14309.41, label: '日经见底' },
+    { id: '1994', key: 'US10Y', date: '1994-12-30', expect: 7.84, label: '1994 年末 10Y' },
+    { id: '1998', key: 'HSI', date: '1997-10-28', expect: 9059.89, label: '恒指黑色星期五收盘' },
+    { id: '1998', key: 'HSI', date: '1998-08-13', expect: 6660.41, label: '恒指见底' },
+    { id: '2008', key: 'SPX', date: '2009-03-09', expect: 676.53, label: '标普见底' },
+  ];
+  const DROPS = [
+    { id: '1990', key: 'N225', expect: -63.2, tol: 0.3, label: '日经峰谷跌幅' },
+    { id: '1998', key: 'HSI', expect: -60.1, tol: 0.3, label: '恒指峰谷跌幅' },
+    { id: '2008', key: 'SPX', expect: -56.8, tol: 0.3, label: '标普峰谷跌幅' },
+  ];
+  const SERIES = {
+    '1987': ['SPX', 'CL00Y'],
+    '1990': ['N225', 'SPX', 'HSI', 'GC00Y', 'CL00Y', 'US10Y'],
+    '1994': ['SPX', 'US10Y', 'GC00Y', 'CL00Y', 'HSI'],
+    '1998': ['HSI', 'N225', 'SPX', 'GC00Y', 'US10Y', 'VIX'],
+    '2008': ['SPX', 'GC00Y', 'CL00Y', 'US10Y', 'VIX'],
+  };
+
+  for (const id of Object.keys(SERIES)) {
+    const p = path.join(ROOT, 'data', 'history', 'crisis-' + id + '.json');
+    if (!existsSync(p)) { ok('危机包存在 crisis-' + id, false, '文件缺失'); continue; }
+    const pkg = JSON.parse(await readFile(p, 'utf8'));
+    ok('危机包 ' + id + ' 是日频', pkg.freq === 'D', '实际 ' + pkg.freq);
+    ok('危机包 ' + id + ' 有事件标注', (pkg.events || []).length >= 3);
+    const keys = (pkg.series || []).map((s) => s.key);
+    for (const k of SERIES[id]) {
+      ok('危机包 ' + id + ' 含序列 ' + k, keys.indexOf(k) >= 0, '实际有 ' + keys.join(','));
+    }
+    // 事件日期必须落在时间轴内
+    const first = pkg.dates[0], last = pkg.dates[pkg.dates.length - 1];
+    ok('危机包 ' + id + ' 事件日期在时间轴内',
+      pkg.events.every((e) => e.t >= first && e.t <= last),
+      `轴 ${first} → ${last}`);
+
+    for (const c of CHECKS.filter((x) => x.id === id)) {
+      const s = pkg.series.find((x) => x.key === c.key);
+      if (!s) continue;
+      const p2 = s.points.find((x) => x.t === c.date);
+      ok(c.label, !!p2 && Math.abs(p2.v - c.expect) < 0.01,
+        '期望 ' + c.expect + '，实际 ' + (p2 ? p2.v : '无此日期'));
+    }
+    for (const c of DROPS.filter((x) => x.id === id)) {
+      const s = pkg.series.find((x) => x.key === c.key);
+      if (!s) continue;
+      let peak = null, trough = null;
+      s.points.forEach((x) => {
+        if (!peak || x.v > peak.v) peak = x;
+        if (!trough || x.v < trough.v) trough = x;
+      });
+      const drop = (trough.v / peak.v - 1) * 100;
+      ok(c.label, Math.abs(drop - c.expect) < c.tol, '期望 ' + c.expect + '%，实际 ' + drop.toFixed(1) + '%');
+    }
+  }
+
+  // 单日最大跌幅：1998 恒指 -13.70%，1990 日经仅 -6.60%
+  {
+    const p98 = JSON.parse(await readFile(path.join(ROOT, 'data', 'history', 'crisis-1998.json'), 'utf8'));
+    const hsi = p98.series.find((s) => s.key === 'HSI');
+    let worst = { pct: 0, t: '' };
+    for (let i = 1; i < hsi.points.length; i++) {
+      const pct = (hsi.points[i].v / hsi.points[i - 1].v - 1) * 100;
+      if (pct < worst.pct) worst = { pct, t: hsi.points[i].t };
+    }
+    ok('恒指单日最大跌幅 = -13.70%（1997-10-28）',
+      Math.abs(worst.pct + 13.70) < 0.01 && worst.t === '1997-10-28',
+      '实际 ' + worst.pct.toFixed(2) + '% @ ' + worst.t);
+
+    const p90 = JSON.parse(await readFile(path.join(ROOT, 'data', 'history', 'crisis-1990.json'), 'utf8'));
+    const n225 = p90.series.find((s) => s.key === 'N225');
+    let worst2 = { pct: 0, t: '' };
+    for (let i = 1; i < n225.points.length; i++) {
+      const pct = (n225.points[i].v / n225.points[i - 1].v - 1) * 100;
+      if (pct < worst2.pct) worst2 = { pct, t: n225.points[i].t };
+    }
+    ok('日经区间最大单日跌幅 = -14.90%（1987-10-20）',
+      Math.abs(worst2.pct + 14.90) < 0.01 && worst2.t === '1987-10-20',
+      '实际 ' + worst2.pct.toFixed(2) + '% @ ' + worst2.t);
+    // 但 1990 年之内（不含 1987），最大单日跌幅只有 -6.60%：慢刀子，不是崩盘
+    let worst3 = { pct: 0, t: '' };
+    for (let i = 1; i < n225.points.length; i++) {
+      const p = n225.points[i];
+      if (p.t < '1990-01-01' || p.t > '1990-12-31') continue;
+      const pct = (p.v / n225.points[i - 1].v - 1) * 100;
+      if (pct < worst3.pct) worst3 = { pct, t: p.t };
+    }
+    ok('日经 1990 年内最大单日跌幅 = -6.60%（1990-04-02）',
+      Math.abs(worst3.pct + 6.60) < 0.01 && worst3.t === '1990-04-02',
+      '实际 ' + worst3.pct.toFixed(2) + '% @ ' + worst3.t);
   }
 }
 

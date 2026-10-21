@@ -159,6 +159,17 @@
     const { route: r, params, query } = m;
     const path = window.Router.parse(location.hash).path;
 
+    // 静态骨架是"首页的样子"。深链进别的页面时先换成中性占位，
+    // 否则用户会先看到一段首页内容，然后突然变成危机列表。
+    const viewEl = document.getElementById('view');
+    if (viewEl && viewEl.dataset.skeleton === '1' && r.id !== 'home') {
+      viewEl.innerHTML = `<div class="empty" style="padding:var(--s-8) 0">
+        <div class="skel" style="height:22px;width:34%;margin:0 auto 16px"></div>
+        <div class="skel" style="height:13px;width:58%;margin:0 auto 9px"></div>
+        <div class="skel" style="height:13px;width:44%;margin:0 auto"></div>
+      </div>`;
+    }
+
     try {
       switch (r.id) {
         case 'home': window.HomeView.render(view); break;

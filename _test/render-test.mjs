@@ -147,6 +147,7 @@ const SCRIPTS = [
   'js/engine/spread.js',
   'js/engine/similarity.js',
   'js/engine/analogy.js',
+  'js/engine/crisis.js',
   'js/sources/quotes.js',
   'js/sources/history.js',
   'js/site/content.js',
@@ -275,7 +276,8 @@ async function main() {
   ok('危机包可加载', !!pkg && !!pkg.series);
   if (pkg) {
     ok('危机包 5 条序列', pkg.series.length === 5, '实际 ' + pkg.series.length);
-    ok('危机包 60 个月', pkg.dates.length === 60, '实际 ' + pkg.dates.length);
+    ok('危机包为日频', pkg.freq === 'D');
+    ok('危机包 1000+ 个交易日', pkg.dates.length > 1000, '实际 ' + pkg.dates.length);
     sandbox.ReplayPlayer.render(getElementById('replay-host'), pkg);
     const rows = getElementById('rp-rows').innerHTML;
     has('回放器：标普轨道', rows, '标普500');
@@ -291,25 +293,52 @@ async function main() {
     const gold = getElementById('val-GC00Y').innerHTML;
     const vix = getElementById('val-VIX').innerHTML;
     has('回放：标普读数 1,166', spx, '1,166');
-    has('回放：标普跌幅 -8.88%', spx, '-8.88%');
-    has('回放：黄金读数 881', gold, '881');
+    ok('回放：标普涨跌幅为负（相对区间起点）', /-\d+\.\d+%/.test(spx), spx);
+    has('回放：黄金读数 880.80', gold, '880.80');
     has('回放：VIX 读数 39.4', vix, '39.4');
     hasEl('回放：日期显示 2008-09-30', getElementById('rp-date'), '2008-09-30');
     // 说明条应显示离游标最近的事件（09-30 距 AIG 09-16 为 14 天，比雷曼 09-15 的 15 天更近）
     hasEl('回放：事件说明条显示最近事件', getElementById('rp-note'), 'AIG');
 
-    // 精确跳到雷曼当天：月频数据没有 09-15，游标落在最近的月末 09-30，
-    // 但说明条必须显示"雷曼"（点谁说谁）
+    // 日频数据里有 09-15 这一天：游标能精确落在事件当天
     sandbox.ReplayPlayer.jumpTo('2008-09-15');
-    hasEl('回放：游标落到最近月末 2008-09-30', getElementById('rp-date'), '2008-09-30');
+    hasEl('回放：游标精确落在 2008-09-15', getElementById('rp-date'), '2008-09-15');
     hasEl('回放：点雷曼就显示雷曼的说明', getElementById('rp-note'), '雷曼兄弟破产');
-    has('回放：雷曼当天标普 1,166', getElementById('val-SPX').innerHTML, '1,166');
+    has('回放：雷曼当天标普 1,192.70', getElementById('val-SPX').innerHTML, '1,192.70');
+    has('回放：雷曼当天黄金 787', getElementById('val-GC00Y').innerHTML, '787');
 
     // 手动拖走之后，锁定自动解除
     sandbox.ReplayPlayer.jumpTo('2008-12-31');
     hasEl('回放：拖走后说明条跟随最近事件', getElementById('rp-note'), '12-16');
     hasEl('回放：12 月说明条', getElementById('rp-note'), '联邦基金利率');
   }
+
+  // 其余四场危机包
+  for (const id of ['1987', '1990', '1994', '1998']) {
+    const p = await sandbox.History.crisis(id);
+    ok('危机包可加载 ' + id, !!p);
+    if (!p) continue;
+    const s = sandbox.Engine.crisis.summarize(p);
+    ok('危机摘要 ' + id + ' 有头条跌幅', s && s.headline && typeof s.headline.dropPct === 'number');
+    ok('危机摘要 ' + id + ' 天数正确', s.days === p.dates.length);
+    sandbox.ReplayPlayer.render(getElementById('replay-' + id), p);
+    ok('回放器渲染 ' + id, getElementById('rp-rows').innerHTML.length > 100);
+    ok('回放器 ' + id + ' 有事件', getElementById('rp-events').innerHTML.length > 50);
+  }
+
+  // 危机列表：从回放包自动生成，头条跌幅由数据算出
+  await sandbox.CrisisView.renderList(view());
+  const clist = view().innerHTML;
+  has('危机列表：标题', clist, '每一场危机');
+  for (const id of ['1987', '1990', '1994', '1998', '2008']) {
+    ok('危机列表含 ' + id, clist.indexOf('#/crisis/' + id) >= 0);
+  }
+  has('危机列表：日频标注', clist, '日频');
+  has('危机列表：日经跌幅来自数据', clist, '-63.2%');
+  has('危机列表：恒指跌幅来自数据', clist, '-60.1%');
+  has('危机列表：标普跌幅来自数据', clist, '-56.8%');
+  has('危机列表：1994 用收益率口径（百分点）', clist, '个百分点');
+  has('危机列表：最惨一天', clist, '最惨一天');
 
   // 产业链
   const chains = sandbox.INDUSTRY_CHAINS;

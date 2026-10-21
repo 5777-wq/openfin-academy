@@ -1,39 +1,73 @@
-/* views/crisis.js —— 危机复盘：列表 + 详情（含回放器） */
+/* views/crisis.js —— 危机复盘：列表（从回放包自动生成）+ 详情（文章 + 回放器） */
 (function () {
   'use strict';
 
   const esc = (s) => window.Fmt.esc(s);
   const F = () => window.Fmt;
 
-  function renderList(view) {
-    const items = window.Content.bySection('crisis');
+  /** 已知的危机包 id（与 _scripts/collect-history.mjs 的 CRISIS_DEFS 对应） */
+  const PKG_IDS = ['1987', '1990', '1994', '1998', '2008'];
+
+  /** 轻量索引：列表页只读这个，不加载几百 KB 的完整包 */
+  async function loadIndex() {
+    const idx = await window.History.loadJSON('data/history/crisis-index.json');
+    return (idx && idx.items) || [];
+  }
+
+  async function renderList(view) {
+    const items = await loadIndex();
+    const arts = window.Content.bySection('crisis');
+    const artIds = arts.map((a) => a.id);
+
+    const cards = items.map((s) => {
+      const art = arts.find((a) => a.id === s.id);
+      const h = s.headline;
+      // 收益率用「区间变动（百分点）」，价格用「峰谷跌幅（%）」——两者不能混着写
+      const tag = !h ? ''
+        : h.kind === 'yield'
+          ? `<span class="tag up">${esc(h.name)} 区间 ${h.changePp.toFixed(2)} 个百分点</span>`
+          : `<span class="tag down">${esc(h.name)} ${h.dropPct.toFixed(1)}%</span>`;
+      const worst = h && h.worstDay ? h.worstDay : null;
+      return `<a class="entry" href="#/crisis/${esc(s.id)}">
+        <span>
+          <span class="e-t">${esc(s.title)}</span>
+          <span class="e-d">${esc(s.from)} → ${esc(s.to)} · ${s.days} 个交易日 · ${s.seriesCount} 条序列
+            ${worst ? `· 最惨一天 ${esc(worst.t)} ${worst.pct.toFixed(2)}%` : ''}</span>
+          <span class="e-tags">
+            ${tag}
+            <span class="tag">${esc(s.freq === 'D' ? '日频' : '月频')}</span>
+            <span class="tag">${s.events} 个事件</span>
+          </span>
+        </span>
+        <span class="e-m">${art ? art.readMinutes + ' min' : '看复盘 →'}</span>
+      </a>`;
+    }).join('');
+
+    // 有文章但还没有回放包的
+    const extra = arts.filter((a) => !PKG_IDS.includes(a.id)).map((a) => `
+      <a class="entry" href="#/crisis/${esc(a.id)}">
+        <span><span class="e-t">${esc(a.title)}</span><span class="e-d">${esc(a.dek || '')}</span></span>
+        <span class="e-m">${a.readMinutes || ''} min</span>
+      </a>`).join('');
+
     view.innerHTML = `
       <div class="art-head">
         <div class="eyebrow">栏目 02 · 危机复盘</div>
         <h1 style="font-size:var(--t-hero);letter-spacing:-.015em;margin-bottom:var(--s-3)">每一场危机，都值得拖一遍时间轴</h1>
-        <p class="art-dek">下面每场危机都配了一个回放器：多条资产在同一条时间轴上同步走，你可以拖到任意一天，看那一刻市场到底发生了什么。</p>
+        <p class="art-dek">下面每场危机都配了一个回放器：多条资产在同一条时间轴上同步走，<b>日频</b>，你可以拖到崩盘那一天，看那一刻各资产到底怎么了。页面上每个跌幅都是从数据里算出来的，不是手写的。</p>
       </div>
-      <div class="entries">
-        ${items.map((c) => `<a class="entry" href="#/crisis/${c.id}">
-          <span>
-            <span class="e-t">${esc(c.title)}</span>
-            <span class="e-d">${esc(c.dek || '')}</span>
-            ${c.tags ? `<span class="e-tags">${c.tags.slice(0, 3).map((t) => `<span class="tag">${esc(t)}</span>`).join('')}</span>` : ''}
-          </span>
-          <span class="e-m">${c.readMinutes ? c.readMinutes + ' min' : ''}</span>
-        </a>`).join('')}
-      </div>`;
+      <div class="entries">${cards}${extra}</div>`;
   }
 
   async function renderDetail(view, id) {
+    const pkg = await window.History.crisis(id);
     const art = window.Content.article(id);
-    const pack = await window.History.crisis(id);
 
     if (!art) {
       view.innerHTML = `<div class="empty"><div class="et">这场复盘还没写</div>
-        <div class="ed">回放数据${pack ? '已经有了' : '也需要先跑一次采集'}。</div>
+        <div class="ed">回放数据${pkg ? '已经有了' : '也需要先跑一次采集'}。</div>
         <a class="btn ghost sm" href="#/crisis">回复盘列表</a></div>`;
-      if (pack) mountReplay(view, pack);
+      if (pkg) mountReplay(view, pkg);
       return;
     }
 
@@ -41,6 +75,7 @@
     let html = F().md(art.body || '');
     html = window.TermCard.markTerms(html, glossary);
     const m = art.meta || art;
+    const s = pkg ? window.Engine.crisis.summarize(pkg) : null;
 
     view.innerHTML = `
       <article class="art-head">
@@ -51,6 +86,7 @@
           ${m.readMinutes ? `<span>阅读约 ${m.readMinutes} 分钟</span><span class="msep">·</span>` : ''}
           <span>数据截至 ${esc(m.dataAsOf || '—')}</span>
           ${m.source ? `<span class="msep">·</span><span>来源 ${esc(m.source)}</span>` : ''}
+          ${s ? `<span class="msep">·</span><span>${s.days} 个交易日 × ${s.seriesCount} 条序列</span>` : ''}
         </div>
       </article>
 
@@ -71,20 +107,20 @@
 
       <div class="prose">${html}</div>`;
 
-    if (pack) mountReplay(view, pack);
+    if (pkg) mountReplay(view, pkg);
   }
 
-  function mountReplay(view, pack) {
+  function mountReplay(view, pkg) {
     const box = document.getElementById('crisis-replay');
     if (!box) return;
-    if (!pack || !pack.series || !pack.series.length) {
+    if (!pkg || !pkg.series || !pkg.series.length) {
       box.innerHTML = `<div class="panel"><div class="empty" style="padding:var(--s-5) 0">
         <div class="et">回放数据还没采集</div>
         <div class="ed">跑一次 <code>node _scripts/collect-history.mjs</code> 就能拿到真实长历史。</div></div></div>`;
       return;
     }
-    window.ReplayPlayer.render(box, pack);
+    window.ReplayPlayer.render(box, pkg);
   }
 
-  window.CrisisView = { renderList, renderDetail };
+  window.CrisisView = { renderList, renderDetail, mountReplay, loadIndex, PKG_IDS };
 })();
