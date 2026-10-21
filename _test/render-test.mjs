@@ -623,7 +623,9 @@ async function main() {
 
   const refs = [...html.matchAll(/(?:src|href)="([^"#:]+)"/g)]
     .map((m) => m[1])
-    .filter((u) => !/^https?:/.test(u) && !u.startsWith('data:'));
+    .filter((u) => !/^https?:/.test(u) && !u.startsWith('data:'))
+    // 业务资源带 ?v= 版本号，校验存在性时把它去掉
+    .map((u) => u.split('?')[0]);
   for (const r of refs) {
     ok('index.html 引用存在 ' + r, existsSync(path.join(ROOT, r)));
   }

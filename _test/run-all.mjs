@@ -279,8 +279,7 @@ function loadScripts(files) {
         for (const b of BAN) {
           ok(`术语 ${id} 不含禁用表达「${b}」`, !s.includes(b));
         }
-      }
-      // 正文里引用的术语必须存在
+      }      // 正文里引用的术语必须存在
       for (const it of idx.items || []) {
         const a = JSON.parse(await readFile(path.join(ROOT, 'data', 'content', it.id + '.json'), 'utf8'));
         const refs = [...String(a.body || '').matchAll(/\[\[([^\]|]+)/g)].map((m) => m[1]);
@@ -290,6 +289,23 @@ function loadScripts(files) {
       }
     }
   }
+}
+
+/* ============================================================
+   5.45 发布卫生：业务资源的 ?v= 必须同版本
+   ------------------------------------------------------------
+   静态托管给 js/css 设了缓存头，发布之后用户可能拿到旧文件——
+   页面看着对，行为却是旧的（分类数、词条顺序这类改动尤其难察觉）。
+   所以每个业务资源挂 ?v=；但版本号必须**全部一样**：
+   不统一就等于有的文件刷新了有的没刷新，比不打版本号还难查。 */
+{
+  const indexHtml = await readFile(path.join(ROOT, 'index.html'), 'utf8');
+  const vers = [...indexHtml.matchAll(/\?v=([0-9a-z]+)/g)].map((m) => m[1]);
+  ok('index.html 的业务资源都带了 ?v=', vers.length >= 20, `实际 ${vers.length} 个`);
+  const uniq = [...new Set(vers)];
+  ok('业务资源 ?v= 全部同版本', uniq.length === 1, `版本号不统一：${uniq.join(' ')}`);
+  ok('vendor 的第三方库不被业务版本号覆盖',
+    !/vendor\/[^"?]+\?v=\d{8}/.test(indexHtml), 'vendor 资源的版本号被改了');
 }
 
 /* ============================================================
