@@ -20,6 +20,10 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const ONLY = (process.argv.find((a) => a.startsWith('--only=')) || '').slice(7).split(',').filter(Boolean);
 const want = (name) => !ONLY.length || ONLY.includes(name);
 
+/** --series=ID,ID —— 只采指定序列（不写其它序列的文件） */
+const SERIES = (process.argv.find((a) => a.startsWith('--series=')) || '').slice(9).split(',').filter(Boolean);
+const wantedSeries = (id) => !SERIES.length || SERIES.includes(id);
+
 async function getText(url, timeout = 25000) {
   // 重试：CDN 偶发失败是常态。采集脚本是每日流水线，不能因为一次抖动就断。
   let lastErr = null;
@@ -81,6 +85,24 @@ async function eastMonthly(secid, from = '19000101') {
     const p = line.split(',');
     return { t: p[0], v: Number(p[1]) };
   }).filter((x) => Number.isFinite(x.v));
+}
+
+/* ---------------- 腾讯月线（备源） ----------------
+   实测：东财 push2his 在部分网络下直连不通（socket 被掐），腾讯 ifzq 通且回 CORS 头。
+   只覆盖 A 股指数——腾讯 symbol 规则简单：1.xxxxxx → shxxxxxx，0.xxxxxx → szxxxxxx。
+   lmt 上限 2000（写 5000 腾讯直接回 "param error"）。 */
+async function tencentMonthly(secid) {
+  const m = /^([10])\.(\d{6})$/.exec(String(secid || ''));
+  if (!m) return [];
+  const code = (m[1] === '1' ? 'sh' : 'sz') + m[2];
+  const u = 'https://web.ifzq.gtimg.cn/appstock/app/kline/kline?param='
+    + `${code},month,,,2000&_var=1`;
+  const txt = await getText(u);
+  const j = JSON.parse(txt);
+  const node = j && j.data && j.data[code];
+  const rows = node && node.month ? node.month : [];
+  return rows.map((r) => ({ t: String(r[0]).slice(0, 10), v: Number(r[2]) }))
+    .filter((x) => /^\d{4}-\d{2}-\d{2}$/.test(x.t) && Number.isFinite(x.v));
 }
 
 /* ---------------- CBOE VIX 日线 → 月末 ---------------- */
@@ -478,6 +500,9 @@ async function main() {
     ['N225', '100.N225', '日经225', '点', 2, '东方财富 push2his 100.N225'],
     ['HSI', '100.HSI', '恒生指数', '点', 2, '东方财富 push2his 100.HSI'],
     ['SH000001', '1.000001', '上证指数', '点', 2, '东方财富 push2his 1.000001'],
+    ['SZ399001', '0.399001', '深证成指', '点', 2, '东方财富 push2his 0.399001'],
+    ['SZ399006', '0.399006', '创业板指', '点', 2, '东方财富 push2his 0.399006'],
+    ['SH000688', '1.000688', '科创50', '点', 2, '东方财富 push2his 1.000688'],
     ['GC00Y', '101.GC00Y', 'COMEX黄金', '美元/盎司', 2, '东方财富 push2his 101.GC00Y'],
     ['SI00Y', '101.SI00Y', 'COMEX白银', '美元/盎司', 2, '东方财富 push2his 101.SI00Y'],
     ['CL00Y', '102.CL00Y', 'NYMEX原油', '美元/桶', 2, '东方财富 push2his 102.CL00Y'],
@@ -485,11 +510,25 @@ async function main() {
   ];
   for (const [id, secid, name, unit, digits, source] of eastDefs) {
     if (!want('east')) break;
+    if (!wantedSeries(id)) continue;
+    let pts = [], used = source;
     try {
-      const pts = await eastMonthly(secid);
-      const p = await writeSeries(id, { name, unit, digits, freq: 'M', source, kind: '月收盘价' }, pts);
+      pts = await eastMonthly(secid);
+    } catch (e) {
+      console.warn(`  [fallback] ${id}：东财不可达（${e.message}），改用腾讯备源`);
+    }
+    if (!pts.length) {
+      try {
+        pts = await tencentMonthly(secid);
+        if (pts.length) used = `腾讯 ifzq 备源 ${secid}`;
+      } catch (e) { console.warn(`  [skip] ${id}：${e.message}`); }
+    }
+    if (!pts.length) {
+      console.warn(`  [skip] ${id}：两个源都没取到数据`);
+    } else {
+      const p = await writeSeries(id, { name, unit, digits, freq: 'M', source: used, kind: '月收盘价' }, pts);
       if (p) seriesMap[id] = p;
-    } catch (e) { console.warn(`  [skip] ${id}：${e.message}`); }
+    }
     await sleep(150);
   }
 

@@ -427,6 +427,25 @@ async function main() {
     '实际 ' + (tlist.match(/href="#\/term\//g) || []).length);
   ok('术语库：每个术语都有可深链的 id', Object.keys(sandbox.Content.glossary()).every((k) => sandbox.TermView.linkOf(k) === '#/term/' + k));
 
+  // 术语卡里的数字必须能在站内序列里对账（口径 = 站点显示的小数位）
+  // 手写的数字会悄悄过期，读者对着站内数据一算就是错的——所以每条都验一遍
+  {
+    const seriesOf = {
+      'sse-index': 'SH000001', 'szse-component': 'SZ399001', 'chinext': 'SZ399006',
+      'kechuang-50': 'SH000688', 'sp500': 'SPX', 'dow-jones': 'DJIA', 'hsi': 'HSI',
+      'nikkei': 'N225', 'vix': 'VIX', 'silver': 'SI00Y', 'dollar-index': 'UDI',
+    };
+    for (const [id, sid] of Object.entries(seriesOf)) {
+      const t = sandbox.Content.term(id);
+      const s = JSON.parse(await readFile(path.join(ROOT, 'data/history', sid + '.json'), 'utf8'));
+      const set = new Set(s.points.map((p) => p.v.toFixed(s.digits)));
+      const nums = (String(t.number || '').match(/\d[\d,]*\.\d+/g) || []).map((x) => x.replace(/,/g, ''));
+      const hit = nums.filter((n) => set.has(n));
+      ok('术语 ' + id + ' 的数字能在站内序列对账', hit.length >= 2,
+        '只命中 ' + hit.length + ' 个：' + JSON.stringify(nums));
+    }
+  }
+
   /* ---- 6. 术语抽屉 ---- */
   sandbox.TermDrawer.init();
   sandbox.TermDrawer.open('discount-rate');
