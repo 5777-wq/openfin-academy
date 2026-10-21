@@ -439,7 +439,7 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
 .insight-note { margin: var(--s-3) 0 0; font-size: var(--t-micro); color: var(--ink-3); line-height: 1.7; }
 
 /* ============================================================
-   术语库：分类导航 + 研报数据速查表
+   术语库：分类导航 + 分类速查表
    ============================================================ */
 .cat-block { margin-bottom: var(--s-5); }
 .cat-desc { font-size: var(--t-micro); color: var(--ink-3); margin-bottom: var(--s-2); line-height: 1.6; }

@@ -100,7 +100,7 @@
         <div class="eyebrow">术语库</div>
         <h1 style="font-size:var(--t-hero);letter-spacing:-.015em;margin-bottom:var(--s-3)">${ids.length} 个词，按你遇到的地方找</h1>
         <p class="art-dek">每个词四段：一句话讲清是什么、一个好懂的比喻、一个真实数字、一个容易踩的坑。
-          不知道从哪看起，先去 <a href="#/data">研报数据速查</a>。</p>
+          不知道从哪看起，先去 <a href="#/data">速查表</a>（九类各一张，行行是「是什么 · 什么时候会骗人」）。</p>
       </div>
       ${blocks}`;
   }
