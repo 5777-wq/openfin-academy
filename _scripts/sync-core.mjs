@@ -83,10 +83,11 @@ async function main() {
     copied++;
   }
 
-  // 记录来源
+  // 记录来源（只记仓库名与上游地址，不写本机绝对路径——这是要公开的仓库）
+  const label = /(^|[\\/])([^\\/]+)$/.exec(src.replace(/\.git$/, ''));
   const head = [
     '# vendor 目录由 _scripts/sync-core.mjs 自动生成，勿手改。',
-    `# source: ${src}`,
+    `# source: ${label ? label[2] : 'openfinlens'}`,
     `# upstream: ${UPSTREAM}`,
     `# commit: ${sha}`,
     `# synced: ${new Date().toISOString()}`,

@@ -1,0 +1,2 @@
+# GitHub Pages：按原样发布分支内容，不走 Jekyll 处理
+# （本仓库有 _scripts/、_test/ 等下划线开头目录，Jekyll 默认会忽略它们）
