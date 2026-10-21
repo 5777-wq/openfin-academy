@@ -14,7 +14,8 @@
       const ctl = new AbortController();
       const timer = setTimeout(() => ctl.abort(), 12000);
       try {
-        const res = await fetch(path, { cache: 'no-cache', signal: ctl.signal });
+        // 同 content.js：走默认缓存，不强制回源
+        const res = await fetch(path, { signal: ctl.signal });
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const j = await res.json();
         cache.set(path, j);

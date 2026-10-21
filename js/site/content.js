@@ -7,10 +7,12 @@
 
   async function loadJSON(path) {
     // 带超时：任何一个请求卡住都不允许让整页空白
+    // 用默认缓存（走 HTTP 缓存 + ETag 协商），不要 no-cache：
+    // no-cache 会强制每次都回源校验，9 个内容文件就是 9 个额外往返，首屏明显变慢
     const ctl = new AbortController();
     const timer = setTimeout(() => ctl.abort(), 12000);
     try {
-      const res = await fetch(path, { cache: 'no-cache', signal: ctl.signal });
+      const res = await fetch(path, { signal: ctl.signal });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       return await res.json();
     } finally { clearTimeout(timer); }
