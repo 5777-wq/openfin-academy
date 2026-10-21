@@ -7,6 +7,7 @@
    产物提交进仓库，浏览器只读静态 JSON，不直连海外源。 */
 import { writeFile, mkdir, readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
+import vm from 'node:vm';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -118,6 +119,180 @@ async function tencentMonthlyHK(secid) {
   const rows = node && node.month ? node.month : [];
   return rows.map((r) => ({ t: String(r[0]).slice(0, 10), v: Number(r[2]) }))
     .filter((x) => /^\d{4}-\d{2}-\d{2}$/.test(x.t) && Number.isFinite(x.v));
+}
+
+/* ---------------- 终端 universe 里的个股 ----------------
+   终端能看的每个标的，科普站也要能查到它的历史——两边共用同一份标的清单。
+   腾讯的 symbol 规则：
+     A股 sh600519 / sz300750 → 原样
+     港股 hk00700 → 原样
+     美股 usAAPL → 必须带交易所后缀 usAAPL.OQ（不带就只回 1 根 bar）
+   美股后缀从 qt.gtimg.cn 查一次（GBK 编码），查不到就退回裸代码。 */
+const usSuffixCache = new Map();
+async function tencentSymbol(symbol) {
+  const s = String(symbol || '');
+  if (/^(sh|sz|bj|hk)/.test(s)) return s;
+  if (s.startsWith('us')) {
+    const code = s.slice(2);
+    if (usSuffixCache.has(code)) return usSuffixCache.get(code);
+    let sym = s;
+    try {
+      const res = await fetch('https://qt.gtimg.cn/q=' + s, { signal: AbortSignal.timeout(12000) });
+      const buf = Buffer.from(await res.arrayBuffer());
+      const txt = new TextDecoder('gbk').decode(buf);
+      const f = String(txt).match(/="([^"]*)"/);
+      const full = f ? (f[1].split('~')[2] || '').trim() : '';
+      if (/^[A-Za-z.]{1,14}$/.test(full)) sym = 'us' + full;
+    } catch (e) { /* 取不到就用裸代码试一次 */ }
+    usSuffixCache.set(code, sym);
+    return sym;
+  }
+  return null;
+}
+
+/** 拆股在某条序列里的生效位置。
+    必须同时看**日期窗口**和**比值**：只看比值会把真实的暴跌（-35% ≈ 1.6 倍）
+    误判成拆股，位置一错，整条序列的比例就全错了。 */
+function effectiveSplitIndex(points, split) {
+  const m = split.date.slice(0, 7);
+  let start = -1;
+  for (let i = 0; i < points.length; i++) { if (points[i].t.slice(0, 7) >= m) { start = i; break; } }
+  if (start < 0) return -1;                       // 拆股在这条序列开始之前 → 不影响
+  let best = -1, bestErr = Infinity;
+  const lo = Math.max(1, start - 2), hi = Math.min(points.length, start + 4);
+  for (let i = lo; i < hi; i++) {
+    const r = points[i - 1].v / points[i].v;
+    if (r <= 1.05) continue;
+    const err = Math.abs(Math.log(r / split.ratio));
+    if (err < bestErr) { bestErr = err; best = i; }
+  }
+  if (best >= 0 && bestErr < 0.35) return best;  // 比值对得上
+  return start;                                  // 对不上就按日期：拆股之后的第一根
+}
+
+/**
+ * 把不复权价整平成复权价。
+ * base = 当前这个价位对应的比例（用 Yahoo 复权价反推，≈1）；
+ * 每一次拆股把它**之前**的 bar 乘上比例（拆股前的 1 股变成 N 股，价要除以 N）。
+ */
+function rescaleBySplits(points, splits, base) {
+  if (!splits || !splits.length) return points;
+  const f = new Array(points.length).fill(base);
+  for (const s of splits) {
+    const i = effectiveSplitIndex(points, s);
+    if (i < 0) continue;
+    for (let k = 0; k < i; k++) f[k] *= s.ratio;
+  }
+  return points.map((p, i) => (f[i] === 1 ? p : { t: p.t, v: p.v / f[i] }));
+}
+
+async function tencentMonthlySymbol(symbol) {
+  const code = await tencentSymbol(symbol);
+  if (!code) return [];
+  const u = 'https://web.ifzq.gtimg.cn/appstock/app/kline/kline?param='
+    + `${code},month,,,2000&_var=1`;
+  const txt = await getText(u);
+  const j = JSON.parse(txt);
+  const node = j && j.data && j.data[code];
+  const rows = node && node.month ? node.month : [];
+  return rows.map((r) => ({ t: String(r[0]).slice(0, 10), v: Number(r[2]) }))
+    .filter((x) => /^\d{4}-\d{2}-\d{2}$/.test(x.t) && Number.isFinite(x.v));
+}
+
+/* 腾讯的美股 symbol 必须带交易所后缀（usAAPL → usAAPL.OQ），
+   而后缀要从 qt.gtimg.cn 查——那一步偶尔会失败，失败了就只回 1 根 bar。
+   兜底：把三个交易所后缀都试一遍，谁给的 bar 多用谁。 */
+async function tencentMonthlySymbolRobust(symbol) {
+  let best = await tencentMonthlySymbol(symbol);
+  if (best.length >= 12) return best;
+  const s = String(symbol || '');
+  if (/^us/.test(s)) {
+    const base = s.slice(2);
+    for (const suf of ['.OQ', '.N', '.A']) {
+      const u = 'https://web.ifzq.gtimg.cn/appstock/app/kline/kline?param='
+        + `us${base}${suf},month,,,2000&_var=1`;
+      try {
+        const txt = await getText(u);
+        const j = JSON.parse(txt);
+        const node = j && j.data && j.data['us' + base + suf];
+        const rows = node && node.month ? node.month : [];
+        const pts = rows.map((r) => ({ t: String(r[0]).slice(0, 10), v: Number(r[2]) }))
+          .filter((x) => /^\d{4}-\d{2}-\d{2}$/.test(x.t) && Number.isFinite(x.v));
+        if (pts.length > best.length) best = pts;
+      } catch (e) { /* 试下一个 */ }
+    }
+  }
+  return best;
+}
+
+/* ---------------- 拆股复权 ----------------
+   腾讯给的是**不复权**价：英伟达 2024-06 十拆一，在月线里就是一道 10 倍断崖
+   （2024-05 收 1096.33，2024-06 收 123.5）；谷歌 2014-04 的 Class C 分配同理。
+   修法不用猜：拿 Yahoo 的**拆股复权**月线做价，腾讯的月线做**日期**——
+   腾讯给的是当月最后一个交易日，Yahoo 给的是当月首日。各取所长：
+     日期 = 腾讯（真实月末交易日）
+     数值 = Yahoo（已按拆股复权，不含分红）
+   拆股事件（split events）只用来交叉验证，不作为唯一依据。 */
+const yahooCache = new Map();
+
+function yahooSymbolOf(symbol) {
+  const s = String(symbol || '');
+  if (/^sh/.test(s)) return s.slice(2) + '.SS';
+  if (/^sz/.test(s)) return s.slice(2) + '.SZ';
+  if (/^bj/.test(s)) return s.slice(2) + '.BJ';
+  if (/^hk/.test(s)) {
+    const digits = s.slice(2).replace(/\D/g, '').replace(/^0+/, '') || '0';
+    return digits.padStart(4, '0') + '.HK';
+  }
+  if (/^us/.test(s)) return s.slice(2).replace(/\./g, '-');
+  return null;
+}
+
+/** Yahoo 月线：月份 → 已按拆股复权的收盘价 */
+async function yahooMonthly(symbol) {
+  const y = yahooSymbolOf(symbol);
+  if (!y) return null;
+  if (yahooCache.has(y)) return yahooCache.get(y);
+  let map = null;
+  try {
+    const u = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(y)
+      + '?range=max&interval=1mo';
+    const res = await fetch(u, { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(20000) });
+    const j = await res.json();
+    const r = j && j.chart && j.chart.result && j.chart.result[0];
+    if (r && r.timestamp && r.indicators) {
+      const ts = r.timestamp;
+      const cl = r.indicators.quote[0].close || [];
+      map = new Map();
+      for (let i = 0; i < ts.length; i++) {
+        if (cl[i] === null || cl[i] === undefined) continue;
+        map.set(new Date(ts[i] * 1000).toISOString().slice(0, 7), Number(cl[i]));
+      }
+    }
+  } catch (e) {
+    console.warn(`  [yahoo] ${symbol}：取不到复权价（${e.message}）`);
+  }
+  yahooCache.set(y, map);
+  return map;
+}
+
+/** 拆股事件（仅用于交叉验证） */
+async function yahooSplits(symbol) {
+  const y = yahooSymbolOf(symbol);
+  if (!y) return [];
+  const u = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(y)
+    + '?range=max&interval=1mo&events=split';
+  try {
+    const res = await fetch(u, { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(20000) });
+    const j = await res.json();
+    const ev = (j && j.chart && j.chart.result && j.chart.result[0].events && j.chart.result[0].events.splits) || {};
+    return Object.values(ev).map((x) => ({
+      date: new Date(x.date * 1000).toISOString().slice(0, 10),
+      ratio: (Number(x.numerator) || 1) / (Number(x.denominator) || 1),
+    })).filter((x) => x.ratio && x.ratio !== 1);
+  } catch (e) {
+    return [];
+  }
 }
 
 /* ---------------- CBOE VIX 日线 → 月末 ---------------- */
@@ -502,6 +677,31 @@ async function resolveChainSecids() {
 }
 
 /* ---------------- 主流程 ---------------- */
+
+/* 终端 universe（vendor 里同步过来的那份）——两边共用同一份标的清单 */
+async function loadVendorUniverse() {
+  const p = path.join(ROOT, 'vendor', 'core', 'universe.js');
+  if (!existsSync(p)) return [];
+  const src = await readFile(p, 'utf8');
+  const ctx = { window: {}, console };
+  ctx.window = ctx;
+  vm.runInNewContext(src, ctx, { filename: 'vendor/core/universe.js' });
+  return (ctx.window.TENCENT_UNIVERSE || []).slice();
+}
+
+/* 已经用别的方式采过的（指数/商品有专门的采集路径），个股环节跳过 */
+const INSTRUMENT_COVERED = new Set([
+  'sh000001', 'sz399001', 'sz399006', 'sh000688',   // A股四大指数
+  'usINX', 'usDJI',                                  // 标普 / 道指
+  'hkHSI', 'hkHSTECH',                               // 恒指 / 恒生科技
+]);
+
+function unitOf(u) {
+  if (u.symbol.startsWith('hk')) return '港元';
+  if (u.symbol.startsWith('us')) return '美元';
+  return '人民币';
+}
+
 async function main() {
   await mkdir(OUT, { recursive: true });
   const seriesMap = {};
@@ -549,8 +749,52 @@ async function main() {
     await sleep(150);
   }
 
-  console.log('[collect] CBOE：VIX');
-  if (want('vix')) {
+  // 终端 universe 里的个股：终端能看的每一只，科普站也要能查到它的历史。
+  // 腾讯源是**不复权**价（不含分红），所以 kind 照实写，页面里也照实说。
+  console.log('[collect] 终端 universe：个股月线（腾讯 ifzq）');
+  if (want('instruments')) {
+    const uni = await loadVendorUniverse();
+    for (const u of uni) {
+      if (!wantedSeries(u.symbol)) continue;
+      if (INSTRUMENT_COVERED.has(u.symbol)) continue;
+      try {
+        const raw = await tencentMonthlySymbolRobust(u.symbol);
+        if (!raw.length) { console.warn(`  [skip] ${u.symbol}：无数据`); continue; }
+        const ym = await yahooMonthly(u.symbol);
+        let pts = raw, srcNote;
+        if (ym && ym.size) {
+          // 腾讯的港股序列会带上上市之前的脏数据（华润啤酒能回到 1983），
+          // 用 Yahoo 的起始月裁掉——那才是这只票真正存在的起点
+          const firstY = [...ym.keys()].sort()[0];
+          const trimmed = raw.filter((p) => p.t.slice(0, 7) >= firstY);
+          const useRaw = trimmed.length >= 12 ? trimmed : raw;
+          // 1) 从能对上的月份反推基准比例（当前价位 ≈ 1）
+          const matched = [];
+          useRaw.forEach((p, i) => {
+            const yv = ym.get(p.t.slice(0, 7));
+            if (yv !== undefined && yv !== 0) matched.push({ i, f: p.v / yv });
+          });
+          const tail = matched.filter((m) => m.i >= useRaw.length - 24);
+          const base = tail.length ? tail[tail.length - 1].f
+            : (matched.length ? matched[matched.length - 1].f : 1);
+          // 2) 拆股事件定比例，价格断崖定生效位置
+          const splits = await yahooSplits(u.symbol);
+          pts = rescaleBySplits(useRaw, splits, base);
+          srcNote = '价：Yahoo Finance（拆股复权）· 日期：腾讯 ifzq';
+        } else {
+          srcNote = '腾讯 ifzq（未复权）';
+        }
+        const p = await writeSeries(u.symbol, {
+          name: u.label, unit: unitOf(u), digits: 2, freq: 'M',
+          source: srcNote, kind: '月末收盘（已按拆股复权，不含分红）',
+        }, pts);
+        if (p) seriesMap[u.symbol] = p;
+      } catch (e) { console.warn(`  [skip] ${u.symbol}：${e.message}`); }
+      await sleep(180);
+    }
+  }
+
+  console.log('[collect] CBOE：VIX');  if (want('vix')) {
   try {
     const pts = await cboeVix();
     const p = await writeSeries('VIX', { name: 'VIX 恐慌指数', unit: '', digits: 1, freq: 'M', source: 'CBOE 官方 VIX_History.csv', kind: '月末收盘' }, pts);

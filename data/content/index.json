@@ -19,6 +19,225 @@
       "file": "assets/gold.md"
     },
     {
+      "id": "hk00700",
+      "section": "assets",
+      "title": "腾讯：它同时是游戏公司、社交公司和投资公司",
+      "dek": "微信的社交垄断、游戏的现金流、对外投资的组合——三块加起来，才是腾讯；只看任何一块都会看错。",
+      "tag": "标的百科",
+      "tags": [
+        "腾讯",
+        "港股",
+        "互联网",
+        "游戏"
+      ],
+      "readMinutes": 6,
+      "dataAsOf": "2026-10-21",
+      "difficulty": 2,
+      "updatedAt": "2026-10-21",
+      "file": "assets/hk00700.md"
+    },
+    {
+      "id": "hk09988",
+      "section": "assets",
+      "title": "阿里巴巴：它的问题从来不是生意",
+      "dek": "电商、云计算、国际业务三块都在赚钱，但股价被\"叙事\"压着：监管、地缘、竞争，每一条都能单独打一轮。",
+      "tag": "标的百科",
+      "tags": [
+        "阿里巴巴",
+        "港股",
+        "电商",
+        "云计算"
+      ],
+      "readMinutes": 5,
+      "dataAsOf": "2026-10-21",
+      "difficulty": 3,
+      "updatedAt": "2026-10-21",
+      "file": "assets/hk09988.md"
+    },
+    {
+      "id": "sh600519",
+      "section": "assets",
+      "title": "贵州茅台：A 股最贵的一门生意",
+      "dek": "它靠一个牌子赚走行业里大部分利润。也正因为如此，它的股价对\"消费信心\"比对\"产量\"更敏感。",
+      "tag": "标的百科",
+      "tags": [
+        "贵州茅台",
+        "A股",
+        "白酒",
+        "消费"
+      ],
+      "readMinutes": 6,
+      "dataAsOf": "2026-10-21",
+      "difficulty": 2,
+      "updatedAt": "2026-10-21",
+      "file": "assets/sh600519.md"
+    },
+    {
+      "id": "sz300750",
+      "section": "assets",
+      "title": "宁德时代：它给电动车供应链装上了\"标准件\"",
+      "dek": "全球动力电池装机量第一。它的对手不是同行，是车企自己造电池的决心——以及整车价格战压下来的那部分利润。",
+      "tag": "标的百科",
+      "tags": [
+        "宁德时代",
+        "A股",
+        "新能源车",
+        "电池"
+      ],
+      "readMinutes": 6,
+      "dataAsOf": "2026-10-21",
+      "difficulty": 3,
+      "updatedAt": "2026-10-21",
+      "file": "assets/sz300750.md"
+    },
+    {
+      "id": "usAAPL",
+      "section": "assets",
+      "title": "苹果：它已经不只是卖手机的了",
+      "dek": "一家把利润藏在服务里的硬件公司。股价在复权后从 2008 年的 3.05 美元涨到 340 美元，也真的跌过八成。",
+      "tag": "标的百科",
+      "tags": [
+        "苹果",
+        "美股",
+        "消费电子",
+        "科技"
+      ],
+      "readMinutes": 6,
+      "dataAsOf": "2026-10-21",
+      "difficulty": 2,
+      "updatedAt": "2026-10-21",
+      "file": "assets/usAAPL.md"
+    },
+    {
+      "id": "usAMZN",
+      "section": "assets",
+      "title": "亚马逊：真正赚钱的是云和广告",
+      "dek": "一开始它靠\"网上卖书\"打败巴诺克；现在它的利润结构里，广告和 AWS 各占一块。",
+      "tag": "标的百科",
+      "tags": [
+        "亚马逊",
+        "美股",
+        "电商",
+        "云"
+      ],
+      "readMinutes": 5,
+      "dataAsOf": "2026-10-21",
+      "difficulty": 2,
+      "updatedAt": "2026-10-21",
+      "file": "assets/usAMZN.md"
+    },
+    {
+      "id": "usGOOG",
+      "section": "assets",
+      "title": "谷歌：搜索还在，但收钱的方式变了",
+      "dek": "广告还是它的命根子，只是它现在不只卖搜索结果了。AI 时代的最大悬念是：搜索流量会不会被聊天机器人截走。",
+      "tag": "标的百科",
+      "tags": [
+        "谷歌",
+        "美股",
+        "互联网",
+        "AI",
+        "搜索"
+      ],
+      "readMinutes": 5,
+      "dataAsOf": "2026-10-21",
+      "difficulty": 2,
+      "updatedAt": "2026-10-21",
+      "file": "assets/usGOOG.md"
+    },
+    {
+      "id": "usMETA",
+      "section": "assets",
+      "title": "Meta：它曾经把互联网的时间都抢走了",
+      "dek": "靠\"免费让你用、你把注意力给它\"赚广告钱。代价是它要不停改产品、改算法，用户因此反复迁移。",
+      "tag": "标的百科",
+      "tags": [
+        "Meta",
+        "美股",
+        "社交",
+        "广告",
+        "AI"
+      ],
+      "readMinutes": 5,
+      "dataAsOf": "2026-10-21",
+      "difficulty": 2,
+      "updatedAt": "2026-10-21",
+      "file": "assets/usMETA.md"
+    },
+    {
+      "id": "usMSFT",
+      "section": "assets",
+      "title": "微软：它同时是三条完全不同的生意",
+      "dek": "办公软件、云、AI 三条线，周期完全不同。把它们当成\"一家科技公司\"看，是最常见的误判。",
+      "tag": "标的百科",
+      "tags": [
+        "微软",
+        "美股",
+        "软件",
+        "云",
+        "AI"
+      ],
+      "readMinutes": 5,
+      "dataAsOf": "2026-10-21",
+      "difficulty": 2,
+      "updatedAt": "2026-10-21",
+      "file": "assets/usMSFT.md"
+    },
+    {
+      "id": "usNVDA",
+      "section": "assets",
+      "title": "英伟达：涨过 100 倍，也从 0.23 美元起来过",
+      "dek": "AI 算力的卖铲人。它的复权后月线从 2010 年的 0.23 美元涨到 228 美元，中间还坐着一次 -80% 的回撤。",
+      "tag": "标的百科",
+      "tags": [
+        "英伟达",
+        "美股",
+        "芯片",
+        "AI"
+      ],
+      "readMinutes": 6,
+      "dataAsOf": "2026-10-21",
+      "difficulty": 2,
+      "updatedAt": "2026-10-21",
+      "file": "assets/usNVDA.md"
+    },
+    {
+      "id": "usTSLA",
+      "section": "assets",
+      "title": "特斯拉：它的估值从来不靠卖车",
+      "dek": "一家销量曾占全球汽车市场 1% 出头的公司，估值一度超过很多车企总和。它究竟在为什么定价？",
+      "tag": "标的百科",
+      "tags": [
+        "特斯拉",
+        "美股",
+        "新能源车",
+        "汽车"
+      ],
+      "readMinutes": 6,
+      "dataAsOf": "2026-10-21",
+      "difficulty": 3,
+      "updatedAt": "2026-10-21",
+      "file": "assets/usTSLA.md"
+    },
+    {
+      "id": "usTSM",
+      "section": "assets",
+      "title": "台积电：全世界最会做一件事的公司",
+      "dek": "几乎所有先进芯片都出自它的厂。它的护城河不是技术，是别人要花十年和一千亿美元才追得上的产能与良率。",
+      "tag": "标的百科",
+      "tags": [
+        "台积电",
+        "美股",
+        "芯片",
+        "半导体"
+      ],
+      "readMinutes": 5,
+      "dataAsOf": "2026-10-21",
+      "difficulty": 3,
+      "updatedAt": "2026-10-21",
+      "file": "assets/usTSM.md"
+    },
+    {
       "id": "inflation",
       "section": "concepts",
       "title": "通胀：钱为什么放着放着就不值钱了",

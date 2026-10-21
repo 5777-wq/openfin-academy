@@ -421,6 +421,24 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
 }
 
 /* ============================================================
+   标的百科：真实数据卡（读数全部由序列算出，不手写）
+   ============================================================ */
+.stat-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1px; background: var(--rule-2); border: 1px solid var(--rule-2);
+}
+.stat {
+  display: flex; flex-direction: column; gap: 3px;
+  padding: var(--s-3) var(--s-4); background: var(--sheet);
+}
+.stat .s-k { font-size: var(--t-micro); color: var(--ink-3); }
+.stat .s-v { font-size: 17px; color: var(--ink); font-weight: 500; }
+.stat .s-v.up { color: var(--up); }
+.stat .s-v.down { color: var(--down); }
+.stat .s-n { font-size: 10.5px; color: var(--ink-4); font-family: var(--font-mono); }
+.insight-note { margin: var(--s-3) 0 0; font-size: var(--t-micro); color: var(--ink-3); line-height: 1.7; }
+
+/* ============================================================
    术语页的跨站跳转条（去行情终端看数据 / 回到行情终端）
    ============================================================ */
 .term-cross {

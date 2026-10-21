@@ -177,7 +177,7 @@
         case 'home': window.HomeView.render(view); break;
         case 'concepts': window.ListView.render(view, 'concepts'); break;
         case 'concept': window.ArticleView.render(view, 'concepts', params.id); break;
-        case 'assets': window.ListView.render(view, 'assets'); break;
+        case 'assets': window.AssetsView.renderIndex(view); break;
         case 'cycles': window.ListView.render(view, 'cycles'); break;
         case 'family': window.ListView.render(view, 'family'); break;
         case 'family-one': window.ArticleView.render(view, 'family', params.id); break;
@@ -191,7 +191,7 @@
           else window.CrisisView.renderList(view);
           break;
         case 'crisis-one': window.CrisisView.renderDetail(view, params.id); break;
-        case 'asset': window.ArticleView.render(view, 'assets', params.id); break;
+        case 'asset': window.AssetsView.renderDetail(view, params.id); break;
         case 'chain': window.ChainView.renderDetail(view, params.id); break;
         case 'cycle': window.ArticleView.render(view, 'cycles', params.id); break;
         default:

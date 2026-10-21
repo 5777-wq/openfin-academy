@@ -148,6 +148,7 @@ const SCRIPTS = [
   'js/engine/similarity.js',
   'js/engine/analogy.js',
   'js/engine/crisis.js',
+  'js/engine/instrument.js',
   'js/sources/quotes.js',
   'js/sources/history.js',
   'js/site/content.js',
@@ -158,6 +159,7 @@ const SCRIPTS = [
   'js/components/chain-heat.js',
   'js/views/home.js',
   'js/views/list.js',
+  'js/views/assets.js',
   'js/views/article.js',
   'js/views/crisis.js',
   'js/views/chain.js',
@@ -407,6 +409,26 @@ async function main() {
   has('搜索：命中术语', view().innerHTML, '黄金');
   sandbox.SearchView.render(view(), '不存在的词xyz');
   has('搜索：无结果提示', view().innerHTML, '没有找到');
+
+  // 标的百科：索引（与行情终端同一份清单）+ 详情（专文 + 真实数据卡）
+  await sandbox.AssetsView.renderIndex(view());
+  const alist = view().innerHTML;
+  has('标的百科：标题说明与终端同一份清单', alist, '和行情终端同一份标的清单');
+  ok('标的百科：列出了 70 只以上标的', (alist.match(/href="#\/assets\//g) || []).length >= 70,
+    '实际 ' + (alist.match(/href="#\/assets\//g) || []).length);
+  has('标的百科：带上覆盖区间', alist, '个月末点');
+  await sandbox.AssetsView.renderDetail(view(), 'usAAPL');
+  const adet = view().innerHTML;
+  has('标的百科详情：专文标题', adet, '苹果');
+  has('标的百科详情：真实数据卡', adet, '真实历史读数');
+  has('标的百科详情：峰谷跌幅', adet, '峰谷跌幅');
+  has('标的百科详情：去终端看数据', adet, 'openfinlens/#symbol=usAAPL');
+  has('标的百科详情：口径说明（未含分红）', adet, '不含分红');
+  // 没有专文的标的：给真实数据 + 老实的说明，不能是空白页
+  await sandbox.AssetsView.renderDetail(view(), 'sh601398');
+  const noart = view().innerHTML;
+  has('标的百科详情：无专文也给数据卡', noart, '真实历史读数');
+  has('标的百科详情：无专文时说明白', noart, '还没有专文');
 
   // 术语页：给行情终端深链用的落地页
   sandbox.TermView.render(view(), 'gold');

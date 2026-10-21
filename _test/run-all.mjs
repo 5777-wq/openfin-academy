@@ -190,6 +190,27 @@ function loadScripts(files) {
     ok('series-map 存在', false, 'data/series-map.json 不存在，先跑 collect-history.mjs');
   }
 
+  // 复权完整性：价格类序列不该出现"拆股断崖"（单月腰斩以上且不伴随拆股）
+  // 不复权价里的十拆一会在月线上留下一道 10 倍断崖，读数全错——所以这条得钉死。
+  {
+    const dir = path.join(ROOT, 'data', 'history');
+    const priceLike = (j) => !/国债收益率|国库券/.test(j.name || '') && !/收益率/.test(j.kind || '');
+    let checked = 0, cliffs = [];
+    for (const f of await readdir(dir)) {
+      if (!f.endsWith('.json') || f.startsWith('crisis') || f === 'series-map.json') continue;
+      const j = JSON.parse(await readFile(path.join(dir, f), 'utf8'));
+      if (!j.points || j.points.length < 3 || !priceLike(j)) continue;
+      checked++;
+      for (let i = 1; i < j.points.length; i++) {
+        const ch = (j.points[i].v / j.points[i - 1].v - 1) * 100;
+        // 原油 2020-03 那种 -55% 是真崩盘，Yahoo 复权后仍会保留
+        if (ch < -70) cliffs.push(`${j.name} ${j.points[i].t} ${ch.toFixed(1)}%`);
+      }
+    }
+    ok('价格类序列已检查拆股断崖', checked > 50, `只检查了 ${checked} 条`);
+    ok('没有未复权造成的假断崖（单月跌超70%）', cliffs.length === 0, cliffs.join(' | '));
+  }
+
   // 危机回放包
   const crisisPath = path.join(ROOT, 'data', 'history', 'crisis-2008.json');
   if (existsSync(crisisPath)) {
