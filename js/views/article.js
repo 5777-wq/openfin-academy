@@ -68,10 +68,11 @@
         </section>` : ''}
 
       <section style="margin-top:var(--s-7)">
+        <section class="lens-only">
         <div class="panel" style="display:flex;gap:var(--s-4);align-items:center;flex-wrap:wrap">
           <div style="flex:1 1 240px">
             <div class="eyebrow">想看此刻的行情</div>
-            <p class="small muted" style="margin:0">这篇文章讲的是原理。想知道今天的价格和涨跌幅，去姊妹站 OpenFinLens。</p>
+            <p class="small muted" style="margin:0">这篇文章讲的是原理。想知道今天的价格和涨跌幅，去 OpenFinLens 看实时行情。</p>
           </div>
           <a class="btn ghost sm" href="https://5777-wq.github.io/openfinlens/" target="_blank" rel="noopener">打开实时看板 ↗</a>
         </div>

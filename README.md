@@ -10,7 +10,7 @@
 
 [![license](https://img.shields.io/badge/license-MIT-000?style=flat-square)](LICENSE)
 
-姊妹站：[OpenFinLens](https://5777-wq.github.io/openfinlens/) —— A股/港股/美股/加密/全球事件，一块屏幕读完的纯前端行情终端
+行情终端：[OpenFinLens](https://5777-wq.github.io/openfinlens/) —— A股/港股/美股/加密/全球事件，一块屏幕读完的纯前端行情终端
 
 <img src="docs/screenshots/home-desktop.png" alt="首页：报头、实时报价条、时代横轴、实时仪表、今日一词" width="100%">
 

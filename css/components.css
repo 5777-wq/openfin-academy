@@ -439,7 +439,30 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
 .insight-note { margin: var(--s-3) 0 0; font-size: var(--t-micro); color: var(--ink-3); line-height: 1.7; }
 
 /* ============================================================
-   术语页的跨站跳转条（去行情终端看数据 / 回到行情终端）
+   站点设置（抽屉里的开关）
+   ============================================================ */
+.set-row {
+  display: flex; align-items: center; gap: var(--s-4);
+  padding: var(--s-3) 0; border-bottom: 1px solid var(--rule-2);
+}
+.set-row .set-k { font-size: var(--t-body); color: var(--ink); }
+.set-row .set-h { font-size: var(--t-micro); color: var(--ink-3); margin-top: 3px; line-height: 1.65; }
+.set-note { margin: var(--s-4) 0 0; font-size: var(--t-micro); color: var(--ink-4); line-height: 1.75; }
+.switch {
+  flex: none; width: 40px; height: 22px; padding: 0; position: relative;
+  border: 1px solid var(--rule); border-radius: 2px; background: var(--sheet-2);
+  cursor: pointer; transition: background var(--dur-1), border-color var(--dur-1);
+}
+.switch::after {
+  content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px;
+  background: var(--ink-3); transition: transform var(--dur-1) var(--ease-out), background var(--dur-1);
+}
+.switch.on { background: var(--gold-soft); border-color: var(--gold-line); }
+.switch.on::after { transform: translateX(18px); background: var(--gold); }
+.switch:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+/* ============================================================
+   术语页的跨站跳转条（去行情终端看数据 / 回到行情终端 / 留在本站）
    ============================================================ */
 .term-cross {
   display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-3);

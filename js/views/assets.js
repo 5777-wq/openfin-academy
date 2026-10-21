@@ -108,11 +108,13 @@
         <p class="muted" style="margin:0">这一只的月线序列还没采到，跑一次采集脚本就能补上。</p>
       </div>`;
 
-    const cross = `
-      <div class="term-cross">
-        <a class="btn sm" href="${LENS}#symbol=${encodeURIComponent(sym)}" target="_blank" rel="noopener">去看历史数据 →</a>
-        ${fromLens ? `<a class="btn ghost sm" href="${LENS}" target="_blank" rel="noopener">← 回到 OpenFinLens</a>` : ''}
-      </div>`;
+    // —— 与行情终端的双向跳转 ——
+    const cross = window.Cross.bar({
+      sym: sym,
+      fromLens: fromLens,
+      moreHref: '#/assets',
+      moreLabel: '看别的标的 →',
+    });
 
     const body = art ? window.TermCard.markTerms(window.Fmt.md(art.body || ''), window.Content.glossary()) : '';
 
@@ -129,9 +131,13 @@
 
       ${art ? `<div class="prose">${body}</div>` : `
         <div class="empty"><div class="et">这一只还没有专文</div>
-          <div class="ed">数据卡是真的（上面每个数都能对着月线序列核）；但"它靠什么赚钱、什么时候会跌"这类解释还在写。
-            想看它的实时行情与走势，去 OpenFinLens。</div>
-          <a class="btn ghost sm" href="${LENS}#symbol=${encodeURIComponent(sym)}" target="_blank" rel="noopener">去 OpenFinLens 看行情 →</a>
+          <div class="ed">数据卡是真的（上面每个数都能对着月线序列核）；但"它靠什么赚钱、什么时候会跌"这类解释还在写。${
+            (window.Cross && window.Cross.enabled())
+              ? '想看它的实时行情与走势，去 OpenFinLens。'
+              : ''}</div>
+          ${(window.Cross && window.Cross.enabled())
+            ? `<a class="btn ghost sm" href="${LENS}#symbol=${encodeURIComponent(sym)}" target="_blank" rel="noopener">去 OpenFinLens 看行情 →</a>`
+            : ''}
         </div>`}
 
       ${art ? `<p style="margin-top:var(--s-6)"><a class="btn ghost sm" href="#/assets">看全部标的 →</a></p>` : ''}`;

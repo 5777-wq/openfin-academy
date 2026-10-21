@@ -6,6 +6,7 @@
   const defaults = {
     theme: 'day',            // day | night
     updown: 'red',           // red（红涨绿跌，中式） | green
+    lens: true,              // 是否显示「去行情终端」的跨站链接
     pathDone: {},            // 新手路径：lessonId → true
     bookmarks: [],           // 收藏的文章 id
     recent: [],              // 最近阅读

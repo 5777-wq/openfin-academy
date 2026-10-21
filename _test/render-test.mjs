@@ -139,6 +139,7 @@ const SCRIPTS = [
   'vendor/core/explain.js',
   'vendor/core/industry-chains.js',
   'js/site/format.js',
+  'js/site/cross.js',
   'js/store.js',
   'js/router.js',
   'js/engine/series.js',
@@ -223,7 +224,7 @@ async function main() {
   const home = view().innerHTML;
   has('首页：主标题', home, '讲成你听得懂的话');
   has('首页：今日一词', home, '今日一词');
-  has('首页：姊妹站', home, 'OpenFinLens');
+  has('首页：行情终端入口', home, 'OpenFinLens');
   has('首页：新手路径入口', home, '从零开始');
   has('首页：时代横轴容器', home, 'id="home-era"');
   // 时代横轴与仪表是子元素，要单独断言
@@ -464,6 +465,38 @@ async function main() {
   has('术语页：术语自带 sym 深链', view().innerHTML, 'openfinlens/#symbol=sh000688');
   sandbox.TermView.render(view(), 'momentum', {});
   has('术语页：概念词走 lens 深链', view().innerHTML, 'openfinlens/#etf=spmo');
+
+  // 跨站跳转条：三档出口（看数据 / 回终端 / 留在本站）
+  sandbox.TermView.render(view(), 'gold', { from: 'lens', sym: 'EM:101.GC00Y' });
+  const cbar = view().innerHTML;
+  has('跨站条：去看历史数据', cbar, '去看历史数据');
+  has('跨站条：回到 OpenFinLens', cbar, '回到 OpenFinLens');
+  has('跨站条：留在本站继续读', cbar, '继续读别的');
+  has('跨站条：指向终端那一只的 K 线', cbar, 'openfinlens/#symbol=EM%3A101.GC00Y');
+  // 总开关关掉后，跨站入口一个都不剩
+  sandbox.Store.set('lens', false);
+  sandbox.TermView.render(view(), 'gold', { from: 'lens', sym: 'EM:101.GC00Y' });
+  ok('关掉跨站链接后跳转条整个消失', !view().innerHTML.includes('term-cross'));
+  ok('关掉后连"去看历史数据"都不出现', !view().innerHTML.includes('去看历史数据'));
+  sandbox.Store.set('lens', true);
+  sandbox.TermView.render(view(), 'gold', { from: 'lens', sym: 'EM:101.GC00Y' });
+  ok('开关打开后跳转条回来', view().innerHTML.includes('term-cross'));
+
+  // 站点设置：报头要有入口，设置项默认开
+  {
+    const html = await readFile(path.join(ROOT, 'index.html'), 'utf8');
+    ok('报头有站点设置按钮', html.includes('id="btn-settings"'));
+    ok('跨站链接默认开', sandbox.Store.defaults.lens === true);
+    // 各处"去行情终端"的入口都要受同一个开关控制
+    const homeSrc = await readFile(path.join(ROOT, 'js/views/home.js'), 'utf8');
+    const artSrc = await readFile(path.join(ROOT, 'js/views/article.js'), 'utf8');
+    const appSrc = await readFile(path.join(ROOT, 'js/app.js'), 'utf8');
+    ok('首页的终端卡片受开关控制', homeSrc.includes('lens-only'));
+    ok('文章页的终端卡片受开关控制', artSrc.includes('lens-only'));
+    ok('左栏的终端卡片受开关控制', appSrc.includes('rail-sister lens-only'));
+    ok('开关统一走 Cross.enabled', appSrc.includes('window.Cross.enabled()'));
+    ok('全站不再出现「姊妹站」这种关系称呼', !(homeSrc + artSrc).includes('姊妹站'));
+  }
 
   // 术语卡里的数字必须能在站内序列里对账（口径 = 站点显示的小数位）
   // 手写的数字会悄悄过期，读者对着站内数据一算就是错的——所以每条都验一遍

@@ -79,7 +79,7 @@
           </a>`;
         }).join('')}
       </div>`).join('') + `
-      <div class="rail-sister">
+      <div class="rail-sister lens-only">
         <div class="rs-t">OpenFinLens</div>
         <p class="rs-d">实时行情终端。热力图、全球事件、产业链实时强弱、13F 与龙虎榜。</p>
         <a class="btn ghost sm" style="margin-top:10px;width:100%;justify-content:center" target="_blank" rel="noopener"
@@ -204,6 +204,7 @@
         <a class="btn ghost sm" href="#/">回首页</a></div>`;
     }
 
+    applyLensSetting(false);   // 跨站链接总开关：每次重画都要跟着当前设置走
     markActive(path);
     document.title = (r.title && r.title !== '首页' ? r.title + ' · ' : '') + '白话金融';
     window.Router.restoreScroll(currentKey);
@@ -272,6 +273,51 @@
     const el = document.getElementById('drawer');
     el.classList.add('on');
     document.getElementById('scrim').classList.add('on');
+  }
+
+  /* ---------------- 站点设置（抽屉） ----------------
+     两个开关：夜间皮肤、去行情终端的链接。设置只存在本机，不联网。 */
+  function showSettings() {
+    const dark = window.Store.get('theme') === 'night';
+    const lens = window.Cross ? window.Cross.enabled() : true;
+    document.getElementById('drawer-title').textContent = '站点设置';
+    document.getElementById('drawer-body').innerHTML = `
+      <div class="set-row">
+        <div>
+          <div class="set-k">夜间皮肤</div>
+          <div class="set-h">报头的月亮按钮也能切</div>
+        </div>
+        <button class="switch ${dark ? 'on' : ''}" id="swTheme" role="switch" aria-checked="${dark}" aria-label="夜间皮肤"></button>
+      </div>
+      <div class="set-row">
+        <div>
+          <div class="set-k">去行情终端的链接</div>
+          <div class="set-h">关掉后，术语页与标的页不再出现「去看历史数据」和「回到 OpenFinLens」，报头的入口也一起消失</div>
+        </div>
+        <button class="switch ${lens ? 'on' : ''}" id="swLens" role="switch" aria-checked="${lens}" aria-label="去行情终端的链接"></button>
+      </div>
+      <p class="set-note">设置只存在这台设备上（localStorage），不联网、不上传、没有统计。</p>`;
+    document.getElementById('drawer-foot').innerHTML = '<span>白话金融 OpenFin Academy</span>';
+    const drawer = document.getElementById('drawer');
+    drawer.classList.add('on');
+    document.getElementById('scrim').classList.add('on');
+
+    document.getElementById('swTheme').addEventListener('click', () => { toggleTheme(); showSettings(); });
+    document.getElementById('swLens').addEventListener('click', () => {
+      const next = !(window.Cross ? window.Cross.enabled() : true);
+      window.Store.set('lens', next);
+      applyLensSetting(true);
+      showSettings();
+    });
+  }
+
+  /** 跨站链接总开关：报头的入口 + 左栏卡片 + 各页的跳转条一起开关 */
+  function applyLensSetting(rerender) {
+    const on = window.Cross ? window.Cross.enabled() : true;
+    const sister = document.getElementById('mh-sister');
+    if (sister) sister.hidden = !on;
+    document.querySelectorAll('.lens-only').forEach((n) => { n.hidden = !on; });
+    if (rerender) route();   // 当前页重画：跳转条要跟着出现/消失
   }
 
   /* ---------------- 主题 ---------------- */
@@ -351,6 +397,7 @@
   async function boot() {
     step('boot:start');
     applyTheme();
+    applyLensSetting(false);
     paintMasthead();
     paintTabbar();
     bindInteractions();          // 先让站点活过来
@@ -380,6 +427,7 @@
     }
 
     paintRail();
+    applyLensSetting(false);   // 左栏那张终端卡片也要跟着开关走
     paintTicker();
     step('boot:rail+ticker painted');
 
@@ -417,6 +465,7 @@
     document.getElementById('btn-search').addEventListener('click', openPalette);
     document.getElementById('btn-keys').addEventListener('click', showKeys);
     document.getElementById('btn-theme').addEventListener('click', toggleTheme);
+    document.getElementById('btn-settings').addEventListener('click', showSettings);
     document.getElementById('to-top').addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 
     const pw = document.getElementById('palette-wrap');
