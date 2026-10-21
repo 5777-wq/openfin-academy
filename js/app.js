@@ -62,7 +62,14 @@
       <div class="rail-group">
         <div class="rail-label">${esc(g.label)}</div>
         ${g.items.map((it) => {
-          const count = it.section ? window.Content.bySection(it.section).length : null;
+          // 产业链的条目来自 vendor（10 条链），不是内容索引
+          let count = null;
+          if (it.section === 'chains') {
+            count = (typeof window.INDUSTRY_CHAINS !== 'undefined' && window.INDUSTRY_CHAINS) || [];
+            count = count.length;
+          } else if (it.section) {
+            count = window.Content.bySection(it.section).length;
+          }
           return `<a class="rail-item" data-path="${esc(it.path)}">
             <span class="ri-n">${esc(it.n)}</span>
             <span class="ri-t">${esc(it.label)}</span>
