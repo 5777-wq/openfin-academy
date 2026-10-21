@@ -1,0 +1,114 @@
+{
+  "generatedAt": "2026-10-21T05:47:00.655Z",
+  "items": [
+    {
+      "id": "gold",
+      "section": "assets",
+      "title": "黄金：它到底在防什么，又不防什么",
+      "dek": "不靠任何公司担保，只靠\"大家都认\"。但它不产生现金流，利率上行时它会先跌给你看。",
+      "tag": "标的百科",
+      "tags": [
+        "黄金",
+        "白银",
+        "避险",
+        "家庭资产"
+      ],
+      "readMinutes": 7,
+      "dataAsOf": "2026-10-21",
+      "difficulty": 2,
+      "updatedAt": "2026-10-21",
+      "file": "assets/gold.md"
+    },
+    {
+      "id": "inflation",
+      "section": "concepts",
+      "title": "通胀：钱为什么放着放着就不值钱了",
+      "dek": "不是钱变少了，是尺子变短了。学会用实际利率算真实的到手收益。",
+      "tag": "货币与利率",
+      "tags": [
+        "通胀",
+        "实际利率",
+        "存款",
+        "家庭"
+      ],
+      "readMinutes": 6,
+      "dataAsOf": "2026-10-21",
+      "difficulty": 1,
+      "updatedAt": "2026-10-21",
+      "file": "concepts/inflation.md"
+    },
+    {
+      "id": "risk-free-rate",
+      "section": "concepts",
+      "title": "为什么美债收益率是\"全球无风险利率\"",
+      "dek": "全球资产定价的那把尺子。它涨 1 个百分点，几乎所有东西的估值都要重算一遍。",
+      "tag": "货币与利率",
+      "tags": [
+        "利率",
+        "美债",
+        "定价",
+        "入门必读"
+      ],
+      "readMinutes": 8,
+      "dataAsOf": "2026-10-21",
+      "difficulty": 2,
+      "updatedAt": "2026-10-21",
+      "file": "concepts/risk-free-rate.md"
+    },
+    {
+      "id": "2008",
+      "section": "crisis",
+      "title": "2008 年那场金融危机，到底发生了什么",
+      "dek": "从房价见顶到雷曼倒闭，危机是怎么沿着资产负债表一路传导到每个家庭的。",
+      "tag": "危机复盘",
+      "tags": [
+        2008,
+        "次贷",
+        "美债",
+        "危机"
+      ],
+      "readMinutes": 12,
+      "dataAsOf": "2026-10-21",
+      "difficulty": 3,
+      "updatedAt": "2026-10-21",
+      "file": "crisis/2008.md"
+    },
+    {
+      "id": "2000-dotcom",
+      "section": "cycles",
+      "title": "2000 年互联网泡沫：本轮 AI 周期像不像",
+      "dek": "不预测，只对照。六个维度逐项打分，相似的地方和不一样的地方都说清楚。",
+      "tag": "周期与镜鉴",
+      "tags": [
+        2000,
+        "互联网泡沫",
+        "AI",
+        "周期",
+        "纳指"
+      ],
+      "readMinutes": 10,
+      "dataAsOf": "2026-10-21",
+      "difficulty": 4,
+      "updatedAt": "2026-10-21",
+      "file": "cycles/2000-dotcom.md"
+    },
+    {
+      "id": "money-jar",
+      "section": "family",
+      "title": "家里的钱怎么分：四只罐子",
+      "dek": "应急、稳健、进攻、长期。不谈买什么，只谈先分对桶。",
+      "tag": "家庭理财",
+      "tags": [
+        "家庭",
+        "配置",
+        "期限",
+        "入门"
+      ],
+      "readMinutes": 7,
+      "dataAsOf": "2026-10-21",
+      "difficulty": 1,
+      "updatedAt": "2026-10-21",
+      "file": "family/money-jar.md"
+    }
+  ]
+}

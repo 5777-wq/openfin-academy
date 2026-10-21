@@ -1,0 +1,138 @@
+{
+  "generatedAt": "2026-10-21T05:45:16.855Z",
+  "note": "正文只能引用本表中的 id，杜绝临时抓数写进文章",
+  "series": [
+    {
+      "id": "CL00Y",
+      "name": "NYMEX原油",
+      "unit": "美元/桶",
+      "freq": "M",
+      "kind": "月收盘价",
+      "source": "东方财富 push2his 102.CL00Y",
+      "from": "1986-09-30",
+      "to": "2026-10-21",
+      "count": 482
+    },
+    {
+      "id": "GC00Y",
+      "name": "COMEX黄金",
+      "unit": "美元/盎司",
+      "freq": "M",
+      "kind": "月收盘价",
+      "source": "东方财富 push2his 101.GC00Y",
+      "from": "1990-01-31",
+      "to": "2026-10-21",
+      "count": 442
+    },
+    {
+      "id": "NDX",
+      "name": "纳斯达克100",
+      "unit": "点",
+      "freq": "M",
+      "kind": "月收盘价",
+      "source": "东方财富 push2his 100.NDX",
+      "from": "1991-08-30",
+      "to": "2026-10-20",
+      "count": 423
+    },
+    {
+      "id": "SH000001",
+      "name": "上证指数",
+      "unit": "点",
+      "freq": "M",
+      "kind": "月收盘价",
+      "source": "东方财富 push2his 1.000001",
+      "from": "1990-12-31",
+      "to": "2026-10-21",
+      "count": 431
+    },
+    {
+      "id": "SI00Y",
+      "name": "COMEX白银",
+      "unit": "美元/盎司",
+      "freq": "M",
+      "kind": "月收盘价",
+      "source": "东方财富 push2his 101.SI00Y",
+      "from": "2011-07-29",
+      "to": "2026-10-21",
+      "count": 184
+    },
+    {
+      "id": "SPX",
+      "name": "标普500",
+      "unit": "点",
+      "freq": "M",
+      "kind": "月收盘价",
+      "source": "东方财富 push2his 100.SPX",
+      "from": "1986-03-31",
+      "to": "2026-10-20",
+      "count": 482
+    },
+    {
+      "id": "UDI",
+      "name": "美元指数",
+      "unit": "",
+      "freq": "M",
+      "kind": "月收盘价",
+      "source": "东方财富 push2his 100.UDI",
+      "from": "1986-01-31",
+      "to": "2026-10-21",
+      "count": 490
+    },
+    {
+      "id": "US10Y",
+      "name": "美国10年期国债收益率",
+      "unit": "%",
+      "freq": "M",
+      "kind": "月末值",
+      "source": "美国财政部官方 daily-treasury-rates.csv",
+      "from": "1990-01-02",
+      "to": "2026-10-01",
+      "count": 442
+    },
+    {
+      "id": "US2Y",
+      "name": "美国2年期国债收益率",
+      "unit": "%",
+      "freq": "M",
+      "kind": "月末值",
+      "source": "美国财政部官方 daily-treasury-rates.csv",
+      "from": "1990-01-02",
+      "to": "2026-10-01",
+      "count": 442
+    },
+    {
+      "id": "US30Y",
+      "name": "美国30年期国债收益率",
+      "unit": "%",
+      "freq": "M",
+      "kind": "月末值",
+      "source": "美国财政部官方 daily-treasury-rates.csv",
+      "from": "1990-01-02",
+      "to": "2026-10-01",
+      "count": 406
+    },
+    {
+      "id": "US3M",
+      "name": "美国3月期国库券收益率",
+      "unit": "%",
+      "freq": "M",
+      "kind": "月末值",
+      "source": "美国财政部官方 daily-treasury-rates.csv",
+      "from": "1990-01-02",
+      "to": "2026-10-01",
+      "count": 442
+    },
+    {
+      "id": "VIX",
+      "name": "VIX 恐慌指数",
+      "unit": "",
+      "freq": "M",
+      "kind": "月末收盘",
+      "source": "CBOE 官方 VIX_History.csv",
+      "from": "1990-01-31",
+      "to": "2026-10-20",
+      "count": 442
+    }
+  ]
+}

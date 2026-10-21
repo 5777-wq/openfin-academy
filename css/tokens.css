@@ -1,0 +1,126 @@
+/* ============================================================
+   白话金融 OpenFin Academy — 设计令牌
+   风格：财经报刊的编辑感 × 交易终端的信息密度
+   —— 纸感底 + 墨蓝字 + 正方切角 + hairline 分隔 + 等宽数字
+   ============================================================ */
+
+:root {
+  /* ---------- 纸与墨 ---------- */
+  --paper:        #F2EAE6;   /* 账簿纸：暖玫瑰调，区别于纯白与奶油 */
+  --paper-deep:   #E9DEDA;   /* 纸的暗部，用于分区底 */
+  --sheet:        #FFFCFA;   /* 单页白：卡片、正文面板 */
+  --sheet-2:      #F8F1ED;   /* 次级面板 */
+  --rule:         #DCCEC6;   /* 主界线 */
+  --rule-2:       #EBE2DC;   /* 淡界线 */
+  --rule-3:       #F3EBE6;   /* 极淡界线 */
+
+  --ink:          #16232B;   /* 标题 */
+  --ink-2:        #4A5B63;   /* 正文 */
+  --ink-3:        #8A9599;   /* 辅助、注释 */
+  --ink-4:        #AEB6B8;   /* 占位 */
+
+  /* ---------- 强调 ---------- */
+  --teal:         #0B6E75;   /* 青金：链接、主图表色、选中态 */
+  --teal-2:       #13888F;
+  --teal-soft:    rgba(11,110,117,.07);
+  --teal-line:    rgba(11,110,117,.22);
+
+  --gold:         #A87A22;   /* 金箔：签名色——数字、游标、关键值 */
+  --gold-2:       #C79B36;
+  --gold-soft:    rgba(168,122,34,.10);
+  --gold-line:    rgba(168,122,34,.28);
+
+  /* ---------- 语义（红涨绿跌，中式口径） ---------- */
+  --up:           #C2402F;
+  --up-soft:      rgba(194,64,47,.08);
+  --down:         #1B7A57;
+  --down-soft:    rgba(27,122,87,.08);
+  --flat:         #7C8A8F;
+  --warn:         #A9701A;
+  --warn-soft:    rgba(169,112,26,.10);
+  --danger:       #A83A3A;
+  --danger-soft:  rgba(168,58,58,.08);
+
+  /* ---------- 字体 ---------- */
+  --font-sans: "PingFang SC", "Source Han Sans SC", "Noto Sans SC", "Hiragino Sans GB",
+               "Microsoft YaHei", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas,
+               "Liberation Mono", "Courier New", monospace;
+
+  /* ---------- 字号 ---------- */
+  --t-masthead:  clamp(26px, 3.4vw, 36px);
+  --t-hero:      clamp(24px, 3vw, 33px);
+  --t-h1:        25px;
+  --t-h2:        19px;
+  --t-h3:        16px;
+  --t-body:      15px;
+  --t-small:     13px;
+  --t-micro:     12px;
+  --t-eyebrow:   11px;
+
+  --lh-tight:    1.3;
+  --lh-title:    1.42;
+  --lh-body:     1.78;
+
+  /* ---------- 间距 ---------- */
+  --s-1: 4px;  --s-2: 8px;  --s-3: 12px; --s-4: 16px;
+  --s-5: 22px; --s-6: 30px; --s-7: 42px; --s-8: 60px;
+
+  /* ---------- 圆角：金融风格用极小切角 ---------- */
+  --r-0: 0px;  --r-1: 2px;  --r-2: 3px;  --r-3: 5px;
+
+  /* ---------- 阴影：靠 hairline 而非投影分层 ---------- */
+  --sh-1: 0 1px 2px rgba(22,35,43,.05);
+  --sh-2: 0 4px 14px -6px rgba(22,35,43,.16);
+  --sh-3: 0 16px 44px -16px rgba(22,35,43,.26);
+
+  /* ---------- 布局尺寸 ---------- */
+  --masthead-h:  58px;
+  --ticker-h:    38px;
+  --rail-w:      214px;
+  --rail-w-min:  60px;
+  --reading-w:   664px;
+  --page-max:    1320px;
+
+  /* ---------- 动效 ---------- */
+  --ease-out: cubic-bezier(.16,1,.3,1);
+  --ease-in-out: cubic-bezier(.65,0,.35,1);
+  --dur-1: .14s; --dur-2: .24s; --dur-3: .42s;
+
+  /* ---------- 层级 ---------- */
+  --z-sticky: 40; --z-rail: 50; --z-drawer: 80; --z-palette: 90; --z-top: 100;
+}
+
+/* 深色皮肤：夜盘终端。仍保持同一套结构语言，只换纸墨。 */
+body[data-theme="night"] {
+  --paper:        #14191C;
+  --paper-deep:   #0E1214;
+  --sheet:        #1B2226;
+  --sheet-2:      #222A2E;
+  --rule:         #2E383D;
+  --rule-2:       #262E33;
+  --rule-3:       #212A2E;
+  --ink:          #E8ECEC;
+  --ink-2:        #AAB6B8;
+  --ink-3:        #7D8A8D;
+  --ink-4:        #5B686C;
+  --teal:         #4FBFC4;
+  --teal-2:       #6FD6DA;
+  --teal-soft:    rgba(79,191,196,.10);
+  --teal-line:    rgba(79,191,196,.28);
+  --gold:         #D2A64A;
+  --gold-2:       #E4BE6B;
+  --gold-soft:    rgba(210,166,74,.12);
+  --gold-line:    rgba(210,166,74,.32);
+  --up:           #E4665A;
+  --up-soft:      rgba(228,102,90,.12);
+  --down:         #35B183;
+  --down-soft:    rgba(53,177,131,.12);
+  --warn:         #D6A54E;
+  --warn-soft:    rgba(214,165,78,.12);
+  --danger:       #E06A6A;
+  --danger-soft:  rgba(224,106,106,.12);
+  --sh-1: 0 1px 2px rgba(0,0,0,.3);
+  --sh-2: 0 4px 14px -6px rgba(0,0,0,.5);
+  --sh-3: 0 16px 44px -16px rgba(0,0,0,.6);
+}

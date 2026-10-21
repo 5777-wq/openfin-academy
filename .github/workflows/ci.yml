@@ -1,0 +1,45 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 测试
+        run: node _test/run-all.mjs
+
+      - name: 内容编译一致性（产物必须与源同步）
+        run: |
+          node _scripts/build-content.mjs
+          if ! git diff --quiet -- data/content; then
+            echo "::error::data/content 与 content/ 不同步，请运行 node _scripts/build-content.mjs 并提交"
+            git diff --stat -- data/content
+            exit 1
+          fi
+
+      - name: 校验所有 JSON 合法
+        run: |
+          for f in $(find data content -name '*.json'); do
+            node -e "JSON.parse(require('fs').readFileSync('$f','utf8'))" || exit 1
+          done
+
+  vendor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: vendor 与上游一致性
+        run: |
+          node _scripts/sync-core.mjs --src https://github.com/5777-wq/openfinlens.git
+          if ! git diff --quiet -- vendor; then
+            echo "::notice::vendor 与上游 OpenFinLens 有差异，请运行 node _scripts/sync-core.mjs 后提交"
+            git diff --stat -- vendor
+          fi

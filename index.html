@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>白话金融 · OpenFin Academy</title>
+<meta name="description" content="把美债收益率、黄金、纳指、原油、A股和 AI 产业链讲成金融小白听得懂的话。零后端、零密钥、零构建的金融科普站。">
+<meta name="theme-color" content="#F2EAE6">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23F2EAE6'/%3E%3Cpath d='M4 23 L11 14 L17 19 L28 7' stroke='%230B6E75' stroke-width='2.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='28' cy='7' r='2.6' fill='%23A87A22'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/components.css">
+<script>
+/* 启动期错误可见化：把异常写进标题与页脚，方便定位（不吞错误，只让它可见） */
+window.__ofaErrors = [];
+function __ofaReport(kind, msg) {
+  window.__ofaErrors.push(kind + ': ' + msg);
+  try {
+    // 标题只带调试标记时改，避免污染正常浏览时的标题
+    if (/(\?|&)debug=1/.test(location.search)) {
+      document.title = 'JS-' + kind + ': ' + String(msg).slice(0, 120);
+    }
+    var b = document.getElementById('boot-error');
+    if (!b) {
+      b = document.createElement('pre');
+      b.id = 'boot-error';
+      b.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:9999;max-height:40vh;overflow:auto;'
+        + 'margin:0;padding:12px 16px;background:#3b1518;color:#ffd9d4;font:12px/1.6 monospace;white-space:pre-wrap;border-top:2px solid #b06367';
+      (document.body || document.documentElement).appendChild(b);
+    }
+    b.textContent = window.__ofaErrors.join('\n');
+  } catch (e) { /* 报告本身失败就算了 */ }
+}
+window.addEventListener('error', function (e) {
+  __ofaReport('ERR', (e.message || 'unknown') + ' @ ' + String(e.filename || '').split('/').pop() + ':' + e.lineno);
+});
+window.addEventListener('unhandledrejection', function (e) {
+  var r = e.reason;
+  __ofaReport('REJ', (r && (r.stack || r.message)) || String(r));
+});
+</script>
+</head>
+<body>
+
+<div class="progress" id="progress" aria-hidden="true"></div>
+
+<!-- ============ 报头 ============ -->
+<header class="masthead">
+  <div class="masthead-in">
+    <a class="nameplate" href="#/" aria-label="白话金融 首页">
+      <span class="zh">白话金融</span>
+      <span class="en">OpenFin Academy</span>
+    </a>
+
+    <div class="masthead-spacer"></div>
+
+    <div class="masthead-meta">
+      <span class="hide-sm" id="mh-date">—</span>
+      <span class="sep hide-sm">·</span>
+      <span class="hide-sm" id="mh-sister">姊妹站 OpenFinLens ↗</span>
+    </div>
+
+    <button class="mh-btn" id="btn-search" aria-label="搜索（快捷键斜杠）">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <span class="hide-sm">搜索</span><span class="kbd">/</span>
+    </button>
+    <button class="mh-btn icon" id="btn-keys" aria-label="快捷键">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/></svg>
+    </button>
+    <button class="mh-btn icon" id="btn-theme" aria-label="切换日夜皮肤">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+    </button>
+  </div>
+  <div class="tick-rule" id="tick-rule" aria-hidden="true"></div>
+</header>
+
+<!-- ============ 报价条 ============ -->
+<div class="ticker">
+  <div class="ticker-in" id="ticker">
+    <span class="tk src-note">行情加载中…</span>
+  </div>
+</div>
+
+<!-- ============ 主体 ============ -->
+<div class="shell">
+  <nav class="rail" id="rail" aria-label="栏目导航"></nav>
+  <main class="main" id="main" tabindex="-1">
+    <div class="reading" id="view"></div>
+  </main>
+</div>
+
+<!-- ============ 移动端底栏 ============ -->
+<nav class="tabbar" id="tabbar" aria-label="移动端导航"></nav>
+
+<!-- ============ 术语抽屉 ============ -->
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="术语解释">
+  <div class="drawer-head">
+    <span class="dt" id="drawer-title">术语</span>
+    <button class="dx" id="drawer-close" aria-label="关闭">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div class="drawer-body" id="drawer-body"></div>
+  <div class="drawer-foot" id="drawer-foot"></div>
+</aside>
+
+<!-- ============ 命令面板 ============ -->
+<div class="palette-wrap" id="palette-wrap">
+  <div class="palette" role="dialog" aria-modal="true" aria-label="搜索">
+    <div class="palette-input">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="palette-input" type="text" placeholder="搜术语、标的、文章…" autocomplete="off" spellcheck="false">
+      <span class="kbd">Esc</span>
+    </div>
+    <div class="palette-list" id="palette-list"></div>
+    <div class="palette-foot">
+      <span>↑↓ 选择</span><span>⏎ 打开</span><span>Esc 关闭</span>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<button class="to-top" id="to-top" aria-label="回到顶部">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 15 6-6 6 6"/></svg>
+</button>
+
+<!-- vendor：从 OpenFinLens 单向同步，勿手改 -->
+<script src="vendor/core/utils.js"></script>
+<script src="vendor/core/universe.js"></script>
+<script src="vendor/core/explain.js"></script>
+<script src="vendor/core/industry-chains.js"></script>
+
+<!-- 本站 -->
+<script src="js/site/format.js"></script>
+<script src="js/store.js"></script>
+<script src="js/router.js"></script>
+<script src="js/engine/series.js"></script>
+<script src="js/engine/percentile.js"></script>
+<script src="js/engine/drawdown.js"></script>
+<script src="js/engine/spread.js"></script>
+<script src="js/engine/similarity.js"></script>
+<script src="js/engine/analogy.js"></script>
+<script src="js/sources/quotes.js"></script>
+<script src="js/sources/history.js"></script>
+<script src="js/site/content.js"></script>
+<script src="js/components/term-card.js"></script>
+<script src="js/components/term-drawer.js"></script>
+<script src="js/components/era-timeline.js"></script>
+<script src="js/components/replay-player.js"></script>
+<script src="js/components/chain-heat.js"></script>
+<script src="js/views/home.js"></script>
+<script src="js/views/list.js"></script>
+<script src="js/views/article.js"></script>
+<script src="js/views/crisis.js"></script>
+<script src="js/views/chain.js"></script>
+<script src="js/views/path.js"></script>
+<script src="js/views/search.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
