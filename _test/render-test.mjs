@@ -445,10 +445,43 @@ async function main() {
   has('术语页：未收录有兜底', view().innerHTML, '还没有收录');
   sandbox.TermView.renderIndex(view());
   const tlist = view().innerHTML;
-  has('术语库：标题', tlist, '每个四段讲完');
-  ok('术语库：列出全部术语', (tlist.match(/href="#\/term\//g) || []).length === Object.keys(sandbox.Content.glossary()).length,
-    '实际 ' + (tlist.match(/href="#\/term\//g) || []).length);
-  ok('术语库：每个术语都有可深链的 id', Object.keys(sandbox.Content.glossary()).every((k) => sandbox.TermView.linkOf(k) === '#/term/' + k));
+  has('术语库：标题', tlist, '按你遇到的地方找');
+  // 索引里每个词都要能点开（入门三词会重复出现，所以按 id 去重后比对）
+  const linkedIds = new Set((tlist.match(/href="#\/term\/([^"]+)"/g) || [])
+    .map((s) => s.replace(/href="#\/term\//, '').replace(/"/g, '')));
+  const allIds = Object.keys(sandbox.Content.glossary());
+  ok('术语库：列出全部术语', allIds.every((k) => linkedIds.has(k)),
+    '术语库 ' + allIds.length + ' 个，索引里点到 ' + linkedIds.size + ' 个');
+  ok('术语库：每个术语都有可深链的 id', allIds.every((k) => sandbox.TermView.linkOf(k) === '#/term/' + k));
+  // 分类分组 + 入门三词
+  ok('术语库：按分类分组', tlist.includes('class="cat-block"') && tlist.includes('入门三词'));
+  ok('术语库：每组有速查表出口', tlist.includes('#/data?cat=macro'));
+
+  // 速查页：按分类切换
+  const idsOf = (html) => new Set((html.match(/href="#\/term\/([^"]+)"/g) || [])
+    .map((s) => s.replace(/href="#\/term\//, '').replace(/"/g, '')));
+  sandbox.TermView.renderDataSheet(view(), {});
+  const ds0 = view().innerHTML;
+  has('速查页：默认是研报数据', ds0, '看研报时撞见的那些数');
+  ok('速查页：九个分类都能切', (ds0.match(/class="ds-tab[ "]/g) || []).length === 9,
+    '实际 ' + (ds0.match(/class="ds-tab[ "]/g) || []).length);
+  const G = sandbox.Content.glossary();
+  const dataIds = Object.keys(G).filter((k) => G[k].cat === 'data');
+  const ds0Ids = idsOf(ds0);
+  ok('速查页：默认只列 data 类', dataIds.every((k) => ds0Ids.has(k))
+    && [...ds0Ids].every((k) => G[k].cat === 'data'),
+    'data 类 ' + dataIds.length + ' 个，页面上 ' + ds0Ids.size + ' 个');
+  sandbox.TermView.renderDataSheet(view(), { cat: 'player' });
+  const ds1 = view().innerHTML;
+  has('速查页：切到机构分类', ds1, '机构');
+  has('速查页：机构分类给入门三词', ds1, '入门三词');
+  const playerIds = Object.keys(G).filter((k) => G[k].cat === 'player');
+  const ds1Ids = idsOf(ds1);
+  ok('速查页：机构分类只列 player 类', playerIds.every((k) => ds1Ids.has(k))
+    && [...ds1Ids].every((k) => G[k].cat === 'player'),
+    'player 类 ' + playerIds.length + ' 个，页面上 ' + ds1Ids.size + ' 个');
+  sandbox.TermView.renderDataSheet(view(), { cat: '不存在的分类' });
+  ok('速查页：非法分类退回研报数据', view().innerHTML.includes('看研报时撞见的那些数'));
 
   // 与行情终端的双向跳转：术语页要能"去看历史数据"和"回到 OpenFinLens"
   sandbox.TermView.render(view(), 'gold', { from: 'lens', sym: 'EM:101.GC00Y' });

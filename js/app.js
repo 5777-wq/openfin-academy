@@ -184,6 +184,7 @@
         case 'chains': window.ChainView.renderList(view); break;
         case 'path': window.PathView.render(view); break;
         case 'terms': window.TermView.renderIndex(view); break;
+        case 'data': window.TermView.renderDataSheet(view, query); break;
         case 'term': window.TermView.render(view, params.id, query); break;
         case 'search': window.SearchView.render(view, query.q || ''); break;
         case 'crisis':

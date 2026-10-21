@@ -77,6 +77,22 @@
 - 术语库里没有的词，先补进术语库再引用
 - 术语库里的 JSON **字符串里要引号时用中文引号「」**，直引号会破坏 JSON
 
+### 加词条怎么走
+
+不要直接手改 `content/_meta/glossary.json`——几百条的长 JSON 手改最容易丢引号。走文本稿：
+
+```bash
+# 1）在 drafts/ 写纯文本稿，格式见 _scripts/merge-terms.mjs 头部注释
+# 2）合并（幂等，同 id 覆盖）
+node _scripts/merge-terms.mjs drafts/batch5.txt
+# 3）构建 + 跑测试
+node _scripts/build-content.mjs
+node _test/run-all.mjs && node _test/render-test.mjs
+```
+
+测试会强制每条词四段齐全（`one` / `metaphor` / `number` / `pit`）、九个分类都有词、
+以及不含「据说 / 业内普遍认为 / 必将 / 稳赚不赔」这类表达。
+
 ## 八、提交前自检
 
 - [ ] 四个词条都齐了（一句话 / 比喻 / 数字 / 坑）

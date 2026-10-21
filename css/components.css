@@ -439,6 +439,76 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
 .insight-note { margin: var(--s-3) 0 0; font-size: var(--t-micro); color: var(--ink-3); line-height: 1.7; }
 
 /* ============================================================
+   术语库：分类导航 + 研报数据速查表
+   ============================================================ */
+.cat-block { margin-bottom: var(--s-5); }
+.cat-desc { font-size: var(--t-micro); color: var(--ink-3); margin-bottom: var(--s-2); line-height: 1.6; }
+
+/* 速查页的分类切换条 */
+.ds-tabs {
+  display: flex; flex-wrap: wrap; gap: var(--s-2);
+  margin: 0 0 var(--s-5); padding-bottom: var(--s-3);
+  border-bottom: 1px solid var(--rule);
+}
+.ds-tab {
+  display: inline-flex; align-items: baseline; gap: 6px;
+  padding: 5px 11px; border: 1px solid var(--rule); border-radius: 999px;
+  font-size: var(--t-small); color: var(--ink-2); text-decoration: none;
+  transition: border-color .15s, color .15s, background .15s;
+}
+.ds-tab:hover { color: var(--ink); border-color: var(--ink-4); }
+.ds-tab.active { color: var(--teal); border-color: var(--teal); background: var(--teal-soft); }
+.ds-tab-n {
+  font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-4);
+  font-variant-numeric: tabular-nums;
+}
+.ds-tab.active .ds-tab-n { color: var(--teal); }
+
+/* 入门三词 */
+.starters { margin: 0 0 var(--s-4); }
+.st-label {
+  font-size: var(--t-micro); color: var(--ink-4); letter-spacing: .06em;
+  margin-bottom: var(--s-2);
+}
+.st-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-2); }
+.starter {
+  display: block; padding: var(--s-3);
+  border: 1px solid var(--rule-2); border-radius: var(--r-2, 6px);
+  text-decoration: none; transition: border-color .15s, transform .15s;
+}
+.starter:hover { border-color: var(--ink-4); transform: translateY(-1px); }
+.st-t { display: block; font-size: var(--t-small); font-weight: 500; color: var(--ink); margin-bottom: 3px; }
+.st-d { display: block; font-size: var(--t-micro); color: var(--ink-3); line-height: 1.55; }
+
+@media (max-width: 760px) {
+  .st-list { grid-template-columns: 1fr; }
+}
+
+.ds { width: 100%; border-collapse: collapse; }
+.ds thead th {
+  text-align: left; font-size: var(--t-micro); font-weight: 500; color: var(--ink-3);
+  padding: 0 var(--s-3) var(--s-2) 0; border-bottom: 1px solid var(--rule);
+  letter-spacing: .04em;
+}
+.ds td { padding: var(--s-3) var(--s-3) var(--s-3) 0; border-bottom: 1px solid var(--rule-2); vertical-align: top; }
+.ds .ds-n { width: 22%; min-width: 118px; }
+.ds .ds-n a { color: var(--ink); font-size: var(--t-body); font-weight: 500; text-decoration: none; }
+.ds .ds-n a:hover { color: var(--teal); }
+.ds .ds-a { display: block; font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-4); margin-top: 2px; }
+.ds .ds-o { width: 34%; font-size: var(--t-small); color: var(--ink-2); line-height: 1.65; }
+.ds .ds-p { font-size: var(--t-small); color: var(--ink-3); line-height: 1.65; }
+
+/* 窄屏：速查表改成一张张卡片，横向滚动太难读 */
+@media (max-width: 760px) {
+  .ds, .ds tbody, .ds tr, .ds td { display: block; width: 100%; }
+  .ds thead { display: none; }
+  .ds tr { border-bottom: 1px solid var(--rule); padding: var(--s-3) 0; }
+  .ds td { border: 0; padding: 0 0 var(--s-2); }
+  .ds .ds-n { width: auto; margin-bottom: 4px; }
+  .ds .ds-p { padding-top: 2px; }
+}
+
+/* ============================================================
    站点设置（抽屉里的开关）
    ============================================================ */
 .set-row {

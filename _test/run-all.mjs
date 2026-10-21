@@ -260,6 +260,25 @@ function loadScripts(files) {
         ok(`术语 ${id} 有 term`, !!t.term);
         ok(`术语 ${id} 有 one`, !!t.one);
         ok(`术语 ${id} 有 pit`, !!t.pit);
+        // 四段式是硬要求：一句话 / 比喻 / 数字 / 坑，一段都不能少
+        ok(`术语 ${id} 有 metaphor`, !!t.metaphor);
+        ok(`术语 ${id} 有 number`, !!t.number);
+        ok(`术语 ${id} 有 cat`, !!t.cat);
+      }
+      // 九个分类都必须有词，否则速查页的分类切换会开天窗
+      const CATS = ['data', 'fund', 'asset', 'macro', 'basic', 'micro', 'player', 'risk', 'tech'];
+      const byCat = {};
+      Object.values(g.terms || {}).forEach((t) => { byCat[t.cat] = (byCat[t.cat] || 0) + 1; });
+      for (const c of CATS) {
+        ok(`术语库分类 ${c} 有词`, (byCat[c] || 0) > 0, `实际 ${byCat[c] || 0}`);
+      }
+      // 禁用表达：写研报口径不许出现的话
+      const BAN = ['据说', '业内普遍认为', '必将', '稳赚不赔', '建议买入', '一定能涨'];
+      for (const [id, t] of Object.entries(g.terms || {})) {
+        const s = JSON.stringify(t);
+        for (const b of BAN) {
+          ok(`术语 ${id} 不含禁用表达「${b}」`, !s.includes(b));
+        }
       }
       // 正文里引用的术语必须存在
       for (const it of idx.items || []) {
