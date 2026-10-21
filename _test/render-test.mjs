@@ -162,6 +162,7 @@ const SCRIPTS = [
   'js/views/crisis.js',
   'js/views/chain.js',
   'js/views/path.js',
+  'js/views/term.js',
   'js/views/search.js',
   'js/app.js',
 ];
@@ -182,7 +183,7 @@ async function main() {
   /* ---- 2. 全局对象齐备 ---- */
   for (const g of ['Fmt', 'Store', 'Router', 'Quotes', 'History', 'Content', 'TermCard',
     'TermDrawer', 'EraTimeline', 'ReplayPlayer', 'ChainHeat',
-    'HomeView', 'ListView', 'ArticleView', 'CrisisView', 'ChainView', 'PathView', 'SearchView',
+    'HomeView', 'ListView', 'ArticleView', 'CrisisView', 'ChainView', 'PathView', 'SearchView', 'TermView',
     'Engine', 'Explain', 'INDUSTRY_CHAINS']) {
     ok('全局对象 ' + g, typeof sandbox[g] !== 'undefined');
   }
@@ -198,7 +199,8 @@ async function main() {
 
   /* ---- 4. 路由表覆盖所有内容分区 ---- */
   const paths = sandbox.Router.ROUTES.map((r) => r.path);
-  for (const p of ['/concepts/:id', '/crisis/:id', '/assets/:id', '/chains/:id', '/cycles/:id', '/family/:id']) {
+  for (const p of ['/concepts/:id', '/crisis/:id', '/assets/:id', '/chains/:id', '/cycles/:id', '/family/:id',
+    '/term/:id', '/terms']) {
     ok('路由存在 ' + p, paths.indexOf(p) >= 0);
   }
   // 每篇文章的 section 都要有对应的详情路由
@@ -405,6 +407,25 @@ async function main() {
   has('搜索：命中术语', view().innerHTML, '黄金');
   sandbox.SearchView.render(view(), '不存在的词xyz');
   has('搜索：无结果提示', view().innerHTML, '没有找到');
+
+  // 术语页：给行情终端深链用的落地页
+  sandbox.TermView.render(view(), 'gold');
+  const th = view().innerHTML;
+  has('术语页：术语名', th, '黄金');
+  has('术语页：页面标题是 h1', th, '<h1>黄金</h1>');
+  has('术语页：四段式卡片', th, 'class="term"');
+  has('术语页：一句话', th, '一句话');
+  has('术语页：可分享的说明', th, '这条链接可以直接分享出去');
+  sandbox.TermView.render(view(), 'risk-free-rate');
+  has('术语页：有延伸阅读时列出来', view().innerHTML, '延伸阅读');
+  sandbox.TermView.render(view(), '不存在的词xyz');
+  has('术语页：未收录有兜底', view().innerHTML, '还没有收录');
+  sandbox.TermView.renderIndex(view());
+  const tlist = view().innerHTML;
+  has('术语库：标题', tlist, '每个四段讲完');
+  ok('术语库：列出全部术语', (tlist.match(/href="#\/term\//g) || []).length === Object.keys(sandbox.Content.glossary()).length,
+    '实际 ' + (tlist.match(/href="#\/term\//g) || []).length);
+  ok('术语库：每个术语都有可深链的 id', Object.keys(sandbox.Content.glossary()).every((k) => sandbox.TermView.linkOf(k) === '#/term/' + k));
 
   /* ---- 6. 术语抽屉 ---- */
   sandbox.TermDrawer.init();

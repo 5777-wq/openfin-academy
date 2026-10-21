@@ -31,11 +31,13 @@
     const d = document.getElementById('mh-date');
     if (d) d.textContent = F().cnDateWithWeek(F().today());
 
+    // 报头右上角：行情终端入口。只给名字和链接，不写"姊妹站"这类关系称呼。
     const sister = document.getElementById('mh-sister');
     if (sister) {
-      sister.innerHTML = '姊妹站 OpenFinLens ↗';
-      sister.style.cursor = 'pointer';
-      sister.onclick = () => window.open('https://5777-wq.github.io/openfinlens/', '_blank', 'noopener');
+      sister.textContent = 'OpenFinLens ↗';
+      sister.href = 'https://5777-wq.github.io/openfinlens/';
+      sister.target = '_blank';
+      sister.rel = 'noopener';
     }
 
     // 报头下的时间刻度线：1990 → 2026
@@ -181,6 +183,8 @@
         case 'family-one': window.ArticleView.render(view, 'family', params.id); break;
         case 'chains': window.ChainView.renderList(view); break;
         case 'path': window.PathView.render(view); break;
+        case 'terms': window.TermView.renderIndex(view); break;
+        case 'term': window.TermView.render(view, params.id); break;
         case 'search': window.SearchView.render(view, query.q || ''); break;
         case 'crisis':
           if (params.id) window.CrisisView.renderDetail(view, params.id);

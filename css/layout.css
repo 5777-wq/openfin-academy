@@ -84,6 +84,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
   display: flex; align-items: center; gap: var(--s-3); white-space: nowrap;
 }
 .masthead-meta .sep { color: var(--rule); }
+.masthead-meta #mh-sister {
+  color: var(--ink-3); text-decoration: none;
+  border-bottom: 1px solid var(--rule); transition: color var(--dur-1), border-color var(--dur-1);
+}
+.masthead-meta #mh-sister:hover { color: var(--teal); border-bottom-color: var(--teal-line); }
 
 .mh-btn {
   display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px;

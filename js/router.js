@@ -17,6 +17,8 @@
     { id: 'family',   path: '/family',           title: '家庭理财', section: 'family' },
     { id: 'family-one', path: '/family/:id',     title: '家庭理财详情' },
     { id: 'path',     path: '/path',             title: '新手路径' },
+    { id: 'terms',    path: '/terms',            title: '术语库' },
+    { id: 'term',     path: '/term/:id',         title: '术语' },
     { id: 'search',   path: '/search',           title: '搜索' },
   ];
 

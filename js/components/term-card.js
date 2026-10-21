@@ -5,9 +5,11 @@
 
   const esc = (s) => window.Fmt.esc(s);
 
-  /** 术语卡 HTML */
-  function render(term) {
+  /** 术语卡 HTML
+   *  opts.noName：词名由外层承担（术语页的 h1），这里只留别名与编号，避免同页出现两次 */
+  function render(term, opts) {
     if (!term) return '';
+    const o = opts || {};
     const parts = [];
     if (term.one) parts.push(part('一句话', term.one));
     if (term.metaphor) parts.push(part('比喻', term.metaphor));
@@ -16,14 +18,18 @@
     if (term.detail) parts.push(part('展开', term.detail));
     if (!parts.length) return '';
 
-    return `<div class="term">
-      <div class="term-head">
-        <span class="tt">${esc(term.term || '')}</span>
-        ${term.alias ? `<span class="tag">${esc(term.alias)}</span>` : ''}
-        ${term.id ? `<span class="tid">${esc(term.id)}</span>` : ''}
-      </div>
-      <div class="term-parts">${parts.join('')}</div>
-    </div>`;
+    const head = o.noName
+      ? ((term.alias || term.id) ? `<div class="term-head">
+          ${term.alias ? `<span class="tag">${esc(term.alias)}</span>` : ''}
+          ${term.id ? `<span class="tid">${esc(term.id)}</span>` : ''}
+        </div>` : '')
+      : `<div class="term-head">
+          <span class="tt">${esc(term.term || '')}</span>
+          ${term.alias ? `<span class="tag">${esc(term.alias)}</span>` : ''}
+          ${term.id ? `<span class="tid">${esc(term.id)}</span>` : ''}
+        </div>`;
+
+    return `<div class="term">${head}<div class="term-parts">${parts.join('')}</div></div>`;
   }
 
   function part(k, v, pit) {
