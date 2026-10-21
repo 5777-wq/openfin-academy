@@ -427,6 +427,22 @@ async function main() {
     '实际 ' + (tlist.match(/href="#\/term\//g) || []).length);
   ok('术语库：每个术语都有可深链的 id', Object.keys(sandbox.Content.glossary()).every((k) => sandbox.TermView.linkOf(k) === '#/term/' + k));
 
+  // 与行情终端的双向跳转：术语页要能"去看历史数据"和"回到 OpenFinLens"
+  sandbox.TermView.render(view(), 'gold', { from: 'lens', sym: 'EM:101.GC00Y' });
+  const cross = view().innerHTML;
+  has('术语页：去看历史数据', cross, '去看历史数据');
+  has('术语页：去看历史数据指向终端深链', cross, 'openfinlens/#symbol=EM%3A101.GC00Y');
+  has('术语页：从终端来才显示回终端', cross, '回到 OpenFinLens');
+  // 不是从终端来的，就不该出现"回到 OpenFinLens"（那是给终端用户的出口）
+  sandbox.TermView.render(view(), 'gold', {});
+  ok('术语页：非终端来源不显示回终端', !view().innerHTML.includes('回到 OpenFinLens'));
+  ok('术语页：非终端来源仍可去看数据', view().innerHTML.includes('去看历史数据'));
+  // 有 sym 的术语自己就能给出去深链
+  sandbox.TermView.render(view(), 'kechuang-50', {});
+  has('术语页：术语自带 sym 深链', view().innerHTML, 'openfinlens/#symbol=sh000688');
+  sandbox.TermView.render(view(), 'momentum', {});
+  has('术语页：概念词走 lens 深链', view().innerHTML, 'openfinlens/#etf=spmo');
+
   // 术语卡里的数字必须能在站内序列里对账（口径 = 站点显示的小数位）
   // 手写的数字会悄悄过期，读者对着站内数据一算就是错的——所以每条都验一遍
   {

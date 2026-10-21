@@ -105,6 +105,21 @@ async function tencentMonthly(secid) {
     .filter((x) => /^\d{4}-\d{2}-\d{2}$/.test(x.t) && Number.isFinite(x.v));
 }
 
+/* 腾讯月线（港股）：恒生科技这类只有腾讯能取到的序列 */
+async function tencentMonthlyHK(secid) {
+  const m = /^100\.(.+)$/.exec(String(secid || ''));
+  if (!m) return [];
+  const code = 'hk' + m[1];
+  const u = 'https://web.ifzq.gtimg.cn/appstock/app/kline/kline?param='
+    + `${code},month,,,2000&_var=1`;
+  const txt = await getText(u);
+  const j = JSON.parse(txt);
+  const node = j && j.data && j.data[code];
+  const rows = node && node.month ? node.month : [];
+  return rows.map((r) => ({ t: String(r[0]).slice(0, 10), v: Number(r[2]) }))
+    .filter((x) => /^\d{4}-\d{2}-\d{2}$/.test(x.t) && Number.isFinite(x.v));
+}
+
 /* ---------------- CBOE VIX 日线 → 月末 ---------------- */
 async function cboeVix() {
   const txt = await getText('https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX_History.csv');
@@ -499,6 +514,7 @@ async function main() {
     ['DJIA', '100.DJIA', '道琼斯工业指数', '点', 2, '东方财富 push2his 100.DJIA'],
     ['N225', '100.N225', '日经225', '点', 2, '东方财富 push2his 100.N225'],
     ['HSI', '100.HSI', '恒生指数', '点', 2, '东方财富 push2his 100.HSI'],
+    ['HSTECH', '100.HSTECH', '恒生科技指数', '点', 2, '东方财富 push2his 100.HSTECH'],
     ['SH000001', '1.000001', '上证指数', '点', 2, '东方财富 push2his 1.000001'],
     ['SZ399001', '0.399001', '深证成指', '点', 2, '东方财富 push2his 0.399001'],
     ['SZ399006', '0.399006', '创业板指', '点', 2, '东方财富 push2his 0.399006'],
@@ -520,6 +536,7 @@ async function main() {
     if (!pts.length) {
       try {
         pts = await tencentMonthly(secid);
+        if (!pts.length) pts = await tencentMonthlyHK(secid);
         if (pts.length) used = `腾讯 ifzq 备源 ${secid}`;
       } catch (e) { console.warn(`  [skip] ${id}：${e.message}`); }
     }

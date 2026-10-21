@@ -11,8 +11,11 @@
     return '#/term/' + encodeURIComponent(id);
   }
 
+  const LENS_BASE = 'https://5777-wq.github.io/openfinlens/';
+
   /** 术语详情页 */
-  function render(view, id) {
+  function render(view, id, query) {
+    const q = query || {};
     const t = window.Content.term(id);
     if (!t) {
       view.innerHTML = `<div class="empty"><div class="et">这个词还没有收录</div>
@@ -37,6 +40,21 @@
         <span class="e-m">看解释 →</span>
       </a>`).join('');
 
+    // —— 与行情终端的双向跳转 ——
+    // 从终端点进来的（?from=lens&sym=xxx）：把"这只票"和"这个词"都带回去
+    const fromLens = q.from === 'lens';
+    const sym = q.sym || t.sym || '';
+    const dataHref = sym
+      ? LENS_BASE + '#symbol=' + encodeURIComponent(sym)
+      : (t.lens || '');
+    const dataLabel = sym
+      ? '去看历史数据 →'
+      : (t.lens ? '去 OpenFinLens 看这一块 →' : '');
+    const cross = (dataLabel ? `
+        <a class="btn sm" href="${esc(dataHref)}" target="_blank" rel="noopener">${esc(dataLabel)}</a>` : '')
+      + (fromLens ? `
+        <a class="btn ghost sm" href="${LENS_BASE}" target="_blank" rel="noopener">← 回到 OpenFinLens</a>` : '');
+
     view.innerHTML = `
       <article class="art-head">
         <div class="eyebrow">术语卡 · 这条链接可以直接分享出去</div>
@@ -47,6 +65,8 @@
       <div style="margin-bottom:var(--s-6)">
         ${window.TermCard.render(t, { noName: true })}
       </div>
+
+      ${cross ? `<div class="term-cross">${cross}</div>` : ''}
 
       <div class="disclaimer">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>

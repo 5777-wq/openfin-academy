@@ -421,6 +421,16 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
 }
 
 /* ============================================================
+   术语页的跨站跳转条（去行情终端看数据 / 回到行情终端）
+   ============================================================ */
+.term-cross {
+  display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-3);
+  align-items: center; margin: 0 0 var(--s-6);
+  padding: var(--s-3) 0; border-top: 1px solid var(--rule-2);
+  border-bottom: 1px solid var(--rule-2);
+}
+
+/* ============================================================
    产业链强弱条
    ============================================================ */
 .chain { border: 1px solid var(--rule); border-radius: var(--r-2); background: var(--sheet); overflow: hidden; }
