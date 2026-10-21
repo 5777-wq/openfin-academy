@@ -93,7 +93,32 @@
     return out;
   }
 
-  function orderTerms(ids, g, hot) {
+  /* 少数分类的组内顺序需要人工定：
+     新开的 `option` 分类里没有任何一条有专文 / sym / 终端映射，
+     排序信号全落空、只能退回字母序——而期权的内在顺序是「基础 → 定价 → 策略」，
+     按字母排会把 Greeks 和跨式、铁鹰混在一起。
+     这里给的顺序就是读者的学习顺序：有行情先看行情，再看怎么定价，最后看怎么搭。 */
+  const ORDER_OVERRIDE = {
+    option: [
+      'option-call', 'option-put', 'strike-price', 'moneyness', 'option-style', 'option-expiration',
+      'implied-vol', 'volatility-smile',
+      'greek-delta', 'greek-gamma', 'greek-vega', 'greek-theta',
+      'covered-call', 'protective-put', 'collar', 'long-straddle',
+      'bull-call-spread', 'bear-put-spread', 'iron-condor', 'short-vol',
+    ],
+  };
+
+  function orderTerms(ids, g, hot, cat) {
+    const ov = cat && ORDER_OVERRIDE[cat];
+    if (ov) {
+      const rank = new Map(ov.map((id, i) => [id, i]));
+      return ids.slice().sort((a, b) => {
+        const ra = rank.has(a) ? rank.get(a) : 999;
+        const rb = rank.has(b) ? rank.get(b) : 999;
+        if (ra !== rb) return ra - rb;
+        return a < b ? -1 : a > b ? 1 : 0;
+      });
+    }
     const score = (id) => {
       const t = g[id] || {};
       if (hasArticle(g, id)) return 0;
@@ -129,7 +154,7 @@
     });
 
     const blocks = CATS.filter((c) => byCat[c.id] && byCat[c.id].length).map((c) => {
-      const rows = orderTerms(byCat[c.id], g, hot).map((id) => {
+      const rows = orderTerms(byCat[c.id], g, hot, c.id).map((id) => {
         const t = g[id];
         return `<a class="entry" href="${esc(linkOf(id))}">
           <span>
@@ -183,7 +208,7 @@
         ${esc(c.label)}<span class="ds-tab-n">${counts[c.id]}</span>
       </a>`).join('');
 
-    const ids = orderTerms(Object.keys(g).filter((id) => (g[id].cat || 'basic') === cur), g, hotIds());
+    const ids = orderTerms(Object.keys(g).filter((id) => (g[id].cat || 'basic') === cur), g, hotIds(), cur);
     const cols = SHEET_COLS[cur] || SHEET_COLS.data;
     const rows = ids.map((id) => {
       const t = g[id];
@@ -244,7 +269,7 @@
     // 站内其它术语：同类的先推（读者多半在同一条线上继续读），同类内部也按热度排
     const cat = t.cat || 'basic';
     const hot = hotIds();
-    const ranked = orderTerms(Object.keys(g).filter((k) => k !== id), g, hot);
+    const ranked = orderTerms(Object.keys(g).filter((k) => k !== id), g, hot, cat);
     const sameCat = ranked.filter((k) => (g[k].cat || 'basic') === cat);
     const rest = ranked.filter((k) => (g[k].cat || 'basic') !== cat);
     const others = sameCat.concat(rest).slice(0, 10).map((k) => `

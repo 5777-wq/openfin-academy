@@ -489,6 +489,11 @@ async function main() {
   const dsOpt = view().innerHTML;
   has('速查页：期权分类能打开', dsOpt, '期权与期权策略速查');
   ok('速查页：期权分类有词条', idsOf(dsOpt).size >= 15, '实际 ' + idsOf(dsOpt).size);
+  // 期权分类没有排序信号可用，得按「基础 → 定价 → 策略」人工排
+  const optIds = [...idsOf((dsOpt.match(/<tbody>([\s\S]*?)<\/tbody>/) || [])[1] || '')];
+  ok('速查页：期权分类按「基础 → 定价 → 策略」排，不是字母序',
+    optIds[0] === 'option-call' && optIds[1] === 'option-put' && optIds[2] === 'strike-price',
+    '前三个：' + optIds.slice(0, 3).join(', '));
 
   // 组内排序：按「读者真会遇到的顺序」，不是字母序
   sandbox.TermView.renderDataSheet(view(), { cat: 'fund' });
