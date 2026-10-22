@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-22T05:21:50.335Z",
+  "generatedAt": "2026-10-22T05:33:38.576Z",
   "note": "这些终端标的在「白话金融」有对应的标的页（#/assets/<symbol>，带真实月线数据卡）。不在表里的标的，终端只给术语页或搜索页——不给半空页。",
-  "count": 100,
+  "count": 114,
   "symbols": [
     "EM:100.FCHI",
     "EM:100.FTSE",
@@ -11,8 +11,22 @@
     "EM:100.SENSEX",
     "EM:100.UDI",
     "EM:101.GC00Y",
+    "EM:101.HG00Y",
     "EM:101.SI00Y",
     "EM:102.CL00Y",
+    "EM:102.NG00Y",
+    "EM:103.ZC00Y",
+    "EM:119.EURUSD",
+    "EM:119.GBPUSD",
+    "EM:119.USDHKD",
+    "EM:119.USDJPY",
+    "EM:133.USDCNH",
+    "EM:171.CN10Y",
+    "EM:171.CN2Y",
+    "EM:171.CN30Y",
+    "EM:171.CN5Y",
+    "EM:171.DE10Y",
+    "EM:171.JP10Y",
     "EM:171.US10Y",
     "EM:171.US2Y",
     "EM:171.US30Y",
@@ -445,6 +459,26 @@
       "series": "usPLTR",
       "label": "Palantir"
     },
+    "EM:133.USDCNH": {
+      "series": "USDCNH",
+      "label": "美元离岸人民币"
+    },
+    "EM:119.EURUSD": {
+      "series": "EURUSD",
+      "label": "欧元美元"
+    },
+    "EM:119.GBPUSD": {
+      "series": "GBPUSD",
+      "label": "英镑美元"
+    },
+    "EM:119.USDJPY": {
+      "series": "USDJPY",
+      "label": "美元日元"
+    },
+    "EM:119.USDHKD": {
+      "series": "USDHKD",
+      "label": "美元港币"
+    },
     "EM:100.UDI": {
       "series": "UDI",
       "label": "美元指数"
@@ -457,9 +491,21 @@
       "series": "SI00Y",
       "label": "COMEX白银"
     },
+    "EM:101.HG00Y": {
+      "series": "HG00Y",
+      "label": "COMEX铜"
+    },
     "EM:102.CL00Y": {
       "series": "CL00Y",
       "label": "NYMEX原油"
+    },
+    "EM:102.NG00Y": {
+      "series": "NG00Y",
+      "label": "天然气"
+    },
+    "EM:103.ZC00Y": {
+      "series": "ZC00Y",
+      "label": "玉米连续"
     },
     "EM:171.US3M": {
       "series": "US3M",
@@ -480,6 +526,30 @@
     "EM:171.US30Y": {
       "series": "US30Y",
       "label": "美债30年"
+    },
+    "EM:171.CN2Y": {
+      "series": "CN2Y",
+      "label": "中债2年"
+    },
+    "EM:171.CN5Y": {
+      "series": "CN5Y",
+      "label": "中债5年"
+    },
+    "EM:171.CN10Y": {
+      "series": "CN10Y",
+      "label": "中债10年"
+    },
+    "EM:171.CN30Y": {
+      "series": "CN30Y",
+      "label": "中债30年"
+    },
+    "EM:171.DE10Y": {
+      "series": "DE10Y",
+      "label": "德债10年"
+    },
+    "EM:171.JP10Y": {
+      "series": "JP10Y",
+      "label": "日债10年"
     },
     "EM:100.N225": {
       "series": "N225",
@@ -521,6 +591,7 @@
     "CAC 40 / 法国CAC40",
     "CCI / Commodity Channel Index",
     "COMEX白银",
+    "COMEX铜",
     "COMEX黄金",
     "CPI / 消费者物价指数",
     "CTA / 商品交易顾问 / 管理期货基金",
@@ -639,6 +710,10 @@
     "东方财富",
     "两融 / margin trading",
     "中信证券",
+    "中债10年",
+    "中债2年",
+    "中债30年",
+    "中债5年",
     "中国中免",
     "中国平安",
     "中国概念股 / ADR / 美国存托凭证 / 中概互联",
@@ -755,6 +830,7 @@
     "大A",
     "大宗商品",
     "大盘 / SSE Composite",
+    "天然气",
     "头寸管理 / position sizing",
     "奈飞",
     "套息交易",
@@ -789,6 +865,7 @@
     "强制平仓",
     "强平 / 爆仓 / 强制平仓 / 平仓",
     "微软",
+    "德债10年",
     "德国DAX",
     "快手",
     "总市值 / market capitalization",
@@ -825,6 +902,7 @@
     "新鸿基地产",
     "无风险利率",
     "无风险收益率",
+    "日债10年",
     "日经225",
     "最大回撤",
     "有效市场",
@@ -842,6 +920,7 @@
     "样本偏差",
     "桥水 / Bridgewater",
     "桥水基金",
+    "欧元美元",
     "止损 / 止盈 / stop loss / take profit",
     "止损与止盈",
     "每股收益",
@@ -886,6 +965,7 @@
     "爆雷 / 炸雷 / 违约事件",
     "牛市看涨价差",
     "特斯拉",
+    "玉米连续",
     "生存者偏差 / survivorship bias",
     "甲骨文",
     "白银 / Silver",
@@ -920,6 +1000,9 @@
     "美债3月",
     "美债5年",
     "美元指数",
+    "美元日元",
+    "美元港币",
+    "美元离岸人民币",
     "美光科技",
     "美团",
     "美式与欧式行权",
@@ -935,6 +1018,7 @@
     "英伟达",
     "英国富时100",
     "英特尔",
+    "英镑美元",
     "苹果",
     "蓝筹股",
     "蓝筹股 / 蓝筹 / blue chip",
