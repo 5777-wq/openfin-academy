@@ -21,13 +21,19 @@
     const arts = window.Content.bySection('crisis');
     const artIds = arts.map((a) => a.id);
 
-    /* 列表按**时间倒序**（最近的危机在前）。
+    /* 列表按**危机本身的年份倒序**（最近的在前）。
        之前用的是采集脚本里的定义顺序（2008/1990/1998/1994/1987）——
        那既不是时间序，也不是惨烈序（1987 那天跌 20.47%，是五场里最惨的，却排在最后），
        读者只会觉得这个列表是乱的。按时间排，读者一眼能看出「上一场大危机离现在有多远」，
-       而且每场危机的来龙去脉本来就连着：87 → 90 → 94 → 98 → 08。 */
-    const byTime = (a, b) => String(b.from || '').localeCompare(String(a.from || ''));
-    const sorted = items.slice().sort(byTime);
+       而且每场危机的来龙去脉本来就连着：87 → 90 → 94 → 98 → 08。
+       注意按**危机的年份**排，不是按数据区间的起点：1990 那场的回放区间从 1987-04
+       开始（含黑色星期一那段），按起点排它会跑到 1987 前面去——那就又乱了。 */
+    const yearOf = (s) => {
+      const m = /(\d{4})/.exec(String((s && s.id) || ''));
+      return m ? Number(m[1]) : 0;
+    };
+    const sorted = items.slice().sort((a, b) =>
+      yearOf(b) - yearOf(a) || String(b.from || '').localeCompare(String(a.from || '')));
 
     const cards = sorted.map((s) => {
       const art = arts.find((a) => a.id === s.id);
