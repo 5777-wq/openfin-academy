@@ -1,10 +1,20 @@
 /* components/term-drawer.js —— 术语抽屉（签名交互）
-   读文章时遇到不懂的词，点一下右侧滑出解释，不离开当前阅读位置。 */
+   读文章时遇到不懂的词，点一下右侧滑出解释，不离开当前阅读位置。
+
+   抽屉是模态的：打开时背景要真的退出可聚焦序列（inert），
+   Tab 要在抽屉里转圈，关闭时焦点要还给打开它的那个元素。
+   只挂 aria-modal 是不够的——那只是给读屏的提示，浏览器不会把背景移出 Tab 序，
+   键盘用户照样能 Tab 到被挡住的背景上去。 */
 (function () {
   'use strict';
 
   let el, scrim, titleEl, bodyEl, footEl, lastFocus = null, onOpen = null;
+  let bgInert = false;   // 背景当前是不是被我们挡住的：只在自己状态变化时才动，别把别人的也摘了
+
   const esc = (s) => window.Fmt.esc(s);
+
+  // 背景上的顶层容器：抽屉打开时它们整体 inert，Tab 与点击都进不去
+  const BG = ['.masthead', '.ticker', '.shell', '.tabbar'];
 
   function init(opts) {
     el = document.getElementById('drawer');
@@ -35,6 +45,8 @@
       open(ref.getAttribute('data-term'));
     });
     document.addEventListener('keydown', (e) => {
+      // Tab 只在抽屉里转：焦点不能跑到被挡住的背景上去
+      if (e.key === 'Tab' && isOpen()) { trapTab(el, e); return; }
       if (e.key !== 'Enter' && e.key !== ' ') return;
       const ref = e.target.closest && e.target.closest('[data-term]');
       if (!ref) return;
@@ -46,7 +58,8 @@
   /** 开合状态 ↔ 无障碍属性：role="dialog" 只在打开时挂，关着就彻底不可聚焦 */
   function syncA11y() {
     if (!el) return;
-    if (el.classList.contains('on')) {
+    const open = el.classList.contains('on');
+    if (open) {
       el.setAttribute('role', 'dialog');
       el.setAttribute('aria-modal', 'true');
       el.removeAttribute('inert');
@@ -55,37 +68,89 @@
       el.removeAttribute('aria-modal');
       el.setAttribute('inert', '');
     }
+    if (open !== bgInert) { bgInert = open; setBackgroundInert(open); }
   }
 
+  /** 背景隔离：顶层容器整体 inert，键盘与读屏都进不去 */
+  function setBackgroundInert(on) {
+    BG.forEach((sel) => {
+      document.querySelectorAll(sel).forEach((n) => {
+        if (on) n.setAttribute('inert', '');
+        else n.removeAttribute('inert');
+      });
+    });
+  }
+
+  /** 容器里能拿到焦点的元素（按 Tab 顺序） */
+  function focusables(root) {
+    if (!root || !root.querySelectorAll) return [];
+    const sel = 'a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])';
+    return Array.prototype.slice.call(root.querySelectorAll(sel));
+  }
+
+  /** Tab 在容器里循环：到头就绕回开头，Shift+Tab 反着来 */
+  function trapTab(root, e) {
+    const els = focusables(root);
+    if (!els.length) { e.preventDefault(); return; }
+    const i = els.indexOf(document.activeElement);
+    let next;
+    if (e.shiftKey) next = (i <= 0) ? els.length - 1 : i - 1;
+    else next = (i < 0 || i === els.length - 1) ? 0 : i + 1;
+    e.preventDefault();
+    if (els[next] && els[next].focus) els[next].focus();
+  }
+
+  /** 术语抽屉 */
   function open(termId) {
     if (!el) return;
     const t = window.Content.term(termId);
-    lastFocus = document.activeElement;
 
     if (!t) {
-      titleEl.textContent = '术语';
-      bodyEl.innerHTML = `<div class="empty">
+      show({
+        title: '术语',
+        body: `<div class="empty">
         <div class="et">这个词还没有收录</div>
         <div class="ed">术语库正在补充中。如果你就是知道答案的人，欢迎提一个 Issue 或 PR 把它写进来。</div>
         <a class="btn ghost sm" href="https://github.com/5777-wq/openfin-academy/issues/new" target="_blank" rel="noopener">去补充这个词 →</a>
-      </div>`;
-      footEl.innerHTML = '';
+      </div>`,
+        foot: '',
+      });
     } else {
-      titleEl.textContent = t.term || termId;
-      bodyEl.innerHTML = window.TermCard.render(t) + (t.links || []).map((l) => `
-        <a class="entry" style="display:flex;gap:8px;padding:10px 0;border-bottom:1px solid var(--rule-2);color:var(--teal);font-size:13px" href="${esc(l.href)}">${esc(l.text)} →</a>`).join('');
-      footEl.innerHTML = t.source
-        ? `<span>出处：${esc(t.source)}</span>`
-        : `<span>本站编写的通俗解释</span>`;
+      show({
+        title: t.term || termId,
+        body: window.TermCard.render(t) + (t.links || []).map((l) => `
+        <a class="entry" style="display:flex;gap:8px;padding:10px 0;border-bottom:1px solid var(--rule-2);color:var(--teal);font-size:13px" href="${esc(l.href)}">${esc(l.text)} →</a>`).join(''),
+        foot: t.source
+          ? `<span>出处：${esc(t.source)}</span>`
+          : `<span>本站编写的通俗解释</span>`,
+      });
     }
+    if (onOpen) onOpen(termId);
+  }
+
+  /**
+   * 打开抽屉的通用流程：快捷键面板、站点设置也走这里。
+   * 记下是谁打开的（关闭时焦点要还回去）、把焦点搬进抽屉、把背景隔开。
+   */
+  function show(opts) {
+    if (!el) return;
+    const o = opts || {};
+    // 已经开着的时候重画（设置面板切开关会重画）：焦点来源还是外面那个，
+    // 别把抽屉里的按钮记成「打开它的那个元素」——抽屉一关，那个按钮就看不见了。
+    const active = document.activeElement;
+    const inside = !!(el.contains && active && el.contains(active));
+    if (!inside) lastFocus = active;
+
+    titleEl.textContent = o.title || '';
+    bodyEl.innerHTML = o.body || '';
+    footEl.innerHTML = o.foot || '';
 
     el.classList.add('on');
     scrim.classList.add('on');
     document.body.style.overflow = 'hidden';
     syncA11y();
     const closeBtn = document.getElementById('drawer-close');
-    if (closeBtn) closeBtn.focus();
-    if (onOpen) onOpen(termId);
+    if (closeBtn && closeBtn.focus) closeBtn.focus();
   }
 
   function close() {
@@ -95,9 +160,10 @@
     document.body.style.overflow = '';
     syncA11y();
     if (lastFocus && lastFocus.focus) { try { lastFocus.focus(); } catch (e) { /* 忽略 */ } }
+    lastFocus = null;
   }
 
   function isOpen() { return el && el.classList.contains('on'); }
 
-  window.TermDrawer = { init, open, close, isOpen };
+  window.TermDrawer = { init, open, close, isOpen, openPanel: show };
 })();

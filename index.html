@@ -6,10 +6,23 @@
 <title>白话金融 · OpenFin Academy</title>
 <meta name="description" content="把美债收益率、黄金、纳指、原油、A股和 AI 产业链讲成金融小白听得懂的话。零后端、零密钥、零构建的金融科普站。">
 <meta name="theme-color" content="#F2EAE6">
+<!-- 分享卡片：静态兜底写死站点级信息，js/app.js 每次换页再改写成这一页的内容。
+     微信/微博/Twitter 的爬虫不执行 JS，只能拿到这份壳——所以壳也得站得住。 -->
+<meta property="og:site_name" content="白话金融 OpenFin Academy">
+<meta property="og:title" id="og-title" content="白话金融 · OpenFin Academy">
+<meta property="og:description" id="og-desc" content="把美债收益率、黄金、纳指、原油、A股和 AI 产业链讲成金融小白听得懂的话。">
+<meta property="og:type" id="og-type" content="website">
+<meta property="og:url" id="og-url" content="https://5777-wq.github.io/openfin-academy/">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" id="og-image" content="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='630' viewBox='0 0 1200 630'%3E%3Crect width='1200' height='630' fill='%23F2EAE6'/%3E%3Cpath d='M0 520 L240 470 L420 500 L660 380 L900 300 L1200 210' stroke='%230B6E75' stroke-width='8' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='1200' cy='210' r='16' fill='%23A87A22'/%3E%3Ctext x='80' y='150' font-family='Helvetica,Arial,sans-serif' font-size='64' font-weight='bold' fill='%2316232B'%3EOpenFin Academy%3C/text%3E%3Ctext x='80' y='215' font-family='Helvetica,Arial,sans-serif' font-size='30' fill='%234A5B63'%3EPlain-language finance, zero backend%3C/text%3E%3C/svg%3E">
+<meta name="twitter:card" id="tw-card" content="summary">
+<meta name="twitter:title" id="tw-title" content="白话金融 · OpenFin Academy">
+<meta name="twitter:description" id="tw-desc" content="把美债收益率、黄金、纳指、原油、A股和 AI 产业链讲成金融小白听得懂的话。">
+<link rel="canonical" id="canonical" href="https://5777-wq.github.io/openfin-academy/">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23F2EAE6'/%3E%3Cpath d='M4 23 L11 14 L17 19 L28 7' stroke='%230B6E75' stroke-width='2.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='28' cy='7' r='2.6' fill='%23A87A22'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="css/tokens.css?v=20261023">
-<link rel="stylesheet" href="css/layout.css?v=20261023">
-<link rel="stylesheet" href="css/components.css?v=20261023">
+<link rel="stylesheet" href="css/tokens.css?v=20261024">
+<link rel="stylesheet" href="css/layout.css?v=20261024">
+<link rel="stylesheet" href="css/components.css?v=20261024">
 <script>
 /* 启动期错误可见化：把异常写进标题与页脚，方便定位（不吞错误，只让它可见） */
 window.__ofaErrors = [];
@@ -41,6 +54,11 @@ window.addEventListener('unhandledrejection', function (e) {
 </script>
 </head>
 <body>
+
+<!-- 跳到主内容：键盘用户不用每次都 Tab 过整个报头 -->
+<a class="skip" id="skip-link" href="#main">跳到主内容</a>
+<!-- 换页播报：内容整块换掉了，读屏用户得有人告诉他一声 -->
+<div id="route-live" class="sr-only" role="status" aria-live="polite"></div>
 
 <div class="progress" id="progress" aria-hidden="true"></div>
 
@@ -119,9 +137,9 @@ window.addEventListener('unhandledrejection', function (e) {
 
 <!-- ============ 术语抽屉 ============ -->
 <div class="scrim" id="scrim"></div>
-<aside class="drawer" id="drawer" role="dialog" aria-label="术语解释">
+<aside class="drawer" id="drawer" role="dialog" aria-labelledby="drawer-title">
   <div class="drawer-head">
-    <span class="dt" id="drawer-title">术语</span>
+    <span class="dt" id="drawer-title" tabindex="-1">术语</span>
     <button class="dx" id="drawer-close" aria-label="关闭">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
     </button>
@@ -152,44 +170,44 @@ window.addEventListener('unhandledrejection', function (e) {
 </button>
 
 <!-- vendor：从 OpenFinLens 单向同步，勿手改 -->
-<script src="vendor/core/utils.js?v=20261023"></script>
-<script src="vendor/core/universe.js?v=20261023"></script>
-<script src="vendor/core/explain.js?v=20261023"></script>
-<script src="vendor/core/industry-chains.js?v=20261023"></script>
+<script src="vendor/core/utils.js?v=20261024"></script>
+<script src="vendor/core/universe.js?v=20261024"></script>
+<script src="vendor/core/explain.js?v=20261024"></script>
+<script src="vendor/core/industry-chains.js?v=20261024"></script>
 <!-- 终端→本站的术语映射表：术语库据此判断「哪些词是行情里真能撞见的」，
      那些词在分类内排前面（组内按读者遇到顺序，不按字母序） -->
-<script src="vendor/core/academy-gloss.js?v=20261023"></script>
+<script src="vendor/core/academy-gloss.js?v=20261024"></script>
 
 <!-- 本站 -->
-<script src="js/site/format.js?v=20261023"></script>
-<script src="js/site/cross.js?v=20261023"></script>
-<script src="js/store.js?v=20261023"></script>
-<script src="js/router.js?v=20261023"></script>
-<script src="js/engine/series.js?v=20261023"></script>
-<script src="js/engine/percentile.js?v=20261023"></script>
-<script src="js/engine/drawdown.js?v=20261023"></script>
-<script src="js/engine/spread.js?v=20261023"></script>
-<script src="js/engine/similarity.js?v=20261023"></script>
-<script src="js/engine/analogy.js?v=20261023"></script>
-<script src="js/engine/crisis.js?v=20261023"></script>
-<script src="js/engine/instrument.js?v=20261023"></script>
-<script src="js/sources/quotes.js?v=20261023"></script>
-<script src="js/sources/history.js?v=20261023"></script>
-<script src="js/site/content.js?v=20261023"></script>
-<script src="js/components/term-card.js?v=20261023"></script>
-<script src="js/components/term-drawer.js?v=20261023"></script>
-<script src="js/components/era-timeline.js?v=20261023"></script>
-<script src="js/components/replay-player.js?v=20261023"></script>
-<script src="js/components/chain-heat.js?v=20261023"></script>
-<script src="js/views/home.js?v=20261023"></script>
-<script src="js/views/list.js?v=20261023"></script>
-<script src="js/views/assets.js?v=20261023"></script>
-<script src="js/views/article.js?v=20261023"></script>
-<script src="js/views/crisis.js?v=20261023"></script>
-<script src="js/views/chain.js?v=20261023"></script>
-<script src="js/views/path.js?v=20261023"></script>
-<script src="js/views/term.js?v=20261023"></script>
-<script src="js/views/search.js?v=20261023"></script>
-<script src="js/app.js?v=20261023"></script>
+<script src="js/site/format.js?v=20261024"></script>
+<script src="js/site/cross.js?v=20261024"></script>
+<script src="js/store.js?v=20261024"></script>
+<script src="js/router.js?v=20261024"></script>
+<script src="js/engine/series.js?v=20261024"></script>
+<script src="js/engine/percentile.js?v=20261024"></script>
+<script src="js/engine/drawdown.js?v=20261024"></script>
+<script src="js/engine/spread.js?v=20261024"></script>
+<script src="js/engine/similarity.js?v=20261024"></script>
+<script src="js/engine/analogy.js?v=20261024"></script>
+<script src="js/engine/crisis.js?v=20261024"></script>
+<script src="js/engine/instrument.js?v=20261024"></script>
+<script src="js/sources/quotes.js?v=20261024"></script>
+<script src="js/sources/history.js?v=20261024"></script>
+<script src="js/site/content.js?v=20261024"></script>
+<script src="js/components/term-card.js?v=20261024"></script>
+<script src="js/components/term-drawer.js?v=20261024"></script>
+<script src="js/components/era-timeline.js?v=20261024"></script>
+<script src="js/components/replay-player.js?v=20261024"></script>
+<script src="js/components/chain-heat.js?v=20261024"></script>
+<script src="js/views/home.js?v=20261024"></script>
+<script src="js/views/list.js?v=20261024"></script>
+<script src="js/views/assets.js?v=20261024"></script>
+<script src="js/views/article.js?v=20261024"></script>
+<script src="js/views/crisis.js?v=20261024"></script>
+<script src="js/views/chain.js?v=20261024"></script>
+<script src="js/views/path.js?v=20261024"></script>
+<script src="js/views/term.js?v=20261024"></script>
+<script src="js/views/search.js?v=20261024"></script>
+<script src="js/app.js?v=20261024"></script>
 </body>
 </html>

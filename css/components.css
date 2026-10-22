@@ -172,6 +172,18 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
 .term-part.pit .tp-v { color: var(--ink-2); }
 .term-part.pit { background: var(--warn-soft); margin: 0 calc(-1 * var(--s-4)) 0 calc(-1 * var(--s-4)); padding-left: var(--s-4); padding-right: var(--s-4); }
 
+/* 首页「今日一词」：整张卡是一个链接。
+   TermCard 输出的是块级盒子，包进 <a> 后 <a> 自己也要撑开，
+   否则行内元素会把版式挤塌。 */
+.term-link { display: block; text-decoration: none; color: inherit; }
+.term-link .term { transition: border-color var(--dur-1); }
+.term-link:hover .term { border-color: var(--teal-line); }
+.term-link:hover .term-head .tt { color: var(--teal); }
+.term-link .term-link-more {
+  display: block; margin-top: 6px; text-align: right;
+  font-family: var(--font-mono); font-size: 10.5px; color: var(--teal);
+}
+
 /* 正文里的术语锚点 */
 .t-ref {
   border-bottom: 1px dashed var(--gold-line); color: var(--ink); cursor: help;
@@ -325,6 +337,21 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
   .entry { grid-template-columns: 1fr; }
   .entry .e-m { order: 3; }
 }
+
+/* ---------- 新手路径的一课 ----------
+   一行一课：左边圆圈只管打勾，右边整行是链接。
+   打勾按钮必须待在 <a> 外面——链接里套按钮是无效 HTML，
+   键盘和读屏用户会把它当成两个可点的玩意儿。 */
+.lesson { display: flex; align-items: flex-start; gap: var(--s-3); }
+.lesson .entry { flex: 1 1 auto; min-width: 0; }
+.lesson-check {
+  flex: none; width: 30px; height: 30px; padding: 0; margin-top: var(--s-4);
+  justify-content: center; border-radius: 50%;
+}
+.lesson-check[aria-pressed="true"] { background: var(--down); border-color: var(--down); color: #fff; }
+/* 学完的课：整行淡下去，但链接还在（想复习随时点回去） */
+.lesson.done .e-t { color: var(--ink-3); }
+.lesson.done .e-t::after { content: ' · 已学'; color: var(--down); font-size: 12px; font-weight: 400; }
 
 /* ============================================================
    回放器
@@ -523,7 +550,13 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
 /* 窄屏：速查表改成一张张卡片，横向滚动太难读 */
 @media (max-width: 760px) {
   .ds, .ds tbody, .ds tr, .ds td { display: block; width: 100%; }
-  .ds thead { display: none; }
+  /* 表头不藏了。display:none 会把这张表在读屏里整个抹掉——
+     读者不知道第二段是「是什么」还是「什么时候会骗人」。
+     改成视觉隐藏：看不见，但表格的行列语义还在（列名由 td 的 aria-label 兜底）。 */
+  .ds thead {
+    position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+    overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;
+  }
   .ds tr { border-bottom: 1px solid var(--rule); padding: var(--s-3) 0; }
   .ds td { border: 0; padding: 0 0 var(--s-2); }
   .ds .ds-n { width: auto; margin-bottom: 4px; }
@@ -531,7 +564,7 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
   /* 表头被藏了，列名就得随身带着：不然读者分不清第二段是「是什么」还是「什么时候会骗人」 */
   .ds td::before {
     content: attr(data-label); display: block; margin-bottom: 3px;
-    font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .1em; color: var(--ink-4);
+    font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .1em; color: var(--ink-2);
   }
   .ds .ds-n::before { margin-bottom: 2px; }
 }

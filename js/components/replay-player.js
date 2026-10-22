@@ -108,6 +108,7 @@
           <span class="rp-title">${esc(data.title || '危机回放')}</span>
           <span class="tag">${esc(data.freq === 'D' ? '日频' : '月频')}</span>
           <span class="rp-date" id="rp-date">—</span>
+          <span class="sr-only" id="rp-live" role="status" aria-live="polite"></span>
         </div>
         <div class="replay-body">
           <div class="rp-legend">
@@ -159,7 +160,11 @@
           : f.pct((g.trough.v / g.peak.v - 1) * 100, 1)),
       ].join(' · ');
 
-      return `<div class="rp-track" data-key="${esc(s.key)}" title="${esc(tip)}">
+      // 峰值谷值原来只写在 title 里：鼠标悬停才看得到，键盘根本够不着。
+      // 现在这条轨道本身可以聚焦，也带一个名字，读屏与键盘都拿得到同一份信息。
+      const label = s.name + (s.unit ? '（' + s.unit + '）' : '') + '：' + tip;
+
+      return `<div class="rp-track" data-key="${esc(s.key)}" title="${esc(tip)}" tabindex="0" role="group" aria-label="${esc(label)}">
         <span class="rt-k">${esc(s.name)}${s.unit ? `<span class="rt-ku">${esc(s.unit)}</span>` : ''}</span>
         <span class="rt-chart">
           <svg class="rt-spark" viewBox="0 0 ${VW} ${VH}" preserveAspectRatio="none" aria-hidden="true">
@@ -302,6 +307,12 @@
     const dateEl = document.getElementById('rp-date');
     if (dateEl) dateEl.textContent = d;
 
+    // 滑块的值得念得出来：光报「第 123 个」谁也听不懂
+    const rangeEl = document.getElementById('rp-range');
+    if (rangeEl) rangeEl.setAttribute('aria-valuetext', d);
+
+    const spoken = [];
+
     pkg.series.forEach((s, si) => {
       const g = geoms[si];
       if (!g) return;
@@ -324,6 +335,9 @@
         el.innerHTML = `<b>${f.num(v, s.digits)}</b>`
           + `<span class="d ${f.dir(chg)}">较起点 ${chgTxt}</span>`
           + `<span class="dd ${f.dir(dd)}">距峰值 ${ddTxt}</span>`;
+        if (v !== null && v !== undefined) {
+          spoken.push(`${s.name} ${f.num(v, s.digits)}，距峰值 ${ddTxt}`);
+        }
       }
 
       const cur = document.getElementById('cur-' + s.key);
@@ -399,6 +413,13 @@
           ? `<span class="muted">把滑块拖到 ${esc(ev0.t)} 附近，看看「${esc(ev0.title)}」那天各资产的反应。</span>`
           : '<span class="muted">拖动滑块，看各资产在同一时刻的反应。</span>';
       }
+    }
+
+    // 播报：读屏用户按 ←→ 之后得知道日期变成了哪天、离峰值还差多少。
+    // 自动播放时不播——每 0.4 秒念一遍会把人吵死。
+    const live = document.getElementById('rp-live');
+    if (live && !playing && spoken.length) {
+      live.textContent = d + '，' + spoken.join('；');
     }
   }
 

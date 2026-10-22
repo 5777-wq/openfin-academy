@@ -22,12 +22,16 @@
     { path: '/',         label: '首页',   icon: 'M3 11l9-8 9 8M5 10v10h14V10' },
     { path: '/concepts', label: '概念',   icon: 'M4 5h16M4 12h16M4 19h10' },
     { path: '/terms',    label: '术语',   icon: 'M4 5a2 2 0 0 1 2-2h5v18H6a2 2 0 0 1-2-2zM20 5a2 2 0 0 0-2-2h-5v18h5a2 2 0 0 0 2-2z' },
+    // 标的百科是全站最大的栏目（94 个标的页），手机上却只有一个藏在报价条里的入口——
+    // 而报价条看着像行情，不像导航。底栏给它一格。
+    { path: '/assets',   label: '标的',   icon: 'M4 7h16M4 12h16M4 17h16M7 4v6' },
     { path: '/crisis',   label: '复盘',   icon: 'M3 12a9 9 0 1 0 3-6.7M3 4v5h5' },
     { path: '/chains',   label: '产业链', icon: 'M4 4v16h16M8 15l3-4 3 2 4-6' },
     { path: '/search',   label: '搜索',   icon: 'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14M20 20l-3.5-3.5' },
   ];
 
   let currentKey = '';
+  const stats = { routes: 0 };   // 渲染次数：冷启动只该有一次
 
   /* ---------------- 报头 ---------------- */
   function paintMasthead() {
@@ -142,11 +146,18 @@
   function markActive(path) {
     document.querySelectorAll('.rail-item').forEach((a) => {
       const p = a.dataset.path;
-      a.classList.toggle('on', p === '/' ? path === '/' : path.indexOf(p) === 0);
+      const on = p === '/' ? path === '/' : path.indexOf(p) === 0;
+      a.classList.toggle('on', on);
+      // 读屏用户要知道自己在哪一栏：当前这一项要标出来
+      if (on) a.setAttribute('aria-current', 'page');
+      else a.removeAttribute('aria-current');
     });
     document.querySelectorAll('#tabbar button').forEach((b) => {
       const p = b.dataset.path;
-      b.classList.toggle('on', p === '/' ? path === '/' : path.indexOf(p) === 0);
+      const on = p === '/' ? path === '/' : path.indexOf(p) === 0;
+      b.classList.toggle('on', on);
+      if (on) b.setAttribute('aria-current', 'page');
+      else b.removeAttribute('aria-current');
     });
   }
 
@@ -176,7 +187,104 @@
   }
 
   /* ---------------- 路由 ---------------- */
+  const SECTION_NAME = {
+    concepts: '货币与利率', crisis: '危机复盘', assets: '标的百科',
+    chains: '产业链图谱', cycles: '周期与镜鉴', family: '家庭理财',
+  };
+  const DEFAULT_DESC = '把美债收益率、黄金、纳指、原油、A股和 AI 产业链讲成金融小白听得懂的话。零后端、零密钥、零构建的金融科普站。';
+
+  /** 标的 symbol → 站内专文 id（和 views/assets.js 用的是同一张表） */
+  function assetArticleId(sym) {
+    const map = (window.AssetsView && window.AssetsView.ARTICLE_OF) || {};
+    return map[sym] || sym;
+  }
+
+  /** 这条路由要不要正文？首屏 22 篇正文全都不拉，只有真读正文时才去取 */
+  function bodyIdForRoute(r, params) {
+    if (r.id === 'crisis-one' || (r.id === 'crisis' && params.id)) return params.id;
+    if (r.id === 'asset') return assetArticleId(params.id);
+    return null;
+  }
+
+  /**
+   * 页面标题。
+   * 约定：视图在容器上写 data-page-title="<内容名> · <栏目> · 白话金融"，
+   * 有就用它；没有就按路由推一个——
+   * 以前 189 个词条页共用一个「术语 · 白话金融」，
+   * 浏览器开八个标签根本分不清是市盈率还是夏普，分享出去的卡片也没有词名。
+   */
+  function pageTitle(r, params, query, host) {
+    const el = host && host.querySelector ? host.querySelector('[data-page-title]') : null;
+    const t = el && el.getAttribute('data-page-title');
+    if (t && String(t).trim()) return String(t).trim();
+    return derivedTitle(r, params, query);
+  }
+
+  function derivedTitle(r, params, query) {
+    const SITE = '白话金融';
+    if (r.id === 'term') {
+      const t = window.Content.term(params.id);
+      return ((t && t.term) || '术语') + ' · 术语 · ' + SITE;
+    }
+    if (r.id === 'search') {
+      const q = String((query && query.q) || '').trim();
+      return q ? '搜索「' + q + '」· ' + SITE : '搜索 · ' + SITE;
+    }
+    if (r.id === 'concept' || r.id === 'cycle' || r.id === 'family-one' || r.id === 'crisis-one') {
+      const sec = SECTION_NAME[{ concept: 'concepts', cycle: 'cycles', 'family-one': 'family', 'crisis-one': 'crisis' }[r.id]];
+      const meta = window.Content.meta(params.id);
+      return ((meta && meta.title) || r.title) + ' · ' + (sec || r.title) + ' · ' + SITE;
+    }
+    if (r.id === 'asset') {
+      const meta = window.Content.meta(assetArticleId(params.id));
+      if (meta && meta.title) return meta.title + ' · 标的百科 · ' + SITE;
+      const pages = (window.Content.assetPages ? window.Content.assetPages() : []);
+      const hit = pages.filter((x) => x.symbol === params.id)[0];
+      return ((hit && hit.label) || params.id) + ' · 标的百科 · ' + SITE;
+    }
+    return (r.title && r.title !== '首页' ? r.title + ' · ' : '') + SITE;
+  }
+
+  /** 分享卡片的描述：这一页在讲什么 */
+  function pageDescription(r, params, query) {
+    if (r.id === 'term') {
+      const t = window.Content.term(params.id);
+      return (t && t.one) || DEFAULT_DESC;
+    }
+    if (r.id === 'search') {
+      const q = String((query && query.q) || '').trim();
+      return q ? '站内搜索「' + q + '」的结果。' : DEFAULT_DESC;
+    }
+    const id = r.id === 'asset' ? assetArticleId(params.id) : params.id;
+    const meta = window.Content.meta(id);
+    return (meta && meta.dek) || DEFAULT_DESC;
+  }
+
+  /** 分享卡片：每页改写成这一页的内容（爬虫不执行 JS，所以静态兜底写在 index.html 里） */
+  function syncShare(title, desc) {
+    const url = location.href;
+    setMeta('og-title', title);
+    setMeta('og-desc', desc);
+    setMeta('og-url', url);
+    setMeta('tw-title', title);
+    setMeta('tw-desc', desc);
+    const c = document.getElementById('canonical');
+    if (c) c.setAttribute('href', url);
+  }
+
+  function setMeta(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.setAttribute('content', value);
+  }
+
+  /** 换页提示：读屏用户看不见页面变了，得有人告诉他一声 */
+  function announcePage(title) {
+    const live = document.getElementById('route-live');
+    if (live) live.textContent = '当前页：' + title;
+  }
+
   function route() {
+    stats.routes++;
     const m = window.Router.current();
     const view = document.getElementById('view');
     if (!m) { window.Router.go('/'); return; }
@@ -216,53 +324,83 @@
     const errHtml = (e) => `<div class="empty"><div class="et">这一页出了点问题</div>
         <div class="ed">${esc(e && e.message ? e.message : String(e))}</div>
         <a class="btn ghost sm" href="#/">回首页</a></div>`;
+    const skelHtml = () => `<div class="empty" style="padding:var(--s-8) 0">
+        <div class="skel" style="height:22px;width:34%;margin:0 auto 16px"></div>
+        <div class="skel" style="height:13px;width:58%;margin:0 auto 9px"></div>
+        <div class="skel" style="height:13px;width:44%;margin:0 auto"></div>
+      </div>`;
+
+    const render = () => {
+      switch (r.id) {
+        case 'home': return window.HomeView.render(host);
+        case 'concepts': return window.ListView.render(host, 'concepts');
+        case 'concept': return window.ArticleView.render(host, 'concepts', params.id);
+        case 'assets': return window.AssetsView.renderIndex(host);
+        case 'cycles': return window.ListView.render(host, 'cycles');
+        case 'family': return window.ListView.render(host, 'family');
+        case 'family-one': return window.ArticleView.render(host, 'family', params.id);
+        case 'chains': return window.ChainView.renderList(host);
+        case 'path': return window.PathView.render(host);
+        case 'terms': return window.TermView.renderIndex(host);
+        case 'data': return window.TermView.renderDataSheet(host, query);
+        case 'term': return window.TermView.render(host, params.id, query);
+        case 'search': return window.SearchView.render(host, query.q || '');
+        case 'crisis':
+          if (params.id) return window.CrisisView.renderDetail(host, params.id);
+          return window.CrisisView.renderList(host);
+        case 'crisis-one': return window.CrisisView.renderDetail(host, params.id);
+        case 'asset': return window.AssetsView.renderDetail(host, params.id);
+        case 'chain': return window.ChainView.renderDetail(host, params.id);
+        case 'cycle': return window.ArticleView.render(host, 'cycles', params.id);
+        default:
+          return window.ListView.render(host, 'concepts');
+      }
+    };
+
+    // 危机复盘页和标的详情页是**同步**读正文的：正文没到位它们会画出空页。
+    // 所以这两条路由先把正文取回来再交给视图；其余页面正文按需自己取。
+    const bodyId = bodyIdForRoute(r, params);
 
     let pending = null;
-    try {
-      switch (r.id) {
-        case 'home': pending = window.HomeView.render(host); break;
-        case 'concepts': pending = window.ListView.render(host, 'concepts'); break;
-        case 'concept': pending = window.ArticleView.render(host, 'concepts', params.id); break;
-        case 'assets': pending = window.AssetsView.renderIndex(host); break;
-        case 'cycles': pending = window.ListView.render(host, 'cycles'); break;
-        case 'family': pending = window.ListView.render(host, 'family'); break;
-        case 'family-one': pending = window.ArticleView.render(host, 'family', params.id); break;
-        case 'chains': pending = window.ChainView.renderList(host); break;
-        case 'path': pending = window.PathView.render(host); break;
-        case 'terms': pending = window.TermView.renderIndex(host); break;
-        case 'data': pending = window.TermView.renderDataSheet(host, query); break;
-        case 'term': pending = window.TermView.render(host, params.id, query); break;
-        case 'search': pending = window.SearchView.render(host, query.q || ''); break;
-        case 'crisis':
-          if (params.id) pending = window.CrisisView.renderDetail(host, params.id);
-          else pending = window.CrisisView.renderList(host);
-          break;
-        case 'crisis-one': pending = window.CrisisView.renderDetail(host, params.id); break;
-        case 'asset': pending = window.AssetsView.renderDetail(host, params.id); break;
-        case 'chain': pending = window.ChainView.renderDetail(host, params.id); break;
-        case 'cycle': pending = window.ArticleView.render(host, 'cycles', params.id); break;
-        default:
-          pending = window.ListView.render(host, 'concepts');
+    if (bodyId) {
+      host.innerHTML = skelHtml();
+      pending = window.Content.ensureArticle(bodyId).then(render);
+    } else {
+      try {
+        pending = render();
+      } catch (e) {
+        console.error('[render]', e);
+        host.innerHTML = errHtml(e);
       }
-    } catch (e) {
-      console.error('[render]', e);
-      host.innerHTML = errHtml(e);
     }
 
     // 视图是 async 的时候，上面的 try/catch 抓不到它内部的异常——
     // 异常会变成 unhandledRejection，用户看到的是**上一次的残页**而不是错误页，
     // 同时 index.html 的全局兜底会在屏幕底部压一条永不消失的红色调试条。
     if (pending && typeof pending.then === 'function') {
-      pending.catch((e) => {
-        console.error('[render]', e);
-        if (!host.isConnected) return;   // 已经切走，这一页不在屏幕上了
-        host.innerHTML = errHtml(e);
-      });
+      // 先按路由给个标题（别让标签页标题空着），等视图画完再按视图写的那个校准
+      applyPageMeta(r, params, query, host, false);
+      pending
+        .then(() => { if (host.isConnected) applyPageMeta(r, params, query, host, true); })
+        .catch((e) => {
+          console.error('[render]', e);
+          if (!host.isConnected) return;   // 已经切走，这一页不在屏幕上了
+          host.innerHTML = errHtml(e);
+        });
+    } else {
+      applyPageMeta(r, params, query, host, true);
+    }
+
+    // 换页之后焦点要落到正文上：内容整块换掉了，读屏用户却什么都没收到
+    if (key !== prevKey) {
+      const main = document.getElementById('main');
+      if (main && main.focus) {
+        try { main.focus({ preventScroll: true }); } catch (e) { main.focus(); }
+      }
     }
 
     applyLensSetting(false);   // 跨站链接总开关：每次重画都要跟着当前设置走
     markActive(path);
-    document.title = (r.title && r.title !== '首页' ? r.title + ' · ' : '') + '白话金融';
     // 滚动位置：先恢复（用**离开时**的 key），再决定要不要归零。
     // 以前是「先恢复、再无条件 scrollTo(0,0)」——恢复的结果 100% 被覆盖，
     // 浏览器后退回长文时会被强行拉回顶部。
@@ -270,38 +408,89 @@
     if (r.id !== 'search' && key !== prevKey) window.scrollTo(0, 0);
   }
 
+  /** 页面标题 + 分享卡片 + 换页提示：一次性做完 */
+  function applyPageMeta(r, params, query, host, say) {
+    const title = pageTitle(r, params, query, host);
+    document.title = title;
+    syncShare(title, pageDescription(r, params, query));
+    if (say !== false) announcePage(title);
+  }
+
   /* ---------------- 命令面板 ----------------
      面板底部写着「↑↓ 选择 / ⏎ 打开 / Esc 关闭」，那这三条就必须真的能用。
      以前只有鼠标能点：↑↓ 不动、⏎ 不开、Esc 只把输入框 blur 一下（面板还留在屏幕上，
-     读者以为已经关了）。这一版把三件事补齐，并把焦点还给打开它的那个元素。 */
+     读者以为已经关了）。这一版把三件事补齐，并把焦点还给打开它的那个元素。
+
+     面板是模态的：Tab 要在「输入框 + 候选项」之间转圈，不能跑到弹层外面去——
+     外面那块背景已经被 aria-modal 对读屏隐藏了，焦点跑出去就等于人和读屏分家了。 */
   let paletteItems = [];
   let paletteSel = 0;
   let paletteLastFocus = null;
+  let paletteBgInert = false;
+
+  // 背景上的顶层容器：面板打开时整体 inert
+  const BG = ['.masthead', '.ticker', '.shell', '.tabbar'];
 
   function isPaletteOpen() {
     const wrap = document.getElementById('palette-wrap');
     return !!(wrap && wrap.classList.contains('on'));
   }
 
+  function setBackgroundInert(on) {
+    BG.forEach((sel) => {
+      document.querySelectorAll(sel).forEach((n) => {
+        if (on) n.setAttribute('inert', '');
+        else n.removeAttribute('inert');
+      });
+    });
+  }
+
   function openPalette() {
     const wrap = document.getElementById('palette-wrap');
     const input = document.getElementById('palette-input');
+    if (!wrap || !input) return;
+    // 抽屉开着的时候再开面板：先把抽屉收掉，焦点和背景状态都归位
+    if (window.TermDrawer && window.TermDrawer.isOpen()) window.TermDrawer.close();
     paletteLastFocus = document.activeElement;
     wrap.classList.add('on');
     input.value = '';
     paintPalette('');
     input.focus();
+    if (!paletteBgInert) { paletteBgInert = true; setBackgroundInert(true); }
   }
   function closePalette() {
     const wrap = document.getElementById('palette-wrap');
     if (!wrap || !wrap.classList.contains('on')) return;
     wrap.classList.remove('on');
+    if (paletteBgInert) { paletteBgInert = false; setBackgroundInert(false); }
     // 焦点还回去：面板是 display:none，焦点会自动掉到 body，
     // 键盘用户下一次 Tab 得从页面最顶部重新走一遍。
-    if (paletteLastFocus && document.contains(paletteLastFocus) && paletteLastFocus.focus) {
+    const stillThere = !document.contains || document.contains(paletteLastFocus);
+    if (paletteLastFocus && stillThere && paletteLastFocus.focus) {
       try { paletteLastFocus.focus(); } catch (e) { /* 元素已经没了就算了 */ }
     }
     paletteLastFocus = null;
+  }
+
+  /** 面板里能拿到焦点的元素：输入框 + 候选项 */
+  function paletteFocusables() {
+    const input = document.getElementById('palette-input');
+    const list = document.getElementById('palette-list');
+    const items = list && list.querySelectorAll
+      ? Array.prototype.slice.call(list.querySelectorAll('.pl-item'))
+      : [];
+    return input ? [input].concat(items) : items;
+  }
+
+  /** Tab 在面板里转：输入框 → 候选项 → 回到输入框 */
+  function paletteTab(back) {
+    const els = paletteFocusables();
+    if (!els.length) return;
+    const i = els.indexOf(document.activeElement);
+    let next;
+    if (back) next = (i <= 0) ? els.length - 1 : i - 1;
+    else next = (i < 0 || i === els.length - 1) ? 0 : i + 1;
+    if (els[next] && els[next].focus) els[next].focus();
   }
 
   /** ↑↓ 移动选中项 */
@@ -311,9 +500,17 @@
     paletteSel = (paletteSel + d + n) % n;
     const list = document.getElementById('palette-list');
     if (!list) return;
-    list.querySelectorAll('.pl-item').forEach((el, i) => el.classList.toggle('sel', i === paletteSel));
+    list.querySelectorAll('.pl-item').forEach((el, i) => {
+      const on = i === paletteSel;
+      el.classList.toggle('sel', on);
+      el.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
     const cur = list.querySelector('.pl-item.sel');
     if (cur && cur.scrollIntoView) cur.scrollIntoView({ block: 'nearest' });
+    // 焦点落在候选项上时，选中项要跟着走：不然会出现「人在 A、选中 B」
+    const input = document.getElementById('palette-input');
+    if (cur && input && document.activeElement !== input && cur.focus) cur.focus();
+    if (input) input.setAttribute('aria-activedescendant', 'pl-opt-' + paletteSel);
   }
 
   /** ⏎ 打开选中项 */
@@ -329,9 +526,9 @@
     const key = String(q || '').trim().toLowerCase();
     const r = window.SearchView.search(key);
     const items = [];
-    r.terms.forEach((t) => items.push({ g: '术语', t: t.term, s: t.one || '', go: () => window.TermDrawer.open(t.id) }));
+    r.terms.forEach((t) => items.push({ g: '术语', t: t.term, s: t.one || '', go: () => window.Router.go('/term/' + encodeURIComponent(t.id)) }));
     r.articles.forEach((a) => items.push({ g: '文章', t: a.title, s: a.dek || '', go: () => window.Router.go('/' + a.section + '/' + a.id) }));
-    r.assets.forEach((a) => items.push({ g: '标的', t: a.name, s: '', go: () => window.Router.go('/assets') }));
+    r.assets.forEach((a) => items.push({ g: '标的', t: a.name, s: '', go: () => window.Router.go('/assets/' + encodeURIComponent(a.symbol)) }));
     paletteItems = items;
     paletteSel = 0;
 
@@ -342,12 +539,16 @@
     let lastG = null, html = '';
     items.slice(0, 40).forEach((it, i) => {
       if (it.g !== lastG) { html += `<div class="pl-group">${esc(it.g)}</div>`; lastG = it.g; }
-      html += `<div class="pl-item${i === 0 ? ' sel' : ''}" data-i="${i}" role="option" aria-selected="${i === 0}">
+      // tabindex="-1"：候选项能被 Tab 到、能拿到焦点，但不会自己进 Tab 序
+      html += `<div class="pl-item${i === 0 ? ' sel' : ''}" id="pl-opt-${i}" data-i="${i}" role="option"
+        tabindex="-1" aria-selected="${i === 0}">
         <span class="pli-t">${esc(it.t)}</span>
         ${it.s ? `<span class="pli-k">${esc(String(it.s).slice(0, 22))}</span>` : ''}
       </div>`;
     });
     list.innerHTML = html;
+    const input = document.getElementById('palette-input');
+    if (input) input.setAttribute('aria-activedescendant', 'pl-opt-0');
     list.querySelectorAll('.pl-item').forEach((el) => {
       el.addEventListener('click', () => {
         const it = items[Number(el.dataset.i)];
@@ -368,13 +569,12 @@
       ['T', '切换日夜皮肤'],
       ['G 然后 H', '回首页'],
     ];
-    document.getElementById('drawer-title').textContent = '快捷键';
-    document.getElementById('drawer-body').innerHTML =
-      `<div class="keys">${rows.map(([k, d]) => `<div class="kr"><span>${esc(d)}</span><span class="kk"><span class="kbd">${esc(k)}</span></span></div>`).join('')}</div>`;
-    document.getElementById('drawer-foot').innerHTML = '<span>本站全程键盘可达</span>';
-    const el = document.getElementById('drawer');
-    el.classList.add('on');
-    document.getElementById('scrim').classList.add('on');
+    // 走抽屉的打开流程：记下是谁打开的、焦点搬进抽屉、背景隔开、关闭时焦点还回去
+    window.TermDrawer.openPanel({
+      title: '快捷键',
+      body: `<div class="keys">${rows.map(([k, d]) => `<div class="kr"><span>${esc(d)}</span><span class="kk"><span class="kbd">${esc(k)}</span></span></div>`).join('')}</div>`,
+      foot: '<span>本站全程键盘可达</span>',
+    });
   }
 
   /* ---------------- 站点设置（抽屉） ----------------
@@ -382,8 +582,9 @@
   function showSettings() {
     const dark = window.Store.get('theme') === 'night';
     const lens = window.Cross ? window.Cross.enabled() : true;
-    document.getElementById('drawer-title').textContent = '站点设置';
-    document.getElementById('drawer-body').innerHTML = `
+    window.TermDrawer.openPanel({
+      title: '站点设置',
+      body: `
       <div class="set-row">
         <div>
           <div class="set-k">夜间皮肤</div>
@@ -398,11 +599,9 @@
         </div>
         <button class="switch ${lens ? 'on' : ''}" id="swLens" role="switch" aria-checked="${lens}" aria-label="去行情终端的链接"></button>
       </div>
-      <p class="set-note">设置只存在这台设备上（localStorage），不联网、不上传、没有统计。</p>`;
-    document.getElementById('drawer-foot').innerHTML = '<span>白话金融 OpenFin Academy</span>';
-    const drawer = document.getElementById('drawer');
-    drawer.classList.add('on');
-    document.getElementById('scrim').classList.add('on');
+      <p class="set-note">设置只存在这台设备上（localStorage），不联网、不上传、没有统计。</p>`,
+      foot: '<span>白话金融 OpenFin Academy</span>',
+    });
 
     document.getElementById('swTheme').addEventListener('click', () => { toggleTheme(); showSettings(); });
     document.getElementById('swLens').addEventListener('click', () => {
@@ -443,22 +642,30 @@
     const bar = document.getElementById('progress');
     if (bar) bar.style.width = p.toFixed(2) + '%';
     const top = document.getElementById('to-top');
-    if (top) top.classList.toggle('on', doc.scrollTop > 500);
+    if (top) {
+      const show = doc.scrollTop > 500;
+      top.classList.toggle('on', show);
+      // 看不见的时候也要退出 Tab 序：opacity:0 挡不住键盘，
+      // Tab 到一个透明按钮上，焦点圈画在空白处，用户根本不知道自己在哪。
+      if (show) top.removeAttribute('inert');
+      else top.setAttribute('inert', '');
+    }
   }
 
   /* ---------------- 键盘 ---------------- */
   let pendingG = 0;   // 「G 然后 H」的第一下：G
   function onKey(e) {
+    // 命令面板开着的时候，键盘整个归它管（↑↓ 选、⏎ 开、Esc 关、Tab 在面板里转圈）
+    if (isPaletteOpen()) {
+      if (e.key === 'Escape') { e.preventDefault(); closePalette(); return; }
+      if (e.key === 'Tab') { e.preventDefault(); paletteTab(e.shiftKey); return; }
+      if (e.key === 'ArrowDown') { e.preventDefault(); paletteMove(1); return; }
+      if (e.key === 'ArrowUp') { e.preventDefault(); paletteMove(-1); return; }
+      if (e.key === 'Enter') { e.preventDefault(); paletteEnter(); return; }
+      return;
+    }
     const tag = (e.target && e.target.tagName) || '';
     if (tag === 'INPUT' || tag === 'TEXTAREA') {
-      // 命令面板开着的时候，键盘归它管（↑↓ 选、⏎ 开、Esc 关）
-      if (isPaletteOpen()) {
-        if (e.key === 'Escape') { e.preventDefault(); closePalette(); return; }
-        if (e.key === 'ArrowDown') { e.preventDefault(); paletteMove(1); return; }
-        if (e.key === 'ArrowUp') { e.preventDefault(); paletteMove(-1); return; }
-        if (e.key === 'Enter') { e.preventDefault(); paletteEnter(); return; }
-        return;
-      }
       if (e.key === 'Escape') e.target.blur();
       return;
     }
@@ -524,14 +731,16 @@
     step('boot:shell painted + interactions bound');
 
     // 内容与行情并行加载；内容最多等 8 秒，超时也先把页面渲染出来
+    let contentArrived = false;
     const contentReady = window.Content.loadAll().catch((e) => {
       console.error('[content] 加载失败', e);
       return null;
     });
+    const contentFlag = contentReady.then(() => { contentArrived = true; });
     const quotesReady = window.Quotes.load().catch(() => window.Quotes.state);
 
     await Promise.race([
-      contentReady,
+      contentFlag,
       new Promise((r) => setTimeout(r, 8000)),
     ]);
     step('boot:content ready ' + (window.Content.idx.list ? 'ok' : 'EMPTY'));
@@ -559,22 +768,30 @@
     else route();
     step('boot:routed');
 
-    // 内容到位后重渲染一次：深链进来时，首屏可能还没拿到文章与回放包
-    contentReady.then(() => {
-      if (window.Content.idx.list) route();
-    });
+    // 内容迟到（超过 8 秒）才重画一次：那时候屏幕上还摆着「内容没能加载出来」。
+    // 正常情况下首屏只画一遍——以前这里无条件又画一次，冷启动白白渲染两遍。
+    if (!contentArrived) {
+      contentReady.then(() => {
+        if (window.Content.idx.list) route();
+      });
+    }
 
     await quotesReady;
     paintTicker();
     paintGauges();
     step('boot:quotes ready');
 
-    // 行情轮询
-    setInterval(async () => {
+    // 行情轮询：页面切到别的标签页就别再空转了。
+    // 回到前台时立刻补跑一次，别让读者盯着一个已经过期的报价。
+    const poll = async () => {
       await window.Quotes.load();
       paintTicker();
       paintGauges();
-    }, 30000);
+    };
+    setInterval(() => { if (!document.hidden) poll(); }, 30000);
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) poll();
+    });
   }
 
   /* ---------------- 交互绑定 ----------------
@@ -592,6 +809,19 @@
     pw.addEventListener('click', (e) => { if (e.target === pw) closePalette(); });
     document.getElementById('palette-input').addEventListener('input', (e) => paintPalette(e.target.value));
 
+    // 跳到主内容：不能让它真的改地址栏。
+    // 本站是 hash 路由：地址栏一变就是换页，#main 这种锚点会被路由当成「不认识的路」。
+    const skip = document.getElementById('skip-link');
+    if (skip) {
+      skip.addEventListener('click', (e) => {
+        e.preventDefault();
+        const main = document.getElementById('main');
+        if (!main) return;
+        if (main.focus) { try { main.focus(); } catch (err) { /* 忽略 */ } }
+        if (main.scrollIntoView) main.scrollIntoView();
+      });
+    }
+
     document.addEventListener('keydown', onKey);
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
@@ -600,5 +830,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
 
-  window.App = { NAV, openPalette, toggleTheme, showKeys };
+  window.App = { NAV, openPalette, toggleTheme, showKeys, route, onScroll, stats };
 })();

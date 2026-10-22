@@ -248,11 +248,12 @@ async function main() {
   }
 
   // 文章详情（每一篇都要能渲染，且标题不为空）
+  // 文章页现在是异步的（正文按需拉，js/site/content.js）——必须 await，否则读到的是骨架
   for (const a of sandbox.Content.list()) {
     let html = '';
     let err = null;
     try {
-      sandbox.ArticleView.render(view(), a.section, a.id);
+      await sandbox.ArticleView.render(view(), a.section, a.id);
       html = view().innerHTML;
     } catch (e) { err = e.message; }
     ok('文章渲染 ' + a.id, !err, err || '');
@@ -270,7 +271,7 @@ async function main() {
   // 「接着读」：related 里既有文章 id 也有术语 id，两个都得渲染出来。
   // 以前只查文章索引，术语型 related 会让整块「接着读」无声消失（页面上什么都不报）。
   {
-    sandbox.ArticleView.render(view(), 'assets', 'hk00700');
+    await sandbox.ArticleView.render(view(), 'assets', 'hk00700');
     const rel = view().innerHTML;
     has('文章「接着读」：区块渲染', rel, '接着读');
     ok('文章「接着读」：四个术语都渲染成条目',
@@ -279,7 +280,7 @@ async function main() {
     has('文章「接着读」：术语指向自己的页', rel, 'href="#/term/a-share"');
     has('文章「接着读」：术语显示中文名', rel, '股息 / 分红');
     // 文章型 related 与术语型 related 混在一起时，两种链接都要有
-    sandbox.ArticleView.render(view(), 'family', 'money-jar');
+    await sandbox.ArticleView.render(view(), 'family', 'money-jar');
     const mix = view().innerHTML;
     has('文章「接着读」：文章型 related 指向文章页', mix, 'href="#/concepts/inflation"');
     has('文章「接着读」：术语型 related 指向术语页', mix, 'href="#/term/etf"');
@@ -880,6 +881,123 @@ async function main() {
     ok('时代横轴：没有只写 CSS 不生效的 .era 选择器', !/(^|[^-\w])\.era\s*\{/.test(css));
     ok('时代横轴：提示卡不会再被容器裁掉',
       /\.era-node \.en-tip\s*\{[^}]*--tip-w/.test(css) && /\.panel\.flush\.open\s*\{/.test(css));
+  }
+
+  /* ---- 17. 读者路径：新手路径 8 课、搜索结果、首页入口都得真能走 ----
+     这几页以前全是「看着像入口、点不动」的地方：
+     8 课渲染成 <div>，搜索结果也是 <div>，今日一词是一张读得懂却点不动的卡片。 */
+  {
+    const glossaryIds = new Set(Object.keys(sandbox.Content.glossary()));
+    const contentIds = new Set(sandbox.Content.list().map((a) => a.section + '/' + a.id));
+
+    /* ① 新手路径：每课都有 target，而且 target 真的解析得到 */
+    const plan = sandbox.Content.pathPlan();
+    ok('新手路径：8 课都有 target',
+      !!plan && plan.lessons.length === 8 && plan.lessons.every((l) => !!l.target),
+      '没写 target 的课：' + (plan ? plan.lessons.filter((l) => !l.target).map((l) => l.id).join(' ') : '(读不到)'));
+    for (const l of (plan ? plan.lessons : [])) {
+      const t = String(l.target || '');
+      let hit = false;
+      const m = /^#\/term\/(.+)$/.exec(t);
+      if (m) hit = glossaryIds.has(decodeURIComponent(m[1]));
+      const a = /^#\/([^/]+)\/([^/]+)$/.exec(t);
+      if (a && a[1] !== 'term') hit = contentIds.has(a[1] + '/' + a[2]);
+      ok('新手路径：' + l.id + ' 的 target 解析得到 ' + t, hit, '这个 id 站内不存在');
+    }
+    // 渲染出来的那一页：整行是链接，打勾按钮在链接外面
+    sandbox.PathView.render(view());
+    const pathHtml = view().innerHTML;
+    const links = [...pathHtml.matchAll(/<a class="entry" href="([^"]+)">/g)].map((m) => m[1]);
+    ok('新手路径：8 课都是可点的链接', links.length === 8, '实际 ' + links.length + ' 个');
+    for (const href of links) {
+      const segs = href.slice(2).split('/').filter(Boolean);
+      ok('新手路径：链接能解析 ' + href, !!sandbox.Router.match(segs), '路由表里没有这条');
+    }
+    const anchors = [...pathHtml.matchAll(/<a class="entry"[\s\S]*?<\/a>/g)].map((m) => m[0]);
+    ok('新手路径：打勾按钮不在链接里面（链接里套按钮是无效 HTML）',
+      anchors.length === 8 && anchors.every((h) => h.indexOf('data-lesson') < 0));
+    ok('新手路径：打勾按钮有 aria-label', (pathHtml.match(/aria-label="[^"]*已学[^"]*"/g) || []).length === 8,
+      '实际 ' + (pathHtml.match(/aria-label="[^"]*已学[^"]*"/g) || []).length + ' 个');
+    ok('新手路径：打勾按钮是状态按钮（aria-pressed）', (pathHtml.match(/aria-pressed="/g) || []).length === 8);
+
+    /* ② 搜索：命中与排序（读者第一眼看到的必须是最准的那条） */
+    const S = sandbox.SearchView.search;
+    const first = (q) => { const r = S(q); return r.terms[0] || null; };
+    const firstAsset = (q) => { const r = S(q); return r.assets[0] || null; };
+
+    ok('搜「市盈率」：第一条就是市盈率', !!first('市盈率') && first('市盈率').id === 'pe-ratio',
+      '实际 ' + (first('市盈率') || {}).term);
+    ok('搜「PE」：第一条就是市盈率', !!first('PE') && first('PE').id === 'pe-ratio',
+      '实际 ' + (first('PE') || {}).term);
+    ok('搜「RSI」：第一条就是 RSI 相对强弱指标', !!first('RSI') && first('RSI').id === 'rsi',
+      '实际 ' + (first('RSI') || {}).term);
+    ok('搜「ETF」：第一条就是 ETF', !!first('ETF') && first('ETF').id === 'etf',
+      '实际 ' + (first('ETF') || {}).term);
+    ok('搜「基金」：第一条是基金类词，不是噪音', !!first('基金') && first('基金').term.indexOf('基金') >= 0,
+      '实际 ' + (first('基金') || {}).term);
+    ok('搜「降息」：搜得到（口语黑话在词条的关键词里）', first('降息') !== null);
+
+    ok('搜「600519」：第一条是贵州茅台', !!firstAsset('600519') && firstAsset('600519').symbol === 'sh600519',
+      '实际 ' + JSON.stringify(firstAsset('600519')));
+    ok('搜「00700」：第一条是腾讯控股', !!firstAsset('00700') && firstAsset('00700').symbol === 'hk00700');
+    ok('搜「AAPL」：第一条是苹果', !!firstAsset('AAPL') && firstAsset('AAPL').symbol === 'usAAPL');
+    ok('搜「NVDA」：第一条是英伟达', !!firstAsset('NVDA') && firstAsset('NVDA').symbol === 'usNVDA');
+    ok('搜「sh600519」：站内 id 也搜得到', !!firstAsset('sh600519'));
+    const icbc = S('工商银行');
+    ok('搜「工商银行」：A 股与港股两只都搜得到', icbc.assets.length >= 2,
+      '实际 ' + icbc.assets.length + ' 只');
+    ok('搜「工商银行」：A 股那只排前面（601398）',
+      !!icbc.assets[0] && icbc.assets[0].code === '601398',
+      '实际 ' + JSON.stringify(icbc.assets[0] || {}));
+    // 代码前缀：读者只记得住前几位
+    ok('搜「60051」：代码前缀也找得到', S('60051').assets.length >= 1);
+
+    /* ③ 搜索结果必须是真链接（以前是 div，读者以为页面坏了） */
+    sandbox.SearchView.render(view(), '市盈率');
+    const sh = view().innerHTML;
+    ok('搜索结果：术语是可分享的词条页链接', sh.includes('href="#/term/pe-ratio"'));
+    ok('搜索结果：不再走抽屉（data-term-go 全部去掉）', sh.indexOf('data-term-go') < 0);
+    ok('搜索结果：没有点不动的 div 条目', !/<div class="entry"/.test(sh));
+    sandbox.SearchView.render(view(), '600519');
+    const ah = view().innerHTML;
+    ok('搜索结果：标的是标的页链接', ah.includes('href="#/assets/sh600519"'));
+    ok('搜索结果：标的结果没有点不动的 div 条目', !/<div class="entry"/.test(ah));
+    // 渲染出来的每一条站内链接都得能被路由解析
+    for (const q of ['市盈率', '600519', '工商银行', '降息', 'ETF', '黄金']) {
+      sandbox.SearchView.render(view(), q);
+      const hrefs = [...view().innerHTML.matchAll(/href="(#\/[^"]+)"/g)].map((m) => m[1]);
+      for (const href of hrefs) {
+        const segs = href.slice(2).split('/').filter(Boolean);
+        ok('搜索「' + q + '」的链接可解析 ' + href, !!sandbox.Router.match(segs), '路由表里没有这条');
+      }
+    }
+    // 搜不到时给一条诚实的出路
+    sandbox.SearchView.render(view(), '不存在的词xyz');
+    ok('搜索无结果：指向新手路径', view().innerHTML.includes('href="#/path"'));
+    ok('搜索无结果：说清还没有这个词', view().innerHTML.includes('还没有这个词'));
+
+    /* ④ 首页：今日一词能点，家庭理财有入口 */
+    sandbox.HomeView.render(view());
+    const home = view().innerHTML;
+    ok('首页：今日一词是可点的词条页链接', /<a class="term-link" href="#\/term\/[^"]+"/.test(home));
+    ok('首页：家庭理财直接链到那一篇文章', home.includes('href="#/family/money-jar"'),
+      '首页没有家庭理财的入口');
+    ok('首页：家庭理财链到的是真文章', contentIds.has('family/money-jar'));
+
+    /* ⑤ 速查表：窄屏保住表格语义（表头视觉隐藏 + 每格带 aria-label） */
+    const css = await readFile(path.join(ROOT, 'css/components.css'), 'utf8');
+    ok('速查表：窄屏不再 display:none 掉表头', !/\.ds thead\s*\{\s*display:\s*none/.test(css));
+    ok('速查表：窄屏表头改成视觉隐藏', /\.ds thead\s*\{[^}]*clip-path:\s*inset\(50%\)/.test(css));
+    sandbox.TermView.renderDataSheet(view(), { cat: 'macro' });
+    const sheet = view().innerHTML;
+    const tds = [...sheet.matchAll(/<td[^>]*>/g)].map((m) => m[0]);
+    ok('速查表：每个单元格都带 aria-label', tds.length > 0 && tds.every((t) => t.indexOf('aria-label="') >= 0),
+      '实际 ' + tds.length + ' 个 td');
+    ok('速查表：aria-label 以本列的列名开头', tds.every((t) => {
+      const dl = (t.match(/data-label="([^"]*)"/) || [])[1] || '';
+      const al = (t.match(/aria-label="([^"]*)"/) || [])[1] || '';
+      return !!dl && al.indexOf(dl + '：') === 0;
+    }), tds[0] || '(没扫到 td)');
   }
 
   console.log('');

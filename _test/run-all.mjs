@@ -256,6 +256,71 @@ function loadScripts(files) {
     ok('不同名字的序列没有其实是同一条线的', twins.length === 0, twins.join(' | '));
   }
 
+  /* 数据契约：三条踩过的坑，各钉一条断言，别再复发。
+       1. 财政部 CSV 的**空单元格**曾被写成 0.00% 收益率（Number('') === 0，
+          Number.isFinite(0) 也是 true）——美国30年期在 2002 年从 5.40%
+          垂直掉到 0 并横躺十个月，读者看到的是错数据不是「缺数据」。
+       2. 财政部 CSV 是倒序，同月多行依次覆盖同一个 key → 拿到的是**月初**值，
+          而注册表和页面全写「月末」，画在同一条 SPX 月末图上整体错开约一个月。
+       3. 复权口径自相矛盾：kind 写「已按拆股复权」、source 写「未复权」，
+          两句话并排摆在读者面前。 */
+  {
+    const dir = path.join(ROOT, 'data', 'history');
+    const monthly = [];
+    for (const f of await readdir(dir)) {
+      if (!f.endsWith('.json') || f.startsWith('crisis') || f === 'series-map.json') continue;
+      monthly.push(JSON.parse(await readFile(path.join(dir, f), 'utf8')));
+    }
+
+    // ① 收益率不得出现**连续**为 0 的点。
+    //    单个 0 可能是真的（2015-09-30 的 3 个月期国债收益率确实是 0.00%），
+    //    但连成一片一定是被当成 0 的空单元格。
+    const zeroRuns = [];
+    for (const id of ['US3M', 'US2Y', 'US10Y', 'US30Y']) {
+      const j = monthly.find((x) => (x.id || '') === id);
+      if (!j || !j.points) continue;
+      let run = 0, maxRun = 0;
+      for (const pt of j.points) {
+        if (!(pt.v > 0)) { run++; maxRun = Math.max(maxRun, run); } else run = 0;
+      }
+      if (maxRun >= 2) zeroRuns.push(`${id} 连续 ${maxRun} 个 0`);
+    }
+    ok('收益率序列没有连续为 0 的点（空单元格曾被写成 0.00%）', zeroRuns.length === 0, zeroRuns.join(' | '));
+
+    // ② 标着「月末」的月度序列，日期不能集中在每月头几天。
+    const early = [];
+    for (const j of monthly) {
+      if (!j.points || j.points.length < 12) continue;
+      const ratio = j.points.filter((p) => ['01', '02', '03', '04'].includes(p.t.slice(8, 10))).length / j.points.length;
+      if (ratio > 0.2) early.push(`${j.id} 有 ${(ratio * 100).toFixed(0)}% 的点落在月初`);
+    }
+    ok('月度序列的日期确实落在月末（不是月初）', early.length === 0, early.join(' | '));
+
+    // ③ 复权口径不得自相矛盾。
+    const contra = [];
+    for (const j of monthly) {
+      const kind = j.kind || '', source = j.source || '';
+      if (/(?<!未)复权/.test(kind) && /未复权/.test(source)) contra.push(`${j.id}: ${kind} | ${source}`);
+    }
+    ok('复权口径不自相矛盾', contra.length === 0, contra.join(' | '));
+
+    // ④ 月线与危机包日频必须对得上：同一个月的月末值 = 日频最后一条观测。
+    //    这条一钉，「月初冒充月末」立刻现形。
+    const m = monthly.find((x) => (x.id || '') === 'US10Y');
+    const m1994 = m && m.points.find((p) => p.t.startsWith('1994-12'));
+    let c1994 = null;
+    const cPath = path.join(dir, 'crisis-1994.json');
+    if (existsSync(cPath)) {
+      const c = JSON.parse(await readFile(cPath, 'utf8'));
+      const s = (c.series || []).find((x) => x.key === 'US10Y');
+      const d = ((s && s.points) || []).filter((p) => p.t.startsWith('1994-12'));
+      c1994 = d[d.length - 1];
+    }
+    ok('美债月线与危机包日频的月末值一致',
+      !!(m1994 && c1994 && m1994.t === c1994.t && m1994.v === c1994.v),
+      `月线 ${m1994 && m1994.t}=${m1994 && m1994.v} / 日频 ${c1994 && c1994.t}=${c1994 && c1994.v}`);
+  }
+
   // 危机回放包
   const crisisPath = path.join(ROOT, 'data', 'history', 'crisis-2008.json');
   if (existsSync(crisisPath)) {
@@ -508,10 +573,17 @@ function loadScripts(files) {
         return p ? p.v : null;
       };
       const gap = at(m, '2006-12') - at(y, '2006-12');
-      ok('2006-12 美债 3M−10Y 差约 60 个基点', Math.abs(gap - 0.60) < 0.05, `实际 ${gap}`);
+      // 月线是**月末**值（财政部 CSV 倒序，所以取每月最晚的那一天）。
+      // 2006-12-29 当天 3M 是 5.02、10Y 是 4.71，倒挂 31 个基点。
+      // 60 个基点是 12 月**初**（12-01）那天的读数，曲线随后一路收窄——
+      // 之前月线取的是月初，断言跟着写成了 60，看起来"对"，其实是把月初当成了月末。
+      ok('2006-12 美债 3M−10Y 差约 31 个基点（月末口径）', Math.abs(gap - 0.31) < 0.02, `实际 ${gap}`);
+      ok('2006-12 美债曲线是倒挂的（3M 高于 10Y）', gap > 0, `实际 ${gap}`);
       const inv = (g.terms || {}).inversion;
       ok('术语库 inversion 写的是 2006 年倒挂（与数据一致）',
         !!inv && inv.number.includes('2006') && !inv.number.includes('2007年8月'));
+      ok('术语库 inversion 不把 12 月初的读数当成月末',
+        !!inv && inv.number.includes('31个基点'), inv && inv.number);
     }
   }
 }

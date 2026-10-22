@@ -309,7 +309,11 @@ async function cboeVix() {
     const iso = usToIso(String(p[di]).trim());
     const v = Number(p[ci]);
     if (!iso || !Number.isFinite(v)) continue;
-    byMonth.set(iso.slice(0, 7), { t: iso, v });
+    // 每个月的**最后一个交易日**才算月末收盘。
+    // 不依赖 CSV 的行序（升序/倒序都成立），换源也不会悄悄错一个月。
+    const mk = iso.slice(0, 7);
+    const cur = byMonth.get(mk);
+    if (!cur || iso > cur.t) byMonth.set(mk, { t: iso, v });
   }
   return [...byMonth.values()].sort((a, b) => a.t.localeCompare(b.t));
 }
@@ -346,9 +350,19 @@ async function treasuryCurve(years) {
       for (const key of Object.keys(idx)) {
         const j = idx[key];
         if (j < 0 || p[j] === undefined) continue;
-        const v = Number(String(p[j]).trim());
+        const cell = String(p[j]).trim().replace(/^"|"$/g, '');
+        // 空单元格 ≠ 0.00%。Number('') === 0，Number.isFinite(0) === true，
+        // 于是「这条期限当天没有报价」会被写成 0 收益率 —— 页面上就是一条
+        // 从 5.40% 垂直掉到 0 并横躺十个月的假曲线。空就是缺，不要当 0。
+        if (!cell) continue;
+        const v = Number(cell);
         if (!Number.isFinite(v)) continue;
-        out[key].set(iso.slice(0, 7), { t: iso, v });
+        const mk = iso.slice(0, 7);
+        // 财政部 CSV 是倒序（新→旧），同一个月的多行会依次覆盖同一个 key。
+        // 取该月**最晚**的一天才是月末值；直接覆盖拿到的是月初值，
+        // 画在同一条 SPX 月末图上会整体错开约一个月。
+        const cur = out[key].get(mk);
+        if (!cur || iso > cur.t) out[key].set(mk, { t: iso, v });
       }
     }
     await sleep(120);
@@ -361,12 +375,23 @@ async function treasuryCurve(years) {
 /* ---------------- 写产物 ---------------- */
 async function writeSeries(id, def, points) {
   if (!points.length) { console.warn(`  [skip] ${id}：无数据`); return null; }
+  const file = path.join(OUT, id + '.json');
+  // 宁缺毋假：只有几个点的残次品不能覆盖掉好的多年曲线。
+  // 腾讯接口偶尔只回 1 根 bar（不带交易所后缀时就是 1 个点），
+  // 东财被掐时也会退化——原来那把好曲线就没了，页面上只剩一条"只有一点的历史"。
+  if (points.length < 12 && existsSync(file)) {
+    const old = JSON.parse(await readFile(file, 'utf8'));
+    if ((old.points || []).length > points.length) {
+      console.warn(`  [skip] ${id}：本次只有 ${points.length} 点，保留旧的 ${old.points.length} 点`);
+      return null;
+    }
+  }
   const payload = Object.assign({
     id,
     generatedAt: new Date().toISOString(),
     points,
   }, def);
-  await writeFile(path.join(OUT, id + '.json'), JSON.stringify(payload), 'utf8');
+  await writeFile(file, JSON.stringify(payload), 'utf8');
   console.log(`  [ok] ${id.padEnd(12)} ${points.length} 点  ${points[0].t} → ${points[points.length - 1].t}`);
   return payload;
 }
@@ -524,8 +549,11 @@ async function treasuryDaily(col) {
     for (let i = 1; i < lines.length; i++) {
       const p = lines[i].split(',');
       const iso = usToIso(String(p[di]).trim().replace(/^"|"$/g, ''));
-      const v = Number(String(p[ci] === undefined ? '' : p[ci]).trim());
-      if (!iso || !Number.isFinite(v)) continue;
+      // 同上：空单元格当缺失，不当 0
+      const cell = String(p[ci] === undefined ? '' : p[ci]).trim().replace(/^"|"$/g, '');
+      if (!iso || !cell) continue;
+      const v = Number(cell);
+      if (!Number.isFinite(v)) continue;
       all.push({ t: iso, v });
     }
     await sleep(80);
@@ -792,7 +820,13 @@ async function main() {
         }
         const p = await writeSeries(u.symbol, {
           name: u.label, unit: unitOf(u), digits: 2, freq: 'M',
-          source: srcNote, kind: '月末收盘（已按拆股复权，不含分红）',
+          source: srcNote,
+          // 口径必须跟实际走通的分支一致。
+          // 之前 kind 是写死的「已按拆股复权」，哪怕这次走的是未复权备源，
+          // 页面上就出现「已复权 · 未复权」两句自相矛盾的话。
+          kind: srcNote.includes('未复权')
+            ? '月末收盘（未复权，不含分红）'
+            : '月末收盘（已按拆股复权，不含分红）',
         }, pts);
         if (p) seriesMap[u.symbol] = p;
       } catch (e) { console.warn(`  [skip] ${u.symbol}：${e.message}`); }
@@ -839,7 +873,12 @@ async function main() {
   const regPath = path.join(ROOT, 'data', 'series-map.json');
   const prev = existsSync(regPath) ? JSON.parse(await readFile(regPath, 'utf8')) : { series: [] };
   const merged = new Map();
-  (prev.series || []).forEach((s) => merged.set(s.id, s));
+  // 注册表只 merge 不 prune：改过名、下过架的 id 会永远留在表里。
+  // 正文引用一个没有数据文件的 id → 图表空白，而注册表本身看不出异常。
+  (prev.series || []).forEach((s) => {
+    if (existsSync(path.join(OUT, s.id + '.json'))) merged.set(s.id, s);
+    else console.warn(`  [prune] ${s.id}：数据文件已不存在，从注册表移除`);
+  });
   Object.values(seriesMap).forEach((s) => {
     merged.set(s.id, {
       id: s.id, name: s.name, unit: s.unit, freq: s.freq, kind: s.kind,

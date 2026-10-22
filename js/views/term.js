@@ -190,6 +190,17 @@
       ${blocks}`;
   }
 
+  /** aria-label 里要的是纯文本：词条里的 **加粗** 得把星号去掉，
+      否则读屏会照着念出「星号 加粗 星号」。 */
+  function plain(s) {
+    return String(s || '')
+      .replace(/\*\*([^*]+)\*\*/g, '$1')
+      .replace(/`([^`]+)`/g, '$1')
+      .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
   /** 速查表：按分类切换（#/data?cat=macro），每个分类先给「入门三词」 */
   function renderDataSheet(view, query) {
     const g = window.Content.glossary();
@@ -210,13 +221,15 @@
 
     const ids = orderTerms(Object.keys(g).filter((id) => (g[id].cat || 'basic') === cur), g, hotIds(), cur);
     const cols = SHEET_COLS[cur] || SHEET_COLS.data;
-    // 窄屏表头会被藏起来，列名要随身带着（data-label），否则读者分不清哪段是哪列
+    // 窄屏表头是视觉隐藏的（不是 display:none），表格语义还在；
+    // 但每格再自带一句「列名：内容」——读屏逐格念的时候不用回头找表头。
     const rows = ids.map((id) => {
       const t = g[id];
+      const name = t.term || id;
       return `<tr>
-        <td class="ds-n" data-label="${esc(cols[0])}"><a href="${esc(linkOf(id))}">${esc(t.term || id)}</a><span class="ds-a">${esc(t.alias || '')}</span></td>
-        <td class="ds-o" data-label="${esc(cols[1])}">${window.TermCard.inline(t.one || '')}</td>
-        <td class="ds-p" data-label="${esc(cols[2])}">${window.TermCard.inline(t.pit || '')}</td>
+        <td class="ds-n" data-label="${esc(cols[0])}" aria-label="${esc(cols[0])}：${esc(plain(name))}"><a href="${esc(linkOf(id))}">${esc(name)}</a><span class="ds-a">${esc(t.alias || '')}</span></td>
+        <td class="ds-o" data-label="${esc(cols[1])}" aria-label="${esc(cols[1])}：${esc(plain(t.one || ''))}">${window.TermCard.inline(t.one || '')}</td>
+        <td class="ds-p" data-label="${esc(cols[2])}" aria-label="${esc(cols[2])}：${esc(plain(t.pit || ''))}">${window.TermCard.inline(t.pit || '')}</td>
       </tr>`;
     }).join('');
 
@@ -322,5 +335,7 @@
       </p>`;
   }
 
-  window.TermView = { render, renderIndex, renderDataSheet, linkOf, CATS, CAT_OF, SHEET_COLS };
+  // hasArticle / hotIds 也导出去：搜索结果用的是同一套分层（有专文 > 终端会链到 > 有 sym），
+  // 同一个词在术语库和搜索里不该排出两个顺序。
+  window.TermView = { render, renderIndex, renderDataSheet, linkOf, CATS, CAT_OF, SHEET_COLS, hasArticle, hotIds, plain };
 })();

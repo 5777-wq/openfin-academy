@@ -1,20 +1,79 @@
 /* views/article.js —— 通用文章阅读器
-   适用：货币与利率 / 标的百科 / 周期镜鉴 / 家庭理财 的详情页 */
+   适用：货币与利率 / 标的百科 / 周期镜鉴 / 家庭理财 的详情页
+
+   正文是**按需拉**的：打开哪篇才拉哪篇。
+   所以第一屏先按索引里的标题/简介摆好版面（body 还在路上），
+   正文到了再把整块填上——不能先渲染「没找到这篇文章」再改成正文，
+   慢网下那样会让人以为站点坏了。 */
 (function () {
   'use strict';
 
   const esc = (s) => window.Fmt.esc(s);
   const F = () => window.Fmt;
 
-  function render(view, section, id) {
-    const art = window.Content.article(id);
-    if (!art) {
-      view.innerHTML = `<div class="empty"><div class="et">没找到这篇文章</div>
-        <div class="ed">它可能还没写，或者链接变了。</div>
-        <a class="btn ghost sm" href="#/">回首页</a></div>`;
-      return;
-    }
+  const DISCLAIMER = `
+      <div class="disclaimer">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+        <span>本文只讲机制和数据，不构成投资建议。数据来自第三方公开接口，有延迟、会出错。</span>
+      </div>`;
 
+  /** 页面标题：内容名 · 栏目 · 白话金融（各视图都按这个约定写 data-page-title） */
+  function pageTitle(section, m) {
+    const name = (m && m.title) || '';
+    return name + ' · ' + (sectionName(section) || '白话金融') + ' · 白话金融';
+  }
+
+  function render(view, section, id) {
+    // 标题、简介、阅读时长都在 index.json 里，先摆出来：读者不用等正文才知道自己在读哪篇
+    const m = window.Content.meta(id);
+    // 只认最后一次渲染：慢网下旧请求回来得晚，不能盖掉新页面
+    const seq = (view.__artSeq || 0) + 1;
+    view.__artSeq = seq;
+    view.innerHTML = skeleton(section, m, id);
+    bindBookmark(view, id);
+
+    return window.Content.ensureArticle(id).then((art) => {
+      if (view.__artSeq !== seq) return;   // 已经切到别的页面了，这一篇别再画
+      if (!art) {
+        view.innerHTML = `<div class="empty"><div class="et">没找到这篇文章</div>
+          <div class="ed">它可能还没写，或者链接变了。</div>
+          <a class="btn ghost sm" href="#/">回首页</a></div>`;
+        return;
+      }
+      paint(view, section, art);
+      bindBookmark(view, art.id || id);
+    });
+  }
+
+  /** 正文没到时的样子：结构跟真的一样，只是正文是骨架线 */
+  function skeleton(section, m, id) {
+    const title = (m && m.title) || id;
+    return `
+      <article class="art-head" data-page-title="${esc(pageTitle(section, m))}">
+        <div class="eyebrow">${esc(sectionName(section))} ${m && m.difficulty ? '· 难度 ' + m.difficulty + '/5' : ''}</div>
+        <h1>${esc(title)}</h1>
+        ${m && m.dek ? `<p class="art-dek">${esc(m.dek)}</p>` : ''}
+        <div class="art-meta">
+          ${m && m.readMinutes ? `<span>阅读约 ${m.readMinutes} 分钟</span><span class="msep">·</span>` : ''}
+          <span>数据截至 ${esc((m && m.dataAsOf) || '—')}</span>
+          ${m && m.updatedAt ? `<span class="msep">·</span><span>更新于 ${esc(m.updatedAt)}</span>` : ''}
+          <span class="msep">·</span>
+          <button class="btn ghost sm" id="art-bookmark" style="height:24px;padding:0 8px;margin:-1px 0">${bookmarkLabel(id)}</button>
+        </div>
+      </article>
+      ${DISCLAIMER}
+      <div class="prose">
+        <div class="skel" style="height:15px;width:92%"></div>
+        <div class="skel" style="height:15px;width:86%;margin-top:12px"></div>
+        <div class="skel" style="height:15px;width:90%;margin-top:12px"></div>
+        <div class="skel" style="height:15px;width:64%;margin-top:12px"></div>
+        <div class="skel" style="height:15px;width:88%;margin-top:24px"></div>
+        <div class="skel" style="height:15px;width:78%;margin-top:12px"></div>
+      </div>`;
+  }
+
+  /** 正文到了：整块画出来 */
+  function paint(view, section, art) {
     const glossary = window.Content.glossary();
     let html = F().md(art.body || '');
     html = window.TermCard.markTerms(html, glossary);
@@ -46,7 +105,7 @@
       .filter(Boolean);
 
     view.innerHTML = `
-      <article class="art-head">
+      <article class="art-head" data-page-title="${esc(pageTitle(section, m))}">
         <div class="eyebrow">${esc(sectionName(section))} ${m.difficulty ? '· 难度 ' + m.difficulty + '/5' : ''}</div>
         <h1>${esc(m.title || '')}</h1>
         ${m.dek ? `<p class="art-dek">${esc(m.dek)}</p>` : ''}
@@ -59,10 +118,7 @@
         </div>
       </article>
 
-      <div class="disclaimer">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>
-        <span>本文只讲机制和数据，不构成投资建议。数据来自第三方公开接口，有延迟、会出错。</span>
-      </div>
+      ${DISCLAIMER}
 
       ${(m.points && m.points.length) ? `
         <div class="panel" style="margin-bottom:var(--s-6);background:var(--sheet-2)">
@@ -97,16 +153,18 @@
         </div>
       </section>`;
 
-    const bm = document.getElementById('art-bookmark');
-    if (bm) {
-      bm.addEventListener('click', () => {
-        const added = window.Store.toggleBookmark(m.id);
-        bm.textContent = added ? '已收藏 ★' : '收藏';
-        toast(added ? '已收藏' : '已取消收藏');
-      });
-    }
-
     window.Store.pushRecent(m.id);
+  }
+
+  function bindBookmark(view, id) {
+    const bm = document.getElementById('art-bookmark');
+    if (!bm || bm.__bound) return;
+    bm.__bound = true;   // 骨架和正文各画一次，别让同一个按钮挂两个监听
+    bm.addEventListener('click', () => {
+      const added = window.Store.toggleBookmark(id);
+      bm.textContent = added ? '已收藏 ★' : '收藏';
+      toast(added ? '已收藏' : '已取消收藏');
+    });
   }
 
   function bookmarkLabel(id) {
@@ -129,5 +187,5 @@
     t._tm = setTimeout(() => t.classList.remove('on'), 1800);
   }
 
-  window.ArticleView = { render, toast, sectionName };
+  window.ArticleView = { render, toast, sectionName, pageTitle };
 })();

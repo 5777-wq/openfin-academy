@@ -56,6 +56,26 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .micro { font-size: var(--t-micro); }
 .hide { display: none !important; }
 
+/* 只给读屏看的东西：页面上看不见，但该念的还得念。
+   换页提示、回放器的播报、峰值谷值都靠它。 */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%);
+  white-space: nowrap; border: 0;
+}
+
+/* 跳到主内容：平时藏在屏幕外，Tab 到它才露出来。
+   键盘用户不用每次都从报头的搜索按钮一路 Tab 到正文。 */
+.skip {
+  position: fixed; top: 8px; left: 8px; z-index: calc(var(--z-top) + 10);
+  transform: translateY(-250%);
+  padding: 9px 16px; border-radius: var(--r-2);
+  background: var(--ink); color: var(--paper);
+  font-size: var(--t-small); text-decoration: none;
+  transition: transform var(--dur-1);
+}
+.skip:focus { transform: translateY(0); text-decoration: none; }
+
 /* ============================================================
    报头 Masthead
    ============================================================ */

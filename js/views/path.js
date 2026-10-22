@@ -4,6 +4,23 @@
 
   const esc = (s) => window.Fmt.esc(s);
 
+  /** 这课会把你带到哪儿：把 target 变成读者看得懂的几个字。
+      点进去之前就知道会看到什么——路径里不做假入口。 */
+  function targetLabel(target) {
+    const t = String(target || '');
+    const m = /^#\/term\/(.+)$/.exec(t);
+    if (m) {
+      const term = window.Content.term(decodeURIComponent(m[1]));
+      return term ? (term.term || '') : '';
+    }
+    const a = /^#\/([^/]+)\/([^/]+)$/.exec(t);
+    if (a) {
+      const art = window.Content.meta(a[2]);
+      return art ? (art.title || '') : '';
+    }
+    return '';
+  }
+
   function render(view) {
     const plan = window.Content.pathPlan();
     if (!plan || !plan.lessons || !plan.lessons.length) {
@@ -34,21 +51,36 @@
       <div class="entries">
         ${plan.lessons.map((l, i) => {
           const ok = window.Store.isDone(l.id);
-          return `<div class="entry" style="grid-template-columns:auto 1fr auto;align-items:center">
-            <button class="btn ghost sm" data-lesson="${esc(l.id)}" style="width:30px;height:30px;padding:0;justify-content:center;border-radius:50%;${ok ? 'background:var(--down);border-color:var(--down);color:#fff' : ''}">
-              ${ok ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>' : '<span class="num" style="font-size:11px">' + (i + 1) + '</span>'}
-            </button>
-            <span>
-              <span class="e-t" style="${ok ? 'color:var(--ink-3)' : ''}">${esc(l.title)}</span>
+          const target = l.target || '';
+          const label = targetLabel(target);
+          const title = esc(l.title);
+
+          // 整行都是链接。以前这里是个 <div class="entry">：读者点哪一课都没反应，
+          // 唯一能点的是左边那个打勾圆圈——一圈点完，还以为自己把课学完了。
+          const body = `<span>
+              <span class="e-t">${title}</span>
               <span class="e-d">${esc(l.dek || '')}</span>
             </span>
-            <span class="e-m">${l.minutes ? l.minutes + ' min' : ''}</span>
+            <span class="e-m">${l.minutes ? l.minutes + ' min' : ''}${label ? ' · ' + esc(label) : ''} →</span>`;
+
+          return `<div class="lesson${ok ? ' done' : ''}">
+            <button class="btn ghost sm lesson-check" type="button" data-lesson="${esc(l.id)}"
+              aria-pressed="${ok ? 'true' : 'false'}"
+              aria-label="${ok ? '取消「' + title + '」的已学标记' : '把「' + title + '」标记为已学'}">
+              ${ok ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>' : '<span class="num" style="font-size:11px">' + (i + 1) + '</span>'}
+            </button>
+            ${target
+              ? `<a class="entry" href="${esc(target)}">${body}</a>`
+              : `<div class="entry">${body}<span class="e-m">这一课还没写</span></div>`}
           </div>`;
         }).join('')}
       </div>`;
 
     view.querySelectorAll('[data-lesson]').forEach((b) => {
-      b.addEventListener('click', () => {
+      b.addEventListener('click', (e) => {
+        // 打勾是状态按钮，不是导航：点了不能带着整行跳走
+        e.preventDefault();
+        e.stopPropagation();
         const id = b.getAttribute('data-lesson');
         const now = !window.Store.isDone(id);
         window.Store.setDone(id, now);
@@ -57,5 +89,5 @@
     });
   }
 
-  window.PathView = { render };
+  window.PathView = { render, targetLabel };
 })();

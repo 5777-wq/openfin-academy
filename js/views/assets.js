@@ -35,8 +35,15 @@
      序列收在仓库里，站内没有任何页面能打开它。 */
   const OWN_SERIES = [
     { id: 'VIX', label: 'VIX 恐慌指数', note: 'CBOE 官方月末收盘 · 标普500期权的隐含波动率' },
-    { id: 'IXIC', label: '纳斯达克综合指数（1991 年起）', note: '综合指数的长历史 · 站内另有腾讯源的 usIXIC（2007 年起）' },
+    { id: 'IXIC', label: '纳斯达克综合指数（1991 年起）', note: '综合指数的长历史 · 站内另有腾讯源的 usIXIC（2007 年起）——同一条指数的两段历史，不是两个指数' },
   ];
+
+  /* 少数几个标的的名字要说清楚。
+     usIXIC 与 IXIC 是**同一条指数**（纳斯达克综合指数）的两段历史：
+     腾讯源从 2007 年起，东财源从 1991 年起。名字含糊的话，读者会以为是两个指数。 */
+  const LABEL_OF = {
+    usIXIC: '纳斯达克综合指数',
+  };
 
   /* 终端的 symbol → 站内专文 id（已写过专文的） */
   const ARTICLE_OF = {
@@ -80,7 +87,7 @@
         const art = window.Content.article(articleIdOf(u.symbol));
         return `<a class="entry" href="#/assets/${encodeURIComponent(u.symbol)}">
           <span>
-            <span class="e-t">${esc(u.label)}</span>
+            <span class="e-t">${esc(LABEL_OF[u.symbol] || u.label)}</span>
             <span class="e-d">${esc(s.from)} → ${esc(s.to)} · ${s.count} 个月末点${art ? ' · 有专文' : ''}</span>
           </span>
           <span class="e-m">看这一页 →</span>
@@ -167,7 +174,7 @@
         <div class="eyebrow">标的百科</div>
         <h1>${esc((art && art.title) || (series && series.name) || sym)}</h1>
         ${art && art.dek ? `<p class="art-dek">${esc(art.dek)}</p>` : ''}
-        ${series ? `<p class="art-meta"><span>${esc(series.name || sym)}</span><span class="msep">·</span><span>${esc(series.unit || '')}</span><span class="msep">·</span><span>数据截至 ${esc(st ? st.to : '—')}</span></p>` : ''}
+        ${series ? `<p class="art-meta"><span>${esc(LABEL_OF[sym] || series.name || sym)}</span><span class="msep">·</span><span>${esc(series.unit || '')}</span><span class="msep">·</span><span>数据截至 ${esc(st ? st.to : '—')}</span></p>` : ''}
       </article>
 
       ${dataCard}

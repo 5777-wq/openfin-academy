@@ -24,14 +24,31 @@ jobs:
       - name: 重新编译内容
         run: node _scripts/build-content.mjs
 
+      # 闸门必须在**提交之前**。
+      # 之前的数据提交带 [skip ci]，push 触发的 CI 直接跳过，
+      # 于是「收益率被写成 0」「月末变月初」这类问题只能等某个人手动推代码才暴露——
+      # 而坏数据已经上线好几天了。契约检查要挡在 push 前面，不是事后补票。
+      - name: 数据契约检查（提交前闸门）
+        run: |
+          node _test/run-all.mjs
+          node _test/render-test.mjs
+          node _scripts/build-content.mjs
+          if ! git diff --quiet -- data/content; then
+            echo "::error::data/content 与 content/ 不同步，请跑 node _scripts/build-content.mjs"
+            git diff --stat -- data/content
+            exit 1
+          fi
+
       - name: 提交变更
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/
+          # content/_meta/ 也要提交：它记着术语库与标的清单的**源**，
+          # 终端的采集脚本本地自测读的就是它。不提交的话，源和产物会各走各的。
+          git add data/ content/_meta/
           if git diff --staged --quiet; then
             echo "没有变化，跳过提交"
             exit 0
           fi
-          git commit -m "data: refresh 长历史序列与内容产物 [skip ci]"
+          git commit -m "data: refresh 长历史序列与内容产物"
           git push

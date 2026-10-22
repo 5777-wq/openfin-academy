@@ -74,10 +74,21 @@
     const glossary = window.Content.glossary();
     const termIds = Object.keys(glossary);
     const pick = pickTodayTerm(termIds);
-    const termHtml = pick ? window.TermCard.render(Object.assign({ id: pick }, glossary[pick])) : '';
+    // 今日一词：整张卡是一个链接。
+    // 以前它是一张读得懂却点不动的卡片——读者读完想看完整解释，只能自己去搜一遍。
+    const termHtml = pick
+      ? `<a class="term-link" href="#/term/${encodeURIComponent(pick)}">
+          ${window.TermCard.render(Object.assign({ id: pick }, glossary[pick]))}
+          <span class="term-link-more">看完整解释 →</span>
+        </a>`
+      : '';
 
     const latestCrisis = window.Content.bySection('crisis').slice(0, 2);
     const latestConcept = window.Content.bySection('concepts').slice(0, 3);
+    // 家庭理财：全站只有这一篇「给家里人看」的东西，
+    // 但它没有入口——左栏第 06 项埋得深，手机上更是完全找不到。
+    // 这里直接链到文章本身，不链栏目页：点了就知道会看到哪一篇。
+    const family = window.Content.list().filter((a) => a.section === 'family');
 
     view.innerHTML = `
       <section class="panel flush open" style="border:0;background:transparent;padding:0">
@@ -105,6 +116,19 @@
         <div class="eyebrow">今日一词</div>
         ${termHtml || '<div class="empty"><div class="et">术语库正在补充</div></div>'}
       </section>
+
+      ${family.length ? `<section style="margin-top:var(--s-7)">
+        <div class="eyebrow">给家里人的那份说明书</div>
+        <div class="entries">
+          ${family.map((f) => `<a class="entry" href="#/family/${esc(f.id)}">
+            <span>
+              <span class="e-t">${esc(f.title)}</span>
+              <span class="e-d">${esc(f.dek || '')}</span>
+            </span>
+            <span class="e-m">${f.readMinutes ? f.readMinutes + ' min' : ''} 读一篇 →</span>
+          </a>`).join('')}
+        </div>
+      </section>` : ''}
 
       <section style="margin-top:var(--s-7)">
         <div class="eyebrow">先把基础打完</div>
