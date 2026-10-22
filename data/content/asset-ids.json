@@ -1,9 +1,14 @@
 {
-  "generatedAt": "2026-10-22T04:47:52.957Z",
+  "generatedAt": "2026-10-22T05:21:50.335Z",
   "note": "这些终端标的在「白话金融」有对应的标的页（#/assets/<symbol>，带真实月线数据卡）。不在表里的标的，终端只给术语页或搜索页——不给半空页。",
-  "count": 95,
+  "count": 100,
   "symbols": [
+    "EM:100.FCHI",
+    "EM:100.FTSE",
+    "EM:100.GDAXI",
+    "EM:100.KS11",
     "EM:100.N225",
+    "EM:100.SENSEX",
     "EM:100.UDI",
     "EM:101.GC00Y",
     "EM:101.SI00Y",
@@ -479,6 +484,26 @@
     "EM:100.N225": {
       "series": "N225",
       "label": "日经225"
+    },
+    "EM:100.GDAXI": {
+      "series": "GDAXI",
+      "label": "德国DAX"
+    },
+    "EM:100.FTSE": {
+      "series": "FTSE",
+      "label": "英国富时100"
+    },
+    "EM:100.FCHI": {
+      "series": "FCHI",
+      "label": "法国CAC40"
+    },
+    "EM:100.KS11": {
+      "series": "KS11",
+      "label": "韩国KOSPI"
+    },
+    "EM:100.SENSEX": {
+      "series": "SENSEX",
+      "label": "印度SENSEX"
     }
   },
   "searchable": [
