@@ -3,7 +3,7 @@
   'use strict';
 
   const BASE = 'data/content/';
-  const idx = { list: null, byId: new Map(), articles: new Map(), glossary: null, path: null };
+  const idx = { list: null, byId: new Map(), articles: new Map(), glossary: null, path: null, assetIds: null };
 
   async function loadJSON(path) {
     // 带超时：任何一个请求卡住都不允许让整页空白
@@ -39,7 +39,16 @@
 
     try { idx.glossary = await loadJSON(BASE + 'glossary.json'); } catch (e) { idx.glossary = { terms: {} }; }
     try { idx.path = await loadJSON(BASE + 'path.json'); } catch (e) { idx.path = null; }
+    // 标的清单（94 个终端标的在本站有对应标的页）：search 要用它们的名字和代码做匹配，
+    // 否则「工商银行」「600519」这类词永远搜不到。20KB，一次拉够。
+    try { idx.assetIds = await loadJSON(BASE + 'asset-ids.json'); } catch (e) { idx.assetIds = null; }
     return idx;
+  }
+
+  /** 站内标的页清单：[{symbol, label}]（symbol 就是 #/assets/<symbol> 里的那一段） */
+  function assetPages() {
+    const d = (idx.assetIds && idx.assetIds.detail) || {};
+    return Object.keys(d).map((symbol) => ({ symbol, label: d[symbol].label || symbol }));
   }
 
   function list() { return (idx.list && idx.list.items) || []; }
@@ -54,5 +63,5 @@
     return list().filter((x) => x.section === section);
   }
 
-  window.Content = { BASE, loadAll, list, meta, article, glossary, term, bySection, pathPlan, idx };
+  window.Content = { BASE, loadAll, list, meta, article, glossary, term, bySection, pathPlan, assetPages, idx };
 })();
