@@ -69,6 +69,8 @@ export function buildRec(d) {
   for (const k of ['one', 'name', 'metaphor', 'number', 'pit', 'source', 'sym', 'lens']) {
     if (d[k]) rec[k] = smartQuotes(d[k]);
   }
+  // kw：额外的搜索关键词（俗名、英文、口语、常见错字），稿子里用逗号分隔
+  if (d.kw) rec.kw = d.kw.split(/[,，]/).map((x) => smartQuotes(x.trim())).filter(Boolean);
   if (d._links.length) rec.links = d._links.map((l) => ({ text: smartQuotes(l.text), href: l.href }));
   return rec;
 }

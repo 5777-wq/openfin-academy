@@ -1,0 +1,72 @@
+@@ gold
+patch: yes
+kw: 金价, 现货黄金, 足金, 黄金价格
+
+@@ monetary-policy
+patch: yes
+kw: 美联储, 联储, fed, 美联储议息, 加息, 降息, 央行, 量化宽松, 缩表
+
+@@ lpr
+patch: yes
+kw: 降息, 加息, 房贷利率, 报价利率
+
+@@ pe-ratio
+patch: yes
+alias: PE / P/E / PE ratio / 市盈率
+kw: 市赢率, 市盈律, 估值倍数
+
+@@ etf
+patch: yes
+kw: 交易所交易基金, 场内基金, 指数基金（被动）
+
+@@ vix
+patch: yes
+kw: 恐慌指数, 情绪指数, 恐慌, 隐含波动率指数
+
+@@ max-drawdown
+patch: yes
+kw: 回撤, 最大跌幅, 净值回撤
+
+@@ volatility
+patch: yes
+kw: vol, 波动, 历史波动率
+
+@@ options
+patch: yes
+kw: option, call, put, 认购, 认沽, 权利金, 合约
+
+@@ a-share
+patch: yes
+kw: a股, 大a, 内地股市, 中国股市
+
+@@ rsi
+patch: yes
+kw: 相对强弱指标, 相对强弱, 超买超卖
+
+@@ macd
+patch: yes
+kw: 指数平滑异同移动平均, 快慢线, 零轴
+
+@@ fund-nav
+patch: yes
+kw: 单位净值, 累计净值, 基金净值
+
+@@ dividend
+patch: yes
+kw: 分红, 派息, 现金分红
+
+@@ index-naming
+patch: yes
+kw: 指数命名, 成分股数量, 指数名字里的数字
+
+@@ blackrock
+patch: yes
+kw: 贝莱德, 全球最大资管
+
+@@ jane-street
+patch: yes
+kw: 简街, jane street, 简街公司
+
+@@ carry-trade
+patch: yes
+kw: 套利交易（套息）, 日元套息, carry, 息差交易

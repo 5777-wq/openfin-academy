@@ -654,6 +654,33 @@ async function main() {
   }
 
   /* ---- 6. 术语抽屉 ---- */
+  /* 站内搜索：读者会怎么打这些词，站点就得搜得到。
+     上一轮实测 67 个真实搜索词里搜不到 10 个，根因是「整串匹配某一个字段」：
+     连着打的「pe市盈率」搜不到、英文缩写还会被误命中（pe ⊂ sharpe）。 */
+  {
+    const S = sandbox.SearchView.search;
+    const QUERIES = [
+      'pe', '市盈率', 'pe市盈率', 'pe ratio', 'eps', 'roe', 'roe 净资产收益率',
+      'etf', 'etfs', '标普500', 'sp500', '标普', '纳指', '道琼斯', 'dow jones',
+      '黄金', 'gold', '金价', '原油', '石油', '美联储', 'fed', 'lpr', '降息', '加息',
+      'm2', '社融', 'cpi', 'ppi', 'pmi', '做空', '空头', '对冲基金', 'hedge fund',
+      '桥水', '期权', 'option', 'call', '跨式', 'straddle', '股息率', '分红',
+      'a股', '回撤', '最大回撤', '波动率', 'vix', '恐慌指数', '净值', '指数基金',
+      'etf费率', '市净率', '夏普', 'sharpe',
+    ];
+    const miss = QUERIES.filter((q) => {
+      const r = S(q);
+      return !(r.terms.length + r.articles.length + r.assets.length);
+    });
+    ok('站内搜索：真实读者会打的词都搜得到', miss.length === 0,
+      '搜不到：' + miss.join(' '));
+    // 「pe ratio」不该命中「sharpe ratio」——pe 是 sharpe 的子串
+    const pr = S('pe ratio');
+    ok('站内搜索：英文缩写按词边界匹配（pe 不该命中 sharpe）',
+      pr.terms.length > 0 && pr.terms[0].term.indexOf('市盈率') >= 0,
+      '首个命中：' + (pr.terms[0] || {}).term);
+  }
+
   sandbox.TermDrawer.init();
   sandbox.TermDrawer.open('discount-rate');
   const drawer = getElementById('drawer-body').innerHTML;
