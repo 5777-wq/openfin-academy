@@ -612,6 +612,45 @@ async function main() {
       ok('术语 ' + id + ' 的数字能在站内序列对账', hit.length >= 2,
         '只命中 ' + hit.length + ' 个：' + JSON.stringify(nums));
     }
+
+    /* 词条里**不许引用序列的最新点**——这条对**所有**带 sym 的词条生效。
+       序列每天被采集刷新一次，最新点每天都在动；词条里写死「2026-10-21 收 3713.03 点」
+       这样的句子，第二天就过期了——对账测试会先红，然后人就会去改测试。
+       正确的做法：词条只引用**不会变的历史值**，最新读数交给标的页的数据卡。
+       （踩过的坑：采集流水线推了一次新数据，CI 就红了，而红的原因是这个。） */
+    const histCache = new Map();
+    const loadHist = async (sid) => {
+      if (!histCache.has(sid)) {
+        try {
+          histCache.set(sid, JSON.parse(await readFile(path.join(ROOT, 'data/history', sid + '.json'), 'utf8')));
+        } catch (e) { histCache.set(sid, null); }
+      }
+      return histCache.get(sid);
+    };
+    const symToSeries = {
+      'a-share': 'SH000001', 'sse-index': 'SH000001', 'szse-component': 'SZ399001',
+      'chinext': 'SZ399006', 'kechuang-50': 'SH000688', 'sp500': 'SPX', 'dow-jones': 'DJIA',
+      'hsi': 'HSI', 'hstech': 'HSTECH', 'nikkei': 'N225', 'vix': 'VIX', 'silver': 'SI00Y',
+      'gold': 'GC00Y', 'crude-oil': 'CL00Y', 'dollar-index': 'UDI', 'inversion': 'US2Y',
+      'yield-curve': 'US2Y', 'real-rate': 'US10Y', 'risk-free-rate': 'US10Y',
+      'discount-rate': 'US10Y', 'nasdaq': 'usIXIC',
+    };
+    for (const [id, t] of Object.entries(sandbox.Content.glossary())) {
+      const sid = symToSeries[id] || t.sym;
+      if (!sid) continue;
+      const s = await loadHist(sid);
+      if (!s || !s.points || !s.points.length) continue;
+      const d = s.digits === undefined ? 2 : s.digits;
+      const last = s.points[s.points.length - 1];
+      const lastVal = Number(last.v).toFixed(d);
+      const ym = String(last.t).slice(0, 7);
+      const txt = String(t.number || '');
+      const nums = (txt.match(/\d[\d,]*\.\d+/g) || []).map((x) => x.replace(/,/g, ''));
+      const quotesLatest = nums.some((n) => n === lastVal)
+        && (txt.indexOf(ym) >= 0 || txt.indexOf(String(last.t)) >= 0);
+      ok('术语 ' + id + ' 不引用序列的最新点（最新读数交给数据卡）', !quotesLatest,
+        '引用了 ' + last.t + ' 的 ' + lastVal + '——它每天都会变');
+    }
   }
 
   /* ---- 6. 术语抽屉 ---- */
