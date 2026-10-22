@@ -97,29 +97,36 @@ async function main() {
   }
 
   // 记录来源（只记仓库名与上游地址，不写本机绝对路径——这是要公开的仓库）
+  // 从 GitHub 克隆时源目录是临时目录名（.tmp-upstream），那不是来源——
+  // 真正写下来的是上游仓库名。
+  const upstreamName = /([^/]+)\.git$/.exec(UPSTREAM);
   const label = /(^|[\\/])([^\\/]+)$/.exec(src.replace(/\.git$/, ''));
+  const sourceName = (label && label[2] && label[2] !== '.tmp-upstream')
+    ? label[2]
+    : (upstreamName ? upstreamName[1] : 'openfinlens');
   const headPath = path.join(VENDOR, 'HEAD');
   const head = [
     '# vendor 目录由 _scripts/sync-core.mjs 自动生成，勿手改。',
-    `# source: ${label ? label[2] : 'openfinlens'}`,
+    `# source: ${sourceName}`,
     `# upstream: ${UPSTREAM}`,
     `# commit: ${sha}`,
     `# synced: ${new Date().toISOString()}`,
     '',
   ].join('\n');
 
-  /* 上游 commit 没变就别改 HEAD 文件。
+  /* 内容没变就别改 HEAD 文件。
      否则每次同步都会刷新一次「synced」时间戳，
      CI 里的 `git diff --quiet -- vendor` 就永远不干净——
-     校验项会变成「永远红」，等于没有校验。 */
+     校验项会变成「永远红」，等于没有校验。
+     比较时忽略 synced 那一行（它本来就只是时间戳）。 */
+  const stripSynced = (t) => t.split('\n').filter((l) => !l.startsWith('# synced:')).join('\n');
   let keepHead = false;
   if (existsSync(headPath)) {
     const old = await readFile(headPath, 'utf8');
-    const oldSha = (/#\s*commit:\s*(\S+)/.exec(old) || [])[1];
-    keepHead = oldSha === sha;
+    keepHead = stripSynced(old) === stripSynced(head);
   }
   if (keepHead) {
-    console.log('[sync] 上游 commit 未变，vendor/HEAD 保持原样');
+    console.log('[sync] 内容未变，vendor/HEAD 保持原样');
   } else {
     await writeFile(headPath, head, 'utf8');
   }

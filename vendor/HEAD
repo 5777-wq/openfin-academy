@@ -1,5 +1,5 @@
 # vendor 目录由 _scripts/sync-core.mjs 自动生成，勿手改。
-# source: global-fin-dashboard
+# source: openfinlens
 # upstream: https://github.com/5777-wq/openfinlens.git
-# commit: 7db3d30369a171f0cafc7becec9ff5642852e302
-# synced: 2026-10-21T17:18:01.395Z
+# commit: 5f75608258222efa4659d48505cf472c0a1532c7
+# synced: 2026-10-22T11:50:42.058Z
