@@ -282,6 +282,38 @@ function loadScripts(files) {
     ok('不同名字的序列没有其实是同一条线的', twins.length === 0, twins.join(' | '));
   }
 
+  /* 危机包是**一组**序列：回放器把它们对齐到同一条日期轴上，缺一条图就是残的。
+     上游抖一下 → 恒指没了 → 包被写成残缺版，而索引还会悄悄换一条资产当头条。
+     所以：包必须含全部声明的序列；索引的头条必须真的在包里。 */
+  {
+    const dir = path.join(ROOT, 'data', 'history');
+    const files = (await readdir(dir)).filter((f) => /^crisis-\d{4}\.json$/.test(f));
+    const pkgs = [];
+    for (const f of files) {
+      const pkg = JSON.parse(await readFile(path.join(dir, f), 'utf8'));
+      pkgs.push(pkg);
+      const have = (pkg.series || []).map((s) => s.key);
+      const want = pkg.expectedSeries || [];
+      const missing = want.filter((k) => !have.includes(k));
+      ok(`危机包 ${f.replace('.json', '')} 含全部声明的序列`, missing.length === 0,
+        missing.length ? '缺 ' + missing.join('、') : '');
+    }
+    const idxPath = path.join(dir, 'crisis-index.json');
+    if (existsSync(idxPath)) {
+      const ix = JSON.parse(await readFile(idxPath, 'utf8'));
+      const bad = [];
+      for (const it of ix.items || []) {
+        const pkg = pkgs.find((p) => p.id === it.id);
+        if (!pkg) { bad.push(`${it.id}：索引里有，产物里没有`); continue; }
+        const hk = it.headline && it.headline.key;
+        if (hk && !(pkg.series || []).some((s) => s.key === hk)) {
+          bad.push(`${it.id}：头条 ${hk} 不在包内`);
+        }
+      }
+      ok('危机索引的头条都真的在对应的包里（没被悄悄换掉）', bad.length === 0, bad.join(' | '));
+    }
+  }
+
   /* 数据契约：三条踩过的坑，各钉一条断言，别再复发。
        1. 财政部 CSV 的**空单元格**曾被写成 0.00% 收益率（Number('') === 0，
           Number.isFinite(0) 也是 true）——美国30年期在 2002 年从 5.40%
@@ -682,21 +714,28 @@ function loadScripts(files) {
   {
     const p98 = JSON.parse(await readFile(path.join(ROOT, 'data', 'history', 'crisis-1998.json'), 'utf8'));
     const hsi = p98.series.find((s) => s.key === 'HSI');
+    // 包里缺序列时要说清楚是「缺」，不是崩在这里（崩了会掩盖真正的失败原因）
+    ok('crisis-1998 含恒指序列', !!hsi, '包内序列：' + p98.series.map((s) => s.key).join('、'));
     let worst = { pct: 0, t: '' };
-    for (let i = 1; i < hsi.points.length; i++) {
-      const pct = (hsi.points[i].v / hsi.points[i - 1].v - 1) * 100;
-      if (pct < worst.pct) worst = { pct, t: hsi.points[i].t };
+    if (hsi) {
+      for (let i = 1; i < hsi.points.length; i++) {
+        const pct = (hsi.points[i].v / hsi.points[i - 1].v - 1) * 100;
+        if (pct < worst.pct) worst = { pct, t: hsi.points[i].t };
+      }
     }
     ok('恒指单日最大跌幅 = -13.70%（1997-10-28）',
-      Math.abs(worst.pct + 13.70) < 0.01 && worst.t === '1997-10-28',
+      !!hsi && Math.abs(worst.pct + 13.70) < 0.01 && worst.t === '1997-10-28',
       '实际 ' + worst.pct.toFixed(2) + '% @ ' + worst.t);
 
     const p90 = JSON.parse(await readFile(path.join(ROOT, 'data', 'history', 'crisis-1990.json'), 'utf8'));
     const n225 = p90.series.find((s) => s.key === 'N225');
+    ok('crisis-1990 含日经序列', !!n225, '包内序列：' + p90.series.map((s) => s.key).join('、'));
     let worst2 = { pct: 0, t: '' };
-    for (let i = 1; i < n225.points.length; i++) {
-      const pct = (n225.points[i].v / n225.points[i - 1].v - 1) * 100;
-      if (pct < worst2.pct) worst2 = { pct, t: n225.points[i].t };
+    if (n225) {
+      for (let i = 1; i < n225.points.length; i++) {
+        const pct = (n225.points[i].v / n225.points[i - 1].v - 1) * 100;
+        if (pct < worst2.pct) worst2 = { pct, t: n225.points[i].t };
+      }
     }
     ok('日经区间最大单日跌幅 = -14.90%（1987-10-20）',
       Math.abs(worst2.pct + 14.90) < 0.01 && worst2.t === '1987-10-20',

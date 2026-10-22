@@ -565,18 +565,27 @@ async function treasuryDaily(col) {
 
 async function buildCrisis(def) {
   const series = [];
+  const missing = [];
   for (const k of def.series) {
     const src = CRISIS_SOURCES[k];
-    if (!src) { console.warn(`  [skip] ${def.id}/${k}：未知来源`); continue; }
+    if (!src) { console.warn(`  [skip] ${def.id}/${k}：未知来源`); missing.push(k); continue; }
     let pts = [];
     try {
       if (src.kind === 'east') pts = await eastDaily(src.secid, def.from, def.to);
       else if (src.kind === 'cboe') pts = (await cboeDaily()).filter((p) => p.t >= def.from && p.t <= def.to);
       else if (src.kind === 'treasury') pts = (await treasuryDaily(src.col)).filter((p) => p.t >= def.from && p.t <= def.to);
-    } catch (e) { console.warn(`  [skip] ${def.id}/${k}：${e.message}`); continue; }
-    if (!pts.length) { console.warn(`  [skip] ${def.id}/${k}：区间内无数据`); continue; }
+    } catch (e) { console.warn(`  [skip] ${def.id}/${k}：${e.message}`); missing.push(k); continue; }
+    if (!pts.length) { console.warn(`  [skip] ${def.id}/${k}：区间内无数据`); missing.push(k); continue; }
     const meta = await seriesMeta(k);
     series.push({ key: k, name: meta.name, unit: meta.unit, digits: meta.digits, points: pts });
+  }
+  // 危机包是**一组**序列：回放器把它们对齐到同一条日期轴上，缺一条图就是残的。
+  // 之前缺了就照样写盘，于是上游一次抖动 → 恒指没了 → 1998 危机页少一条线，
+  // 而头条还会悄悄换成别的资产（见 buildCrisisIndex）——那是会骗人的降级。
+  // 宁缺毋假：缺任何一条就**不写**，保留上一版完整包，等下一轮补上。
+  if (missing.length) {
+    console.warn(`  [skip] crisis-${def.id}：缺 ${missing.join('、')}，保留旧包（不写残缺包）`);
+    return;
   }
   if (!series.length) { console.warn(`  [skip] crisis-${def.id}：没有可用序列`); return; }
 
@@ -592,6 +601,9 @@ async function buildCrisis(def) {
     generatedAt: new Date().toISOString(),
     dates,
     series,
+    // 这一场**应该**有哪几条序列，写进产物里。
+    // 有了它，CI 才能断言「包没缺序列」——缺一条的包在回放器里就是残的图。
+    expectedSeries: def.series,
     events: def.events || [],
     source: '东方财富（指数/商品）· CBOE（VIX）· 美国财政部（美债收益率）',
     note: def.note || '日频口径。前复权与否按各源原始序列，不做跨源价格调整。',
@@ -611,9 +623,15 @@ async function buildCrisisIndex() {
     if (!existsSync(p)) continue;
     const pkg = JSON.parse(await readFile(p, 'utf8'));
 
-    const s = (pkg.series || []).find((x) => x.key === def.headlineKey)
-      || (pkg.series || []).find((x) => !isYield(x.key));
-    if (!s) continue;
+    // 头条资产由 CRISIS_DEFS 的 headlineKey 指定（是编辑判断），
+    // 数值一律从数据算（不是手写）——指定"看哪条"，不指定"是多少"。
+    // 找不到 headlineKey 就**跳过这一场**：悄悄换成另一条资产，
+    // 等于让读者以为 1998 年的头条还是恒指，其实已经是别的东西了。
+    const s = (pkg.series || []).find((x) => x.key === def.headlineKey);
+    if (!s) {
+      console.warn(`  [skip] crisis-index ${def.id}：包内缺头条序列 ${def.headlineKey}`);
+      continue;
+    }
 
     let peak = null, trough = null, worst = { pct: 0, t: '' };
     for (let i = 0; i < s.points.length; i++) {
