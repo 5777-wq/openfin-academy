@@ -21,7 +21,15 @@
     const arts = window.Content.bySection('crisis');
     const artIds = arts.map((a) => a.id);
 
-    const cards = items.map((s) => {
+    /* 列表按**时间倒序**（最近的危机在前）。
+       之前用的是采集脚本里的定义顺序（2008/1990/1998/1994/1987）——
+       那既不是时间序，也不是惨烈序（1987 那天跌 20.47%，是五场里最惨的，却排在最后），
+       读者只会觉得这个列表是乱的。按时间排，读者一眼能看出「上一场大危机离现在有多远」，
+       而且每场危机的来龙去脉本来就连着：87 → 90 → 94 → 98 → 08。 */
+    const byTime = (a, b) => String(b.from || '').localeCompare(String(a.from || ''));
+    const sorted = items.slice().sort(byTime);
+
+    const cards = sorted.map((s) => {
       const art = arts.find((a) => a.id === s.id);
       const h = s.headline;
       // 收益率用「区间变动（百分点）」，价格用「峰谷跌幅（%）」——两者不能混着写
@@ -45,8 +53,9 @@
       </a>`;
     }).join('');
 
-    // 有文章但还没有回放包的
-    const extra = arts.filter((a) => !PKG_IDS.includes(a.id)).map((a) => `
+    // 有文章但还没有回放包的（id 就是年份，按年份倒序排）
+    const extra = arts.filter((a) => !PKG_IDS.includes(a.id))
+      .sort((a, b) => String(b.id).localeCompare(String(a.id))).map((a) => `
       <a class="entry" href="#/crisis/${esc(a.id)}">
         <span><span class="e-t">${esc(a.title)}</span><span class="e-d">${esc(a.dek || '')}</span></span>
         <span class="e-m">${a.readMinutes || ''} min</span>
@@ -56,7 +65,7 @@
       <div class="art-head">
         <div class="eyebrow">栏目 02 · 危机复盘</div>
         <h1 style="font-size:var(--t-hero);letter-spacing:-.015em;margin-bottom:var(--s-3)">每一场危机，都值得拖一遍时间轴</h1>
-        <p class="art-dek">下面每场危机都配了一个回放器：多条资产在同一条时间轴上同步走，<b>日频</b>，你可以拖到崩盘那一天，看那一刻各资产到底怎么了。页面上每个跌幅都是从数据里算出来的，不是手写的。</p>
+        <p class="art-dek">下面每场危机都配了一个回放器：多条资产在同一条时间轴上同步走，<b>日频</b>，你可以拖到崩盘那一天，看那一刻各资产到底怎么了。页面上每个跌幅都是从数据里算出来的，不是手写的。<b>按时间倒序，最近的在前。</b></p>
       </div>
       <div class="entries">${cards}${extra}</div>`;
   }

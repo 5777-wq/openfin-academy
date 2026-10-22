@@ -271,7 +271,9 @@ async function main() {
      ============================================================ */
   const layout = await readFile(path.join(ROOT, 'css/layout.css'), 'utf8');
   const components = await readFile(path.join(ROOT, 'css/components.css'), 'utf8');
-  const allCss = layout + '\n' + components;
+  // 注释里没有花括号，扫描选择器前先把注释剥掉——
+  // 否则 /* 换页之后… */ 这种说明文字会被算进选择器，判断全乱。
+  const allCss = (layout + '\n' + components).replace(/\/\*[\s\S]*?\*\//g, '');
   const focusRules = [...allCss.matchAll(/([^{}]*:focus-visible[^{}]*)\{([^}]*)\}/g)];
   ok('CSS 里有 :focus-visible 的焦点环规则', focusRules.length > 0, '找到 ' + focusRules.length + ' 条');
   let thin = 0, none = 0;
@@ -279,12 +281,22 @@ async function main() {
     const outline = /outline\s*:\s*([^;]+)/.exec(body);
     if (!outline) continue;
     const v = outline[1].trim();
-    if (/^none$/i.test(v)) { none++; failures.push('焦点环被抹掉了：' + sel.trim()); fail++; }
+    // 唯一的例外：#main 这个**容器**。
+    // 换页后焦点会落到它身上（读屏用户得知道内容整块换了），但它不是可交互控件——
+    // 给它画一圈焦点框，版式上就是一条贴在正文右边缘、从头贯到尾的金线，
+    // 读者会以为那是什么坏了。「换页了」这件事由 live region 播报。
+    const targets = sel.split(',').map((x) => x.trim().replace(/:focus(-visible)?/g, '').trim());
+    const onlyMain = targets.length > 0 && targets.every((t) => t === 'main' || t === '#main');
+    if (/^none$/i.test(v) && !onlyMain) { none++; failures.push('焦点环被抹掉了：' + sel.trim()); fail++; }
     const w = /(\d+(?:\.\d+)?)px/.exec(v);
     if (w && Number(w[1]) < 2) thin++;
   }
   ok('所有 :focus-visible 的焦点环宽度都 ≥2px', thin === 0, thin + ' 条太细');
-  ok('没有 :focus-visible 把 outline 设成 none', none === 0, none + ' 条被抹掉');
+  ok('没有 :focus-visible 把 outline 设成 none（#main 容器除外）', none === 0, none + ' 条被抹掉');
+  // 容器上的焦点框必须去掉——留着就是版式里一条莫名其妙的金线
+  ok('#main 是容器，换页后不画焦点框（换页由 live region 播报）',
+    /main:focus[^{}]*\{[^}]*outline\s*:\s*none/i.test(allCss),
+    'layout.css 里没有 main:focus { outline: none }');
   const globalRing = /:focus-visible\s*\{[^}]*outline\s*:\s*(\d+(?:\.\d+)?)px/.exec(layout);
   ok('全局焦点环宽度 ≥2px', !!globalRing && Number(globalRing[1]) >= 2,
     globalRing ? globalRing[1] + 'px' : 'layout.css 里没找到 :focus-visible 规则');

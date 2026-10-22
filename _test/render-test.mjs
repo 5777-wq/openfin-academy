@@ -404,6 +404,18 @@ async function main() {
   has('危机列表：标普跌幅来自数据', clist, '-56.8%');
   has('危机列表：1994 用收益率口径（百分点）', clist, '个百分点');
   has('危机列表：最惨一天', clist, '最惨一天');
+  // 列表必须按**时间倒序**（最近的在前）。之前用的是采集脚本里的定义顺序
+  // （2008/1990/1998/1994/1987）——既不是时间序也不是惨烈序，读者只觉得乱。
+  {
+    const order = [];
+    const re = /href="#\/crisis\/(\d{4})"/g;
+    let m;
+    while ((m = re.exec(clist))) order.push(m[1]);
+    const expect = order.slice().sort((a, b) => Number(b) - Number(a));
+    ok('危机列表按时间倒序（最近的在前）',
+      order.length >= 2 && order.join(',') === expect.join(','),
+      '实际 ' + order.join(',') + '，期望 ' + expect.join(','));
+  }
 
   // 产业链
   const chains = sandbox.INDUSTRY_CHAINS;

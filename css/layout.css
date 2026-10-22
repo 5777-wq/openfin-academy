@@ -40,6 +40,11 @@ a { color: var(--teal); text-decoration: none; }
 a:hover { text-decoration: underline; text-underline-offset: 3px; }
 button { font: inherit; color: inherit; cursor: pointer; }
 :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: var(--r-1); }
+/* 换页之后焦点会落到 #main 上（读屏用户得知道内容整块换了）。
+   但 #main 不是可交互控件——给它画一圈焦点框，版式上就多出一条莫名其妙的金线
+   （贴着正文右边缘，从头贯到尾），读者会以为那是什么坏了。
+   容器上的焦点框去掉，「换页了」这件事交给 live region 播报。 */
+main:focus, main:focus-visible { outline: none; }
 ::selection { background: var(--gold-soft); color: var(--ink); }
 
 /* ---------- 通用排版件 ---------- */

@@ -19,6 +19,7 @@
   const VW = 100, VH = 100, VPAD = 5;
 
   let pkg = null, dates = [], idx = 0, playing = null, host = null;
+  let curEvents = [];   // 事件按时间正序排好的那一份（渲染与高亮都用它，别用 pkg.events 原序）
   let pinned = null;   // 用户点选的事件：它的说明优先显示（游标离开 ±20 天后自动失效）
   let geoms = [];     // 每条序列的对齐值 + 画图几何（render 时算一次，setIdx 直接复用）
   let ro = null;      // 刻度标签避让用的观察器：离开页面必须断开，否则一直挂着
@@ -258,14 +259,18 @@
   function drawEvents() {
     const box = document.getElementById('rp-events');
     if (!box || !pkg.events) return;
-    box.innerHTML = pkg.events.map((ev, i) => `
+    // 事件按**时间正序**（最早的在最上面）。
+    // 数据包里的顺序是手写的，这里再排一次——
+    // 「按时间顺序看」是这一页的基本要求，不能靠数据碰巧写对了。
+    curEvents = pkg.events.slice().sort((a, b) => String(a.t).localeCompare(String(b.t)));
+    box.innerHTML = curEvents.map((ev, i) => `
       <button class="rp-event" data-i="${i}">
         <span class="re-d">${esc(ev.t)}</span>
         <span class="re-t">${esc(ev.title)}</span>
       </button>`).join('');
     box.querySelectorAll('.rp-event').forEach((b) => {
       b.addEventListener('click', () => {
-        const ev = pkg.events[Number(b.dataset.i)];
+        const ev = curEvents[Number(b.dataset.i)];
         jumpTo(ev.t);
       });
     });
@@ -381,9 +386,9 @@
 
     // 事件高亮 + 说明
     const evBox = document.getElementById('rp-events');
-    if (evBox && pkg.events) {
+    if (evBox && curEvents && curEvents.length) {
       evBox.querySelectorAll('.rp-event').forEach((b, i) => {
-        const ev = pkg.events[i];
+        const ev = curEvents[i];
         const near = Math.abs(daysBetween(ev.t, d)) <= 20;
         b.classList.toggle('on', near);
       });
