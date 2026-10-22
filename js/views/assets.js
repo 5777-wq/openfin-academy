@@ -12,9 +12,18 @@
     sh000001: 'SH000001', sz399001: 'SZ399001', sz399006: 'SZ399006', sh000688: 'SH000688',
     usINX: 'SPX', usDJI: 'DJIA', hkHSI: 'HSI', hkHSTECH: 'HSTECH',
     'EM:100.N225': 'N225',            // 终端「全球指数条」那一排里的日经225
-    'EM:101.GC00Y': 'GC00Y', 'EM:101.SI00Y': 'SI00Y', 'EM:102.CL00Y': 'CL00Y',
-    'EM:100.UDI': 'UDI', 'EM:171.US10Y': 'US10Y', 'EM:171.US2Y': 'US2Y',
+    'EM:100.GDAXI': 'GDAXI', 'EM:100.FTSE': 'FTSE', 'EM:100.FCHI': 'FCHI',
+    'EM:100.KS11': 'KS11', 'EM:100.SENSEX': 'SENSEX',
+    'EM:101.GC00Y': 'GC00Y', 'EM:101.SI00Y': 'SI00Y', 'EM:101.HG00Y': 'HG00Y',
+    'EM:102.CL00Y': 'CL00Y', 'EM:102.NG00Y': 'NG00Y', 'EM:103.ZC00Y': 'ZC00Y',
+    'EM:100.UDI': 'UDI',
+    'EM:171.US10Y': 'US10Y', 'EM:171.US5Y': 'US5Y', 'EM:171.US2Y': 'US2Y',
     'EM:171.US3M': 'US3M', 'EM:171.US30Y': 'US30Y',
+    'EM:171.CN2Y': 'CN2Y', 'EM:171.CN5Y': 'CN5Y', 'EM:171.CN10Y': 'CN10Y', 'EM:171.CN30Y': 'CN30Y',
+    'EM:171.DE10Y': 'DE10Y', 'EM:171.JP10Y': 'JP10Y',
+    'EM:133.USDCNH': 'USDCNH',
+    'EM:119.EURUSD': 'EURUSD', 'EM:119.GBPUSD': 'GBPUSD',
+    'EM:119.USDJPY': 'USDJPY', 'EM:119.USDHKD': 'USDHKD',
     gold: 'GC00Y',            // 老链接 #/assets/gold 也要能拿到数据卡
   };
 
@@ -144,11 +153,15 @@
           <div class="stat"><span class="s-k">最新月末</span><span class="s-v num">${esc(fmtNum(st.last.v, series))}</span><span class="s-n">${esc(st.to)}</span></div>
           <div class="stat"><span class="s-k">峰值</span><span class="s-v num">${esc(fmtNum(st.peak.v, series))}</span><span class="s-n">${esc(st.peak.t)}</span></div>
           <div class="stat"><span class="s-k">谷底</span><span class="s-v num">${esc(fmtNum(st.trough.v, series))}</span><span class="s-n">${esc(st.trough.t)}</span></div>
+          ${st.isRate ? `
+          <div class="stat"><span class="s-k">峰谷变动</span><span class="s-v num">${st.spreadPp.toFixed(2)} 个百分点</span><span class="s-n">峰值到谷底</span></div>
+          <div class="stat"><span class="s-k">近一年</span><span class="s-v num ${(st.chg1yBp || 0) >= 0 ? 'up' : 'down'}">${st.chg1yBp === null ? '--' : (st.chg1yBp >= 0 ? '+' : '') + st.chg1yBp.toFixed(0) + ' 个基点'}</span><span class="s-n">收益率变化</span></div>`
+          : `
           <div class="stat"><span class="s-k">峰谷跌幅</span><span class="s-v num ${st.dropPct < 0 ? 'down' : 'up'}">${st.dropPct.toFixed(1)}%</span><span class="s-n">峰值到谷底</span></div>
-          <div class="stat"><span class="s-k">近一年</span><span class="s-v num ${(st.chg1y || 0) >= 0 ? 'up' : 'down'}">${st.chg1y === null ? '--' : st.chg1y.toFixed(1) + '%'}</span><span class="s-n">不含分红</span></div>
+          <div class="stat"><span class="s-k">近一年</span><span class="s-v num ${(st.chg1y || 0) >= 0 ? 'up' : 'down'}">${st.chg1y === null ? '--' : st.chg1y.toFixed(1) + '%'}</span><span class="s-n">不含分红</span></div>`}
           <div class="stat"><span class="s-k">覆盖区间</span><span class="s-v num">${esc(st.from.slice(0, 7))} 起</span><span class="s-n">${st.count} 个月末点</span></div>
         </div>
-        <p class="insight-note">口径：${esc(series.kind || '月收盘价')} · ${esc(series.source || '')}${st.unadj ? '。未复权价不含分红，所以这里的涨幅是价格涨幅，不是总回报' : ''}。</p>
+        <p class="insight-note">口径：${esc(series.kind || '月收盘价')} · ${esc(series.source || '')}${st.unadj ? '。未复权价不含分红，所以这里的涨幅是价格涨幅，不是总回报' : ''}${st.isRate ? '。收益率的变化用「个百分点 / 个基点」说，不用百分比——从 5% 跌到 2% 是跌了 3 个百分点，不是跌了 60%' : ''}。</p>
       </div>` : `
       <div class="panel" style="margin-bottom:var(--s-6)">
         <div class="eyebrow">历史数据</div>

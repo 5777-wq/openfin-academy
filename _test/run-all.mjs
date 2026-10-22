@@ -132,6 +132,32 @@ function loadScripts(files) {
 }
 
 /* ============================================================
+   1b. 标的读数：收益率与价格两套口径
+   ============================================================ */
+{
+  const W = loadScripts(['js/engine/instrument.js']);
+  const I = W.Engine.instrument;
+  const price = {
+    unit: '点', kind: '月收盘价',
+    points: [{ t: '2024-01-31', v: 100 }, { t: '2024-02-29', v: 120 }, { t: '2024-03-29', v: 60 }],
+  };
+  const rate = {
+    unit: '%', kind: '月末值',
+    points: [{ t: '2024-01-31', v: 5 }, { t: '2024-02-29', v: 2 }, { t: '2024-03-29', v: 3.5 }],
+  };
+  const sp = I.stats(price);
+  const sr = I.stats(rate);
+  eq('价格序列：峰谷跌幅按百分比', Math.round(sp.dropPct), -50);
+  eq('价格序列：不是收益率口径', sp.isRate, false);
+  eq('收益率序列：认得出是收益率', sr.isRate, true);
+  // 从 5% 跌到 2% 是「跌了 3 个百分点」，不是「跌了 60%」——
+  // 百分比那套算法对收益率是错的（页面里也照它渲染过）。
+  eq('收益率序列：峰谷变动用个百分点', sr.spreadPp, 3);
+  ok('收益率序列：不给百分比跌幅', sr.dropPct < 0 && sr.spreadPp !== sr.dropPct, `dropPct=${sr.dropPct} spreadPp=${sr.spreadPp}`);
+  ok('收益率序列：近一年用基点', sr.chg1yBp === null || typeof sr.chg1yBp === 'number', String(sr.chg1yBp));
+}
+
+/* ============================================================
    2. 格式化层
    ============================================================ */
 {

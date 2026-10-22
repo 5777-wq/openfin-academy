@@ -37,6 +37,12 @@
 
     const pct = (a, b) => (a && b ? (a.v / b.v - 1) * 100 : null);
 
+    // 收益率类序列：单位是 %。
+    // 收益率的「涨跌」不能按百分比算——从 5% 跌到 2% 是跌了 60%（百分比），
+    // 但读者要看的是「跌了 3 个百分点」。口径写错，数字就骗人。
+    // 回放器早就分开了（js/components/replay-player.js 的 isYield），这里跟它同一把尺子。
+    const isRate = String(series.unit || '') === '%';
+
     return {
       from: first.t,
       to: last.t,
@@ -44,8 +50,11 @@
       last: last,
       peak: peak,
       trough: trough,
+      isRate: isRate,
       dropPct: (trough.v / peak.v - 1) * 100,   // 峰谷跌幅（负数）
+      spreadPp: isRate ? peak.v - trough.v : null,            // 峰谷变动（个百分点）
       chg1y: pct(last, y1),
+      chg1yBp: isRate && y1 ? (last.v - y1.v) * 100 : null,    // 近一年变动（基点）
       chg3y: pct(last, y3),
       chgAll: pct(last, first),
       unadj: /未复权/.test(String(series.kind || '')) || /未复权/.test(String(series.source || '')),

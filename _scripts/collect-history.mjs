@@ -330,7 +330,7 @@ function usToIso(s) {
 
 /* ---------------- 美国财政部收益率曲线 → 月末 ---------------- */
 async function treasuryCurve(years) {
-  const out = { US3M: new Map(), US2Y: new Map(), US10Y: new Map(), US30Y: new Map() };
+  const out = { US3M: new Map(), US2Y: new Map(), US5Y: new Map(), US10Y: new Map(), US30Y: new Map() };
   for (const y of years) {
     const txt = await treasuryCsv(y);
     if (!txt) continue;
@@ -340,7 +340,7 @@ async function treasuryCurve(years) {
     const di = head.indexOf('Date');
     if (di < 0) { console.warn(`  [treasury] ${y} 表头无法识别：${lines[0].slice(0, 80)}`); continue; }
     const idx = {
-      US3M: head.indexOf('3 Mo'), US2Y: head.indexOf('2 Yr'),
+      US3M: head.indexOf('3 Mo'), US2Y: head.indexOf('2 Yr'), US5Y: head.indexOf('5 Yr'),
       US10Y: head.indexOf('10 Yr'), US30Y: head.indexOf('30 Yr'),
     };
     for (let i = 1; i < lines.length; i++) {
@@ -757,6 +757,29 @@ async function main() {
     ['SI00Y', '101.SI00Y', 'COMEX白银', '美元/盎司', 2, '东方财富 push2his 101.SI00Y'],
     ['CL00Y', '102.CL00Y', 'NYMEX原油', '美元/桶', 2, '东方财富 push2his 102.CL00Y'],
     ['UDI', '100.UDI', '美元指数', '', 2, '东方财富 push2his 100.UDI'],
+    // —— 下面这批是终端「全球指数条 / 宏观面板 / 外汇」里的标的 ——
+    // 之前只有终端能给实时价，站内没有月线序列，于是这些标的**一个页都没有**
+    // （终端只能退回去给术语页）。secid 全部取自终端 universe 自己带的 secid 字段，
+    // 不是猜的：终端就是拿这些 secid 问东财要价的。
+    ['GDAXI', '100.GDAXI', '德国DAX', '点', 2, '东方财富 push2his 100.GDAXI'],
+    ['FTSE', '100.FTSE', '英国富时100', '点', 2, '东方财富 push2his 100.FTSE'],
+    ['FCHI', '100.FCHI', '法国CAC40', '点', 2, '东方财富 push2his 100.FCHI'],
+    ['KS11', '100.KS11', '韩国KOSPI', '点', 2, '东方财富 push2his 100.KS11'],
+    ['SENSEX', '100.SENSEX', '印度SENSEX', '点', 2, '东方财富 push2his 100.SENSEX'],
+    ['HG00Y', '101.HG00Y', 'COMEX铜', '美元/磅', 3, '东方财富 push2his 101.HG00Y'],
+    ['NG00Y', '102.NG00Y', 'NYMEX天然气', '美元/百万英热', 3, '东方财富 push2his 102.NG00Y'],
+    ['ZC00Y', '103.ZC00Y', 'CBOT玉米连续', '美元/蒲式耳', 2, '东方财富 push2his 103.ZC00Y'],
+    ['CN2Y', '171.CN2Y', '中债2年期国债收益率', '%', 2, '东方财富 push2his 171.CN2Y'],
+    ['CN5Y', '171.CN5Y', '中债5年期国债收益率', '%', 2, '东方财富 push2his 171.CN5Y'],
+    ['CN10Y', '171.CN10Y', '中债10年期国债收益率', '%', 2, '东方财富 push2his 171.CN10Y'],
+    ['CN30Y', '171.CN30Y', '中债30年期国债收益率', '%', 2, '东方财富 push2his 171.CN30Y'],
+    ['DE10Y', '171.DE10Y', '德国10年期国债收益率', '%', 2, '东方财富 push2his 171.DE10Y'],
+    ['JP10Y', '171.JP10Y', '日本10年期国债收益率', '%', 2, '东方财富 push2his 171.JP10Y'],
+    ['USDCNH', '133.USDCNH', '美元离岸人民币', '人民币/美元', 4, '东方财富 push2his 133.USDCNH'],
+    ['EURUSD', '119.EURUSD', '欧元美元', '美元/欧元', 4, '东方财富 push2his 119.EURUSD'],
+    ['GBPUSD', '119.GBPUSD', '英镑美元', '美元/英镑', 4, '东方财富 push2his 119.GBPUSD'],
+    ['USDJPY', '119.USDJPY', '美元日元', '日元/美元', 3, '东方财富 push2his 119.USDJPY'],
+    ['USDHKD', '119.USDHKD', '美元港币', '港元/美元', 4, '东方财富 push2his 119.USDHKD'],
   ];
   for (const [id, secid, name, unit, digits, source] of eastDefs) {
     if (!want('east')) break;
@@ -849,6 +872,7 @@ async function main() {
   const curve = await treasuryCurve(years);
   const tDefs = [
     ['US10Y', '美国10年期国债收益率', '%', 2],
+    ['US5Y', '美国5年期国债收益率', '%', 2],
     ['US2Y', '美国2年期国债收益率', '%', 2],
     ['US3M', '美国3月期国库券收益率', '%', 2],
     ['US30Y', '美国30年期国债收益率', '%', 2],
