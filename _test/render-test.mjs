@@ -179,14 +179,11 @@ const SCRIPTS = [
   'vendor/core/academy-gloss.js',
   'js/site/format.js',
   'js/site/cross.js',
+  'js/site/disclaimer.js',
   'js/store.js',
   'js/router.js',
-  'js/engine/series.js',
   'js/engine/percentile.js',
   'js/engine/drawdown.js',
-  'js/engine/spread.js',
-  'js/engine/similarity.js',
-  'js/engine/analogy.js',
   'js/engine/crisis.js',
   'js/engine/instrument.js',
   'js/sources/quotes.js',
@@ -229,9 +226,10 @@ async function main() {
     'Engine', 'Explain', 'INDUSTRY_CHAINS']) {
     ok('全局对象 ' + g, typeof sandbox[g] !== 'undefined');
   }
-  ok('Engine 六个模块齐备', sandbox.Engine
-    && !!sandbox.Engine.series && !!sandbox.Engine.percentile && !!sandbox.Engine.drawdown
-    && !!sandbox.Engine.spread && !!sandbox.Engine.similarity && !!sandbox.Engine.analogy);
+  ok('首屏用到的引擎模块齐备', sandbox.Engine
+    && !!sandbox.Engine.percentile && !!sandbox.Engine.drawdown
+    && !!sandbox.Engine.crisis && !!sandbox.Engine.instrument,
+    'percentile / drawdown / crisis / instrument 缺了');
 
   /* ---- 3. 内容加载 ---- */
   await sandbox.Content.loadAll();
@@ -300,7 +298,13 @@ async function main() {
       ok('文章 ' + a.id + ' 标题非空', h1.replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim().length > 4, 'h1=' + h1);
       ok('文章 ' + a.id + ' 标题与索引一致', h1.replace(/&quot;/g, '"').includes(String(a.title).slice(0, 6)));
       ok('文章 ' + a.id + ' 有免责声明', html.includes('不构成投资建议'));
-      ok('文章 ' + a.id + ' 有数据截止日期', html.includes('数据截至'));
+      ok('文章 ' + a.id + ' 有数据截止日期', html.includes('本文写于'));
+      // 引了序列的文章还要标出「数据实际截止到哪天」——
+      // 手写的 dataAsOf 是写作那天，永远停在那天，两个一起显示才对。
+      const hasActual = !!a.dataAsOfActual;
+      ok('文章 ' + a.id + (hasActual ? ' 标出数据实际截止日' : ' 没有自己的序列就不硬标数据日'),
+        hasActual ? html.includes('数据截至') : !html.includes('数据截至'),
+        'dataAsOfActual=' + (a.dataAsOfActual || '（无）'));
       ok('文章 ' + a.id + ' 正文非空', html.includes('class="prose"'));
     }
   }
@@ -817,6 +821,14 @@ async function main() {
   for (const s of SCRIPTS) {
     ok('index.html 加载了 ' + s, html.includes(s));
   }
+  /* D-7：首屏瘦身。
+     series / spread / similarity / analogy 这四个引擎模块全站零引用
+     （只有测试在用），却跟着首屏一起下载。它们留在仓库里给测试用，
+     但不许再进 index.html。 */
+  for (const dead of ['js/engine/series.js', 'js/engine/spread.js',
+    'js/engine/similarity.js', 'js/engine/analogy.js']) {
+    ok('首屏不再加载零引用的 ' + dead, !html.includes(dead));
+  }
 
   /* ---- 9. 站内链接不许有死链 ----
      首页时代横轴曾经有 4 个节点指向不存在的文章（#/crisis/2013、#/cycles/ai-cycle 等），
@@ -1096,6 +1108,26 @@ async function main() {
       const al = (t.match(/aria-label="([^"]*)"/) || [])[1] || '';
       return !!dl && al.indexOf(dl + '：') === 0;
     }), tds[0] || '(没扫到 td)');
+
+    /* ⑥ 免责声明：写作指南要求「文首、文末、每页页脚」三处。
+       以前只有文章页、危机页、词条页有，索引 / 标的 / 产业链页一个都没有。 */
+    const html = await readFile(path.join(ROOT, 'index.html'), 'utf8');
+    ok('全站页脚存在', html.includes('<footer class="footer">'));
+    ok('全站页脚写了不构成投资建议', /不构成投资建议/.test(html));
+    ok('全站页脚写了不预测市场', /不预测市场走势/.test(html));
+
+    sandbox.HomeView.render(view());
+    has('首页：有免责声明', view().innerHTML, 'class="disclaimer"');
+    sandbox.ListView.render(view(), 'concepts');
+    has('栏目索引：有免责声明', view().innerHTML, 'class="disclaimer"');
+    sandbox.AssetsView.renderIndex(view());
+    has('标的索引：有免责声明', view().innerHTML, 'class="disclaimer"');
+    await sandbox.AssetsView.renderDetail(view(), 'usAAPL');
+    has('标的详情：有免责声明', view().innerHTML, 'class="disclaimer"');
+    sandbox.ChainView.renderList(view());
+    has('产业链列表：有免责声明', view().innerHTML, 'class="disclaimer"');
+    await sandbox.ChainView.renderDetail(view(), 'ai');
+    has('产业链详情：有免责声明', view().innerHTML, 'class="disclaimer"');
   }
 
   console.log('');

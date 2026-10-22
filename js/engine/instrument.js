@@ -94,6 +94,15 @@
     // 回放器早就分开了（js/components/replay-player.js 的 isYield），这里跟它同一把尺子。
     const isRate = String(series.unit || '') === '%';
 
+    /* 当前读数在历史样本里的分位。
+       这是小白最需要的一句判断：「现在这个数，在历史上算高还是算低」。
+       它只陈述事实（当前值在历史分布里的位置），不预测、不建议。
+       分位高不等于该卖，分位低也不等于该买——文案里不这么说。 */
+    const vals = pts.map((p) => p.v).filter((v) => typeof v === 'number' && isFinite(v));
+    const hasPctl = !!(window.Engine && window.Engine.percentile);
+    const pctl = hasPctl ? window.Engine.percentile.percentile(vals, last.v) : null;
+    const band = (hasPctl && pctl !== null) ? window.Engine.percentile.band(pctl) : null;
+
     return {
       from: first.t,
       to: last.t,
@@ -117,6 +126,8 @@
       chgAll: pct(last, first),
       unadj: /未复权/.test(String(series.kind || '')) || /未复权/.test(String(series.source || '')),
       partial: detectPartial(series),   // 最后一点是不是当月未收的盘中值
+      pctl: pctl,                        // 当前读数的历史分位（0-100）
+      band: band,                        // 分位档位 {label, tone}
     };
   }
 

@@ -9,10 +9,13 @@
   function gaugeCard(cfg) {
     const q = cfg.fetch();
     if (!q) {
+      /* 加载失败之后这里一直写「数据加载中」——读者以为页面卡住了。
+         行情源已经试过一轮还拿不到数，就直说连不上，别让人干等。 */
+      const tried = !!(window.Quotes.state && window.Quotes.state.source);
       return `<div class="dpanel">
         <div class="dp-k">${esc(cfg.name)}</div>
         <div class="dp-v">--</div>
-        <div class="dp-d muted">数据加载中</div>
+        <div class="dp-d muted">${tried ? '行情暂时连不上' : '数据加载中'}</div>
       </div>`;
     }
     const d = F().dir(q.pct);
@@ -107,6 +110,8 @@
         <div id="home-era"></div>
       </section>
 
+      ${(window.Site && window.Site.disclaimer) ? window.Site.disclaimer.GENERIC : ''}
+
       <section style="margin-top:var(--s-7)">
         <div class="eyebrow">实时仪表 <span class="muted" id="gauge-src" style="margin-left:auto;text-transform:none;letter-spacing:0"></span></div>
         <div class="gauges" id="home-gauges"></div>
@@ -165,7 +170,7 @@
     // 仪表数据源标注
     const src = document.getElementById('gauge-src');
     if (src && window.Quotes.state.source) {
-      src.textContent = `来源 ${window.Quotes.state.source} · ${window.Quotes.state.degraded ? '（降级：缓存数据）' : '实时'}`;
+      src.textContent = '来源 ' + window.Quotes.state.source + ' · ' + window.Quotes.freshness();
     }
   }
 

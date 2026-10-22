@@ -168,7 +168,9 @@
     const rows = window.Quotes.all();
     if (!rows.length) {
       const tried = !!window.Quotes.state.source;
-      box.innerHTML = `<span class="tk src-note">${tried ? '行情暂不可用（数据源不可达且无本地缓存）' : '行情加载中…'}</span>`;
+      // 「行情暂不可用（数据源不可达且无本地缓存）」这句话像是在说站坏了。
+      // 读者只要知道「暂时连不上、正在重试」就够了。
+      box.innerHTML = `<span class="tk src-note">${tried ? '行情暂时连不上，正在重试' : '行情加载中…'}</span>`;
       return;
     }
     box.innerHTML = rows.map((q) => {
@@ -288,6 +290,11 @@
     const m = window.Router.current();
     const view = document.getElementById('view');
     if (!m) { window.Router.go('/'); return; }
+
+    /* 抽屉开着的时候换页：先把它收掉。
+       不收的话读者看到的是「页面换了，但抽屉还盖在上面，而且不能滚」——
+       焦点也会掉到 body 上。 */
+    if (window.TermDrawer && window.TermDrawer.isOpen()) window.TermDrawer.close();
 
     const key = location.hash;
     const prevKey = currentKey;
@@ -456,12 +463,19 @@
     input.value = '';
     paintPalette('');
     input.focus();
+    // aria-expanded 原来在 HTML 里写死成 true：面板关着时也念「已展开」
+    input.setAttribute('aria-expanded', 'true');
     if (!paletteBgInert) { paletteBgInert = true; setBackgroundInert(true); }
   }
   function closePalette() {
     const wrap = document.getElementById('palette-wrap');
     if (!wrap || !wrap.classList.contains('on')) return;
     wrap.classList.remove('on');
+    const input = document.getElementById('palette-input');
+    if (input) {
+      input.setAttribute('aria-expanded', 'false');
+      input.removeAttribute('aria-activedescendant');
+    }
     if (paletteBgInert) { paletteBgInert = false; setBackgroundInert(false); }
     // 焦点还回去：面板是 display:none，焦点会自动掉到 body，
     // 键盘用户下一次 Tab 得从页面最顶部重新走一遍。
@@ -521,19 +535,39 @@
     it.go();
   }
 
+  /** 空查询时给的引导：点开搜索就看到「无结果」，是「这站坏了」的第一印象。
+      给的四个入口都是真能点开的（点进去就知道会看到什么）。 */
+  const PALETTE_STARTERS = [
+    { t: '通货膨胀', s: '钱为什么变薄', path: '/term/inflation' },
+    { t: '无风险利率', s: '全站定价的尺子', path: '/term/risk-free-rate' },
+    { t: '新手路径', s: '8 课入门', path: '/path' },
+    { t: '危机复盘', s: '拖时间轴看崩盘', path: '/crisis' },
+  ];
+
   function paintPalette(q) {
     const list = document.getElementById('palette-list');
     const key = String(q || '').trim().toLowerCase();
-    const r = window.SearchView.search(key);
+    const input = document.getElementById('palette-input');
     const items = [];
-    r.terms.forEach((t) => items.push({ g: '术语', t: t.term, s: t.one || '', go: () => window.Router.go('/term/' + encodeURIComponent(t.id)) }));
-    r.articles.forEach((a) => items.push({ g: '文章', t: a.title, s: a.dek || '', go: () => window.Router.go('/' + a.section + '/' + a.id) }));
-    r.assets.forEach((a) => items.push({ g: '标的', t: a.name, s: '', go: () => window.Router.go('/assets/' + encodeURIComponent(a.symbol)) }));
+
+    if (!key) {
+      PALETTE_STARTERS.forEach((s) => items.push({
+        g: '试试这些', t: s.t, s: s.s,
+        go: () => window.Router.go(s.path),
+      }));
+    } else {
+      const r = window.SearchView.search(key);
+      r.terms.forEach((t) => items.push({ g: '术语', t: t.term, s: t.one || '', go: () => window.Router.go('/term/' + encodeURIComponent(t.id)) }));
+      r.articles.forEach((a) => items.push({ g: '文章', t: a.title, s: a.dek || '', go: () => window.Router.go('/' + a.section + '/' + a.id) }));
+      r.assets.forEach((a) => items.push({ g: '标的', t: a.name, s: '', go: () => window.Router.go('/assets/' + encodeURIComponent(a.symbol)) }));
+    }
     paletteItems = items;
     paletteSel = 0;
 
     if (!items.length) {
       list.innerHTML = `<div class="pl-group">无结果</div><div class="pl-item muted">换个词试试，或者按 Esc 关闭</div>`;
+      // 已经没有候选项了，aria-activedescendant 不能还指着不存在的 pl-opt-0
+      if (input) input.removeAttribute('aria-activedescendant');
       return;
     }
     let lastG = null, html = '';
@@ -547,7 +581,6 @@
       </div>`;
     });
     list.innerHTML = html;
-    const input = document.getElementById('palette-input');
     if (input) input.setAttribute('aria-activedescendant', 'pl-opt-0');
     list.querySelectorAll('.pl-item').forEach((el) => {
       el.addEventListener('click', () => {
@@ -697,7 +730,7 @@
     if (window.HomeView && window.HomeView.paintGauges) window.HomeView.paintGauges();
     const src = document.getElementById('gauge-src');
     if (src && window.Quotes.state.source) {
-      src.textContent = `来源 ${window.Quotes.state.source} · ${window.Quotes.state.degraded ? '（降级：缓存数据）' : '实时'}`;
+      src.textContent = '来源 ' + window.Quotes.state.source + ' · ' + window.Quotes.freshness();
     }
   }
 
@@ -812,16 +845,34 @@
     paintGauges();
     step('boot:quotes ready');
 
-    // 行情轮询：页面切到别的标签页就别再空转了。
-    // 回到前台时立刻补跑一次，别让读者盯着一个已经过期的报价。
+    /* 行情轮询：失败要退避。
+       以前固定 30 秒一次，数据源挂了就一直重试——既费流量，也像在跟源较劲。
+       现在失败一次就把间隔拉长：30 → 60 → 120 → 240 → 300 秒（封顶 5 分钟），
+       成功一次就回到 30 秒。 */
+    let pollDelay = 30000;
+    let pollTimer = null;
     const poll = async () => {
       await window.Quotes.load();
       paintTicker();
       paintGauges();
+      return !window.Quotes.state.degraded;   // true = 这次拿到的是实时数据
     };
-    setInterval(() => { if (!document.hidden) poll(); }, 30000);
+    const schedulePoll = () => {
+      if (pollTimer) clearTimeout(pollTimer);
+      pollTimer = setTimeout(async () => {
+        if (document.hidden) { schedulePoll(); return; }
+        let ok = false;
+        try { ok = await poll(); } catch (e) { ok = false; }
+        pollDelay = ok ? 30000 : Math.min(pollDelay * 2, 300000);
+        schedulePoll();
+      }, pollDelay);
+    };
+    schedulePoll();
     document.addEventListener('visibilitychange', () => {
-      if (!document.hidden) poll();
+      if (document.hidden) return;
+      // 回到前台立刻补跑一次，别让读者盯着一个已经过期的报价
+      pollDelay = 30000;
+      poll().then(() => schedulePoll());
     });
   }
 

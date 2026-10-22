@@ -45,14 +45,30 @@ jobs:
         run: |
           node _scripts/audit.mjs
 
+      - name: 文档数字与数据一致（README 里的词条数 / 标的数不许漂）
+        # 这些数字靠人记一定会再错。脚本从数据里算，README 里对不上就报错。
+        run: |
+          node _scripts/sync-docs.mjs --check
+
   vendor:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: vendor 与上游一致性
+      - name: vendor 与 vendor/HEAD 记录的上游 commit 一致
+        # 以前这里只 echo 一句 notice，没有 exit 1——这个 job 永远不会红，
+        # 等于没有校验。而且拉的是上游最新 HEAD：上游一有新提交，
+        # 即使加了 exit 1 也会永久失败。
+        # 现在按 vendor/HEAD 里钉住的 commit 检出再比对。
         run: |
-          node _scripts/sync-core.mjs --src https://github.com/5777-wq/openfinlens.git
+          SHA=$(sed -n 's/^# commit: //p' vendor/HEAD)
+          echo "pinned upstream commit: $SHA"
+          if [ -z "$SHA" ]; then
+            echo "::error::vendor/HEAD 里没有 commit 记录"
+            exit 1
+          fi
+          node _scripts/sync-core.mjs --src https://github.com/5777-wq/openfinlens.git --commit "$SHA"
           if ! git diff --quiet -- vendor; then
-            echo "::notice::vendor 与上游 OpenFinLens 有差异，请运行 node _scripts/sync-core.mjs 后提交"
+            echo "::error::vendor 与上游 $SHA 不一致，请运行 node _scripts/sync-core.mjs 并提交"
             git diff --stat -- vendor
+            exit 1
           fi

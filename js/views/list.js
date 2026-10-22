@@ -51,6 +51,7 @@
         <h1 style="font-size:var(--t-hero);letter-spacing:-.015em;margin-bottom:var(--s-3)">${esc(intro.title)}</h1>
         <p class="art-dek">${esc(intro.dek)}</p>
       </div>
+      ${(window.Site && window.Site.disclaimer) ? window.Site.disclaimer.GENERIC : ''}
       <div class="entries">${cards || '<div class="empty"><div class="et">这一栏还在写</div><div class="ed">内容正在补充中。</div></div>'}</div>`;
   }
 

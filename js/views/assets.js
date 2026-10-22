@@ -136,6 +136,7 @@
         <p class="art-dek">下面是行情终端里能看的每一只标的。点进去有它的真实历史读数（历史最高、历史最低、最大回撤、近一年涨跌），有专文的还会多一篇讲清楚它靠什么赚钱。</p>
       </div>
       ${blocks || '<div class="empty"><div class="et">数据还没采齐</div><div class="ed">跑一次采集脚本就能拿到真实历史。</div></div>'}
+      ${(window.Site && window.Site.disclaimer) ? window.Site.disclaimer.GENERIC : ''}
       ${ownBlock}`;
   }
 
@@ -167,6 +168,13 @@
           <div class="stat"><span class="s-k">最大回撤</span><span class="s-v num ${st.dropPct < 0 ? 'down' : 'up'}">${st.dropPct.toFixed(1)}%</span><span class="s-n">${esc(String(st.mddFrom || '').slice(0, 7))} → ${esc(String(st.mddTo || '').slice(0, 7))}</span></div>
           <div class="stat"><span class="s-k">近一年</span><span class="s-v num ${(st.chg1y || 0) >= 0 ? 'up' : 'down'}">${st.chg1y === null ? '--' : st.chg1y.toFixed(1) + '%'}</span><span class="s-n">不含分红</span></div>`}
           <div class="stat"><span class="s-k">覆盖区间</span><span class="s-v num">${esc(st.from.slice(0, 7))} 起</span><span class="s-n">${st.count} 个月度点</span></div>
+          ${st.pctl !== null && st.pctl !== undefined && st.band ? `
+          <div class="stat">
+            <span class="s-k">当前在历史上的位置</span>
+            <span class="s-v num">${st.pctl.toFixed(0)}% 分位</span>
+            <span class="pbar" aria-hidden="true"><i style="left:${st.pctl.toFixed(1)}%"></i></span>
+            <span class="s-n">${esc(st.band.label)}</span>
+          </div>` : ''}
         </div>
         <p class="insight-note">口径：${esc(series.kind || '月收盘价')} · ${esc(series.source || '')}${st.unadj ? '。未复权价不含分红，所以这里的涨幅是价格涨幅，不是总回报' : ''}${st.isRate ? '。收益率的变化用「个百分点 / 个基点」说，不用百分比——从 5% 跌到 2% 是跌了 3 个百分点，不是跌了 60%' : ''}${st.partial ? '。序列的最后一点是采集当天的盘中值，当月还没走完，所以不叫「月末」' : ''}。最大回撤指的是历史里最深的那一次「从高点跌到低点」，峰值在前、谷底在后。</p>
       </div>` : `
@@ -198,6 +206,7 @@
       </article>
 
       ${dataCard}
+      ${(window.Site && window.Site.disclaimer) ? window.Site.disclaimer.GENERIC : ''}
       ${cross}
 
       ${art ? `<div class="prose">${body}</div>` : `

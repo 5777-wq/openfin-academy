@@ -39,6 +39,21 @@
 
     // 事件委托：正文里的术语锚点
     document.addEventListener('click', (e) => {
+      /* 抽屉里的站内链接：先关抽屉，再让默认行为继续跳。
+         以前不关——路由换了页，抽屉还盖在上面，body 也还是 overflow:hidden，
+         读者看到的是「页面换了但被盖着，还不能滚」，焦点还掉到 body 上。
+         这里只 close()，**不** preventDefault：跳转交给路由自己处理。 */
+      const inner = e.target.closest && e.target.closest('#drawer-body a[href^="#/"]');
+      if (inner) { close(); return; }
+
+      // 复制链接：读者终于能把一个术语发给朋友
+      const copyBtn = e.target.closest && e.target.closest('[data-copy-term]');
+      if (copyBtn) {
+        e.preventDefault();
+        copyTermLink(copyBtn.getAttribute('data-copy-term'), copyBtn);
+        return;
+      }
+
       const ref = e.target.closest('[data-term]');
       if (!ref) return;
       e.preventDefault();
@@ -120,9 +135,8 @@
         title: t.term || termId,
         body: window.TermCard.render(t) + (t.links || []).map((l) => `
         <a class="entry" style="display:flex;gap:8px;padding:10px 0;border-bottom:1px solid var(--rule-2);color:var(--teal);font-size:13px" href="${esc(l.href)}">${esc(l.text)} →</a>`).join(''),
-        foot: t.source
-          ? `<span>出处：${esc(t.source)}</span>`
-          : `<span>本站编写的通俗解释</span>`,
+        foot: (t.source ? `<span>出处：${esc(t.source)}</span>` : `<span>本站编写的通俗解释</span>`)
+          + `<button class="btn ghost sm" data-copy-term="${esc(termId)}" style="margin-left:auto">复制链接</button>`,
       });
     }
     if (onOpen) onOpen(termId);
@@ -164,6 +178,33 @@
   }
 
   function isOpen() { return el && el.classList.contains('on'); }
+
+  /** 复制词条链接：读者终于能把一个术语发给朋友。
+      剪贴板不可用时退回选中法——总比什么都不做强。 */
+  function copyTermLink(termId, btn) {
+    const url = location.origin + location.pathname + '#/term/' + encodeURIComponent(termId);
+    const done = (ok) => {
+      if (!btn) return;
+      const old = btn.textContent;
+      btn.textContent = ok ? '已复制' : '复制失败';
+      setTimeout(() => { btn.textContent = old; }, 1400);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(() => done(true), () => done(false));
+      return;
+    }
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = url;
+      ta.setAttribute('readonly', '');
+      ta.style.cssText = 'position:absolute;left:-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand && document.execCommand('copy');
+      document.body.removeChild(ta);
+      done(!!ok);
+    } catch (e) { done(false); }
+  }
 
   window.TermDrawer = { init, open, close, isOpen, openPanel: show };
 })();

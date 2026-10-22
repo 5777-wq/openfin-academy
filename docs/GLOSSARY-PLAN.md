@@ -3,7 +3,7 @@
 > 目标：读者在终端里遇到任何一个词，都能点开看到「这是什么、怎么算、怎么用、坑在哪」，
 > 而不是只得到一个定义。分类要按**读研报/看盘时真正会遇到的顺序**排，不是教科书目录。
 
-**当前状态：189 个词条，十个分类全部有内容。** 下表的「现状」是真实分布，不是计划。
+**当前状态：213 个词条，十个分类全部有内容。** 下表的「现状」是真实分布，不是计划。
 
 ## 一、为什么要分类
 
@@ -191,7 +191,7 @@ node _scripts/audit.mjs
 
 两条链都是自动的：
 
-- 本站 `build-content.mjs` → `data/content/asset-ids.json`（94 个终端标的在本站有页）
+- 本站 `build-content.mjs` → `data/content/asset-ids.json`（114 个终端标的在本站有页）
 - 终端 `collect-academy-terms.mjs` → `data/academy-terms.json` + `js/data/academy-assets.js`，
   采集流水线 6h 档自动刷新。CI 的 paths-ignore 排除了 `data/**`，
   所以「清单过期」只能靠采集时自检抓，不能指望跑 CI 时抓。

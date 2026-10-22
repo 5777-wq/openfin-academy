@@ -93,7 +93,7 @@
         <div class="ed">回放数据${pkg ? '已经有了' : '也需要先跑一次采集'}。</div>
         <a class="btn ghost sm" href="#/crisis">回复盘列表</a></div>
         <div id="crisis-replay" style="margin-top:var(--s-6)"></div>`;
-      mountReplay(view, pkg);
+      mountReplay(view, pkg, id);
       return;
     }
 
@@ -110,14 +110,15 @@
         ${m.dek ? `<p class="art-dek">${esc(m.dek)}</p>` : ''}
         <div class="art-meta">
           ${m.readMinutes ? `<span>阅读约 ${m.readMinutes} 分钟</span><span class="msep">·</span>` : ''}
-          <span>数据截至 ${esc(m.dataAsOf || '—')}</span>
+          <span>本文写于 ${esc(m.dataAsOf || '—')}</span>
+          ${m.dataAsOfActual ? `<span class="msep">·</span><span>数据截至 ${esc(m.dataAsOfActual)}</span>` : ''}
           ${m.source ? `<span class="msep">·</span><span>来源 ${esc(m.source)}</span>` : ''}
           ${s ? `<span class="msep">·</span><span>${s.days} 个交易日 × ${s.seriesCount} 条序列</span>` : ''}
         </div>
       </article>
 
       <div class="disclaimer">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+        ${(window.Site && window.Site.disclaimer) ? window.Site.disclaimer.ICON : ''}
         <span>历史复盘不预测未来。市场结构、监管环境和参与者都和当年不同。</span>
       </div>
 
@@ -133,10 +134,10 @@
 
       <div class="prose">${html}</div>`;
 
-    if (pkg) mountReplay(view, pkg);
+    if (pkg) mountReplay(view, pkg, id);
   }
 
-  function mountReplay(view, pkg) {
+  function mountReplay(view, pkg, id) {
     /* 只在自己的容器里找。
        以前用 document.getElementById('crisis-replay')——那是**整个文档**里的第一个同名节点。
        旧页面 await 回来时，新页面已经有同名节点了，于是旧数据被写进新页面：
@@ -144,9 +145,19 @@
     const box = view.querySelector('#crisis-replay');
     if (!box) return;
     if (!pkg || !pkg.series || !pkg.series.length) {
-      box.innerHTML = `<div class="panel"><div class="empty" style="padding:var(--s-5) 0">
-        <div class="et">回放数据还没采集</div>
-        <div class="ed">跑一次 <code>node _scripts/collect-history.mjs</code> 就能拿到真实长历史。</div></div></div>`;
+      /* 「还没采集」和「没加载到」是两回事：
+         前者要跑采集脚本，后者多半是网络问题——给个重试按钮就够了。
+         以前一律说「还没采集」，读者对着一个已存在的文件白跑一次脚本。 */
+      const known = PKG_IDS.indexOf(String(id)) >= 0;
+      box.innerHTML = known
+        ? `<div class="panel"><div class="empty" style="padding:var(--s-5) 0">
+            <div class="et">回放数据这次没加载出来</div>
+            <div class="ed">数据文件是有的（data/history/crisis-${esc(String(id))}.json），
+            多半是网络抖了一下。刷新页面就能再试一次。</div>
+            <button class="btn ghost sm" onclick="location.reload()">重新加载</button></div></div>`
+        : `<div class="panel"><div class="empty" style="padding:var(--s-5) 0">
+            <div class="et">回放数据还没采集</div>
+            <div class="ed">跑一次 <code>node _scripts/collect-history.mjs</code> 就能拿到真实长历史。</div></div></div>`;
       return;
     }
     // 挂新实例之前先拆旧的

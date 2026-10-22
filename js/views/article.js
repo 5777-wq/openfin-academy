@@ -11,11 +11,9 @@
   const esc = (s) => window.Fmt.esc(s);
   const F = () => window.Fmt;
 
-  const DISCLAIMER = `
-      <div class="disclaimer">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>
-        <span>本文只讲机制和数据，不构成投资建议。数据来自第三方公开接口，有延迟、会出错。</span>
-      </div>`;
+  const DISCLAIMER = (window.Site && window.Site.disclaimer)
+    ? window.Site.disclaimer.ARTICLE
+    : `<div class="disclaimer"><span>本文只讲机制和数据，不构成投资建议。</span></div>`;
 
   /** 页面标题：内容名 · 栏目 · 白话金融（各视图都按这个约定写 data-page-title） */
   function pageTitle(section, m) {
@@ -55,7 +53,8 @@
         ${m && m.dek ? `<p class="art-dek">${esc(m.dek)}</p>` : ''}
         <div class="art-meta">
           ${m && m.readMinutes ? `<span>阅读约 ${m.readMinutes} 分钟</span><span class="msep">·</span>` : ''}
-          <span>数据截至 ${esc((m && m.dataAsOf) || '—')}</span>
+          <span>本文写于 ${esc((m && m.dataAsOf) || '—')}</span>
+          ${m && m.dataAsOfActual ? `<span class="msep">·</span><span>数据截至 ${esc(m.dataAsOfActual)}</span>` : ''}
           ${m && m.updatedAt ? `<span class="msep">·</span><span>更新于 ${esc(m.updatedAt)}</span>` : ''}
           <span class="msep">·</span>
           <button class="btn ghost sm" id="art-bookmark" style="height:24px;padding:0 8px;margin:-1px 0">${bookmarkLabel(id)}</button>
@@ -111,7 +110,8 @@
         ${m.dek ? `<p class="art-dek">${esc(m.dek)}</p>` : ''}
         <div class="art-meta">
           ${m.readMinutes ? `<span>阅读约 ${m.readMinutes} 分钟</span><span class="msep">·</span>` : ''}
-          <span>数据截至 ${esc(m.dataAsOf || '—')}</span>
+          <span>本文写于 ${esc(m.dataAsOf || '—')}</span>
+          ${m.dataAsOfActual ? `<span class="msep">·</span><span>数据截至 ${esc(m.dataAsOfActual)}</span>` : ''}
           ${m.updatedAt ? `<span class="msep">·</span><span>更新于 ${esc(m.updatedAt)}</span>` : ''}
           <span class="msep">·</span>
           <button class="btn ghost sm" id="art-bookmark" style="height:24px;padding:0 8px;margin:-1px 0">${bookmarkLabel(m.id)}</button>

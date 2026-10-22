@@ -23,7 +23,7 @@
     { secid: '119.EURUSD', key: 'EM:119.EURUSD', name: '欧元美元', digits: 4, unit: '' },
   ];
 
-  const state = { quotes: new Map(), updatedAt: 0, degraded: false, source: '' };
+  const state = { quotes: new Map(), updatedAt: 0, degraded: false, fromCache: false, source: '' };
 
   function cachePut(obj) {
     try { localStorage.setItem(CACHE_KEY, JSON.stringify(obj)); } catch (e) { /* 忽略 */ }
@@ -80,6 +80,7 @@
         rows.forEach((r) => state.quotes.set(r.key, r));
         state.updatedAt = Date.now();
         state.degraded = false;
+        state.fromCache = false;
         state.source = '东方财富';
         cachePut({ at: state.updatedAt, rows });
         return state;
@@ -91,9 +92,11 @@
         c.rows.forEach((r) => state.quotes.set(r.key, r));
         state.updatedAt = c.at;
         state.degraded = true;
+        state.fromCache = true;
         state.source = '本地缓存';
       } else {
         state.degraded = true;
+        state.fromCache = false;
         state.source = '不可用';
       }
       return state;
@@ -103,5 +106,14 @@
   function get(key) { return state.quotes.get(key) || null; }
   function all() { return Array.from(state.quotes.values()); }
 
-  window.Quotes = { INSTRUMENTS, load, get, all, state };
+  /** 行情新鲜度：给页面上「来源 xxx · ?」那一行用。
+      「降级：缓存数据」原来在**根本没有缓存**时也写出来——那是句假话。
+      现在只有真的读到本地缓存才说缓存，否则直说「暂时连不上」。 */
+  function freshness() {
+    if (state.fromCache) return '缓存数据';
+    if (state.degraded) return '暂时连不上';
+    return '实时';
+  }
+
+  window.Quotes = { INSTRUMENTS, load, get, all, state, freshness };
 })();

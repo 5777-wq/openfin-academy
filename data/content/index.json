@@ -14,6 +14,7 @@
       ],
       "readMinutes": 7,
       "dataAsOf": "2026-10-21",
+      "dataAsOfActual": null,
       "difficulty": 2,
       "updatedAt": "2026-10-21",
       "file": "assets/gold.md"
@@ -22,7 +23,7 @@
       "id": "hk00700",
       "section": "assets",
       "title": "腾讯：它同时是游戏公司、社交公司和投资公司",
-      "dek": "微信的社交垄断、游戏的现金流、对外投资的组合——三块加起来，才是腾讯；只看任何一块都会看错。",
+      "dek": "微信的社交、游戏的现金流、对外投资——三块加起来才是腾讯。",
       "tag": "标的百科",
       "tags": [
         "腾讯",
@@ -32,6 +33,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-10-21",
+      "dataAsOfActual": "2026-10-22",
       "difficulty": 2,
       "updatedAt": "2026-10-21",
       "file": "assets/hk00700.md"
@@ -40,7 +42,7 @@
       "id": "hk09988",
       "section": "assets",
       "title": "阿里巴巴：它的问题从来不是生意",
-      "dek": "电商、云计算、国际业务三块都在赚钱，但股价被\"叙事\"压着：监管、地缘、竞争，每一条都能单独打一轮。",
+      "dek": "电商、云计算、国际业务三块都在赚钱，股价却被\"叙事\"压着。",
       "tag": "标的百科",
       "tags": [
         "阿里巴巴",
@@ -50,6 +52,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-10-21",
+      "dataAsOfActual": "2026-10-22",
       "difficulty": 3,
       "updatedAt": "2026-10-21",
       "file": "assets/hk09988.md"
@@ -58,7 +61,7 @@
       "id": "sh600519",
       "section": "assets",
       "title": "贵州茅台：A 股最贵的一门生意",
-      "dek": "它靠一个牌子赚走行业里大部分利润。也正因为如此，它的股价对\"消费信心\"比对\"产量\"更敏感。",
+      "dek": "它靠一个牌子赚走行业里大部分利润，股价对\"消费信心\"比对\"产量\"更敏感。",
       "tag": "标的百科",
       "tags": [
         "贵州茅台",
@@ -68,6 +71,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-10-21",
+      "dataAsOfActual": "2026-10-22",
       "difficulty": 2,
       "updatedAt": "2026-10-21",
       "file": "assets/sh600519.md"
@@ -76,7 +80,7 @@
       "id": "sz300750",
       "section": "assets",
       "title": "宁德时代：它给电动车供应链装上了\"标准件\"",
-      "dek": "全球动力电池装机量第一。它的对手不是同行，是车企自己造电池的决心——以及整车价格战压下来的那部分利润。",
+      "dek": "全球动力电池装机量第一。它的对手是车企自研电池的决心。",
       "tag": "标的百科",
       "tags": [
         "宁德时代",
@@ -86,6 +90,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-10-21",
+      "dataAsOfActual": "2026-10-22",
       "difficulty": 3,
       "updatedAt": "2026-10-21",
       "file": "assets/sz300750.md"
@@ -94,7 +99,7 @@
       "id": "usAAPL",
       "section": "assets",
       "title": "苹果：它已经不只是卖手机的了",
-      "dek": "一家把利润藏在服务里的硬件公司。股价在复权后从 2008 年的 3.05 美元涨到 340 美元，也真的跌过八成。",
+      "dek": "一家把利润藏在服务里的硬件公司，复权后涨了一百多倍，也真的跌过 57%。",
       "tag": "标的百科",
       "tags": [
         "苹果",
@@ -104,6 +109,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-10-21",
+      "dataAsOfActual": "2026-10-21",
       "difficulty": 2,
       "updatedAt": "2026-10-21",
       "file": "assets/usAAPL.md"
@@ -122,6 +128,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-10-21",
+      "dataAsOfActual": "2026-10-21",
       "difficulty": 2,
       "updatedAt": "2026-10-21",
       "file": "assets/usAMZN.md"
@@ -130,7 +137,7 @@
       "id": "usGOOG",
       "section": "assets",
       "title": "谷歌：搜索还在，但收钱的方式变了",
-      "dek": "广告还是它的命根子，只是它现在不只卖搜索结果了。AI 时代的最大悬念是：搜索流量会不会被聊天机器人截走。",
+      "dek": "广告还是它的命根子。AI 时代最大的悬念：搜索流量会不会被聊天机器人截走。",
       "tag": "标的百科",
       "tags": [
         "谷歌",
@@ -141,6 +148,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-10-21",
+      "dataAsOfActual": "2026-10-21",
       "difficulty": 2,
       "updatedAt": "2026-10-21",
       "file": "assets/usGOOG.md"
@@ -149,7 +157,7 @@
       "id": "usMETA",
       "section": "assets",
       "title": "Meta：它曾经把互联网的时间都抢走了",
-      "dek": "靠\"免费让你用、你把注意力给它\"赚广告钱。代价是它要不停改产品、改算法，用户因此反复迁移。",
+      "dek": "靠\"免费让你用、你把注意力给它\"赚广告钱，代价是产品必须不停改。",
       "tag": "标的百科",
       "tags": [
         "Meta",
@@ -160,6 +168,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-10-21",
+      "dataAsOfActual": "2026-10-21",
       "difficulty": 2,
       "updatedAt": "2026-10-21",
       "file": "assets/usMETA.md"
@@ -168,7 +177,7 @@
       "id": "usMSFT",
       "section": "assets",
       "title": "微软：它同时是三条完全不同的生意",
-      "dek": "办公软件、云、AI 三条线，周期完全不同。把它们当成\"一家科技公司\"看，是最常见的误判。",
+      "dek": "办公软件、云、AI 三条线周期完全不同，当成\"一家科技公司\"看最误判。",
       "tag": "标的百科",
       "tags": [
         "微软",
@@ -179,6 +188,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-10-21",
+      "dataAsOfActual": "2026-10-21",
       "difficulty": 2,
       "updatedAt": "2026-10-21",
       "file": "assets/usMSFT.md"
@@ -187,7 +197,7 @@
       "id": "usNVDA",
       "section": "assets",
       "title": "英伟达：涨过 100 倍，也从 0.23 美元起来过",
-      "dek": "AI 算力的卖铲人。它的复权后月线从 2010 年的 0.23 美元涨到 228 美元，中间还坐着一次 -80% 的回撤。",
+      "dek": "AI 算力的卖铲人。复权月线从 0.23 美元涨到 228.38 美元，中途跌过 63%。",
       "tag": "标的百科",
       "tags": [
         "英伟达",
@@ -197,6 +207,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-10-21",
+      "dataAsOfActual": "2026-10-21",
       "difficulty": 2,
       "updatedAt": "2026-10-21",
       "file": "assets/usNVDA.md"
@@ -205,7 +216,7 @@
       "id": "usTSLA",
       "section": "assets",
       "title": "特斯拉：它的估值从来不靠卖车",
-      "dek": "一家销量曾占全球汽车市场 1% 出头的公司，估值一度超过很多车企总和。它究竟在为什么定价？",
+      "dek": "销量曾占全球汽车市场 1% 出头的公司，估值一度超过很多车企总和。它在为什么定价？",
       "tag": "标的百科",
       "tags": [
         "特斯拉",
@@ -215,6 +226,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-10-21",
+      "dataAsOfActual": "2026-10-21",
       "difficulty": 3,
       "updatedAt": "2026-10-21",
       "file": "assets/usTSLA.md"
@@ -223,7 +235,7 @@
       "id": "usTSM",
       "section": "assets",
       "title": "台积电：全世界最会做一件事的公司",
-      "dek": "几乎所有先进芯片都出自它的厂。它的护城河不是技术，是别人要花十年和一千亿美元才追得上的产能与良率。",
+      "dek": "几乎所有先进芯片都出自它的厂，护城河不是技术，是产能与良率。",
       "tag": "标的百科",
       "tags": [
         "台积电",
@@ -233,6 +245,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-10-21",
+      "dataAsOfActual": "2026-10-21",
       "difficulty": 3,
       "updatedAt": "2026-10-21",
       "file": "assets/usTSM.md"
@@ -251,6 +264,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-10-21",
+      "dataAsOfActual": null,
       "difficulty": 1,
       "updatedAt": "2026-10-21",
       "file": "concepts/inflation.md"
@@ -269,6 +283,7 @@
       ],
       "readMinutes": 8,
       "dataAsOf": "2026-10-21",
+      "dataAsOfActual": null,
       "difficulty": 2,
       "updatedAt": "2026-10-21",
       "file": "concepts/risk-free-rate.md"
@@ -287,6 +302,7 @@
       ],
       "readMinutes": 8,
       "dataAsOf": "2026-10-21",
+      "dataAsOfActual": "1988-12-30",
       "difficulty": 2,
       "updatedAt": "2026-10-21",
       "file": "crisis/1987.md"
@@ -305,6 +321,7 @@
       ],
       "readMinutes": 11,
       "dataAsOf": "2026-10-21",
+      "dataAsOfActual": "1993-06-30",
       "difficulty": 3,
       "updatedAt": "2026-10-21",
       "file": "crisis/1990.md"
@@ -313,7 +330,7 @@
       "id": "1994",
       "section": "crisis",
       "title": "1994 墨西哥比索危机：小国惹出的全球紧缩",
-      "dek": "这一年股市和黄金几乎没动，只有美债收益率飙升。这是一次债券市场危机，不是股票危机。",
+      "dek": "这一年股市和黄金几乎没动，只有美债收益率飙升。这是一次债券危机。",
       "tag": "危机复盘",
       "tags": [
         "1994",
@@ -323,6 +340,7 @@
       ],
       "readMinutes": 7,
       "dataAsOf": "2026-10-21",
+      "dataAsOfActual": "1995-12-29",
       "difficulty": 2,
       "updatedAt": "2026-10-21",
       "file": "crisis/1994.md"
@@ -331,7 +349,7 @@
       "id": "1998",
       "section": "crisis",
       "title": "1998 亚洲金融危机：恒指一天跌 13.7%",
-      "dek": "这一年，亚洲的钱在流血，美国的钱在上涨，黄金也在跌。三件事同时发生，才是最反直觉的一课。",
+      "dek": "这一年，亚洲的钱在流血，美国的钱在上涨，黄金也在跌。三件事同时发生才最反直觉。",
       "tag": "危机复盘",
       "tags": [
         "亚洲金融危机",
@@ -342,6 +360,7 @@
       ],
       "readMinutes": 12,
       "dataAsOf": "2026-10-21",
+      "dataAsOfActual": "1999-06-30",
       "difficulty": 3,
       "updatedAt": "2026-10-21",
       "file": "crisis/1998.md"
@@ -360,6 +379,7 @@
       ],
       "readMinutes": 12,
       "dataAsOf": "2026-10-21",
+      "dataAsOfActual": "2010-06-30",
       "difficulty": 3,
       "updatedAt": "2026-10-21",
       "file": "crisis/2008.md"
@@ -379,6 +399,7 @@
       ],
       "readMinutes": 10,
       "dataAsOf": "2026-10-21",
+      "dataAsOfActual": null,
       "difficulty": 4,
       "updatedAt": "2026-10-21",
       "file": "cycles/2000-dotcom.md"
@@ -397,6 +418,7 @@
       ],
       "readMinutes": 7,
       "dataAsOf": "2026-10-21",
+      "dataAsOfActual": null,
       "difficulty": 1,
       "updatedAt": "2026-10-21",
       "file": "family/money-jar.md"

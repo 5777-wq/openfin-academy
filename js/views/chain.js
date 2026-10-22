@@ -26,7 +26,8 @@
           </span>
           <span class="e-m">看链路 →</span>
         </a>`).join('')}
-      </div>`;
+      </div>
+      ${(window.Site && window.Site.disclaimer) ? window.Site.disclaimer.GENERIC : ''}`;
   }
 
   async function renderDetail(view, id) {
@@ -47,6 +48,7 @@
       <div id="chain-heat" style="margin-bottom:var(--s-6)">
         <div class="panel"><div class="skel" style="height:16px;width:40%"></div></div>
       </div>
+      ${(window.Site && window.Site.disclaimer) ? window.Site.disclaimer.GENERIC : ''}
       <div class="prose">
         ${links.map((s) => `
           <h3>${esc(s.name)}</h3>

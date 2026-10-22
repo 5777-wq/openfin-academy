@@ -88,6 +88,17 @@
   }
 
   /** 极简 markdown → HTML（受控子集：标题/加粗/斜体/代码/链接/列表/引用/段落/换行） */
+
+  /**
+   * 链接协议白名单。
+   *
+   * 正文里的 markdown 链接会被渲染成 <a href>。如果不做校验，
+   * `[点我](javascript:alert(1))` 就会变成一个可点击的 javascript: 链接——
+   * 这是内容被投毒时的注入面。现在只放行 http(s)、站内绝对路径和锚点，
+   * 其余一律**不生成 <a>**（原样留成文本）。
+   */
+  const SAFE_HREF = /^(https?:|\/|#)/i;
+
   function md(src) {
     if (!src) return '';
     const blocks = String(src).replace(/\r\n/g, '\n').split(/\n{2,}/);
@@ -95,7 +106,12 @@
       .replace(/`([^`]+)`/g, '<code>$1</code>')
       .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
       .replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>')
-      .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2">$1</a>');
+      .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (m, text, href) => {
+        const h = String(href).trim();
+        if (!SAFE_HREF.test(h)) return m;   // 不安全的协议：不生成链接
+        const rel = /^https?:/i.test(h) ? ' target="_blank" rel="noopener noreferrer"' : '';
+        return `<a href="${h}"${rel}>${text}</a>`;
+      });
 
     return blocks.map((b) => {
       const t = b.trim();
@@ -103,8 +119,11 @@
       if (/^###\s+/.test(t)) return `<h3>${inline(t.replace(/^###\s+/, ''))}</h3>`;
       if (/^##\s+/.test(t)) return `<h2>${inline(t.replace(/^##\s+/, ''))}</h2>`;
       if (/^>\s?/.test(t)) {
-        const lines = t.split('\n').map((l) => l.replace(/^>\s?/, ''));
-        return `<blockquote><p>${inline(lines.join('<br>'))}</p></blockquote>`;
+        /* 逐行渲染再拼 <br>。
+           以前是 lines.join('<br>') 之后才转义，转义把 <br> 变成了 &lt;br&gt;，
+           页面上能直接看到「&lt;br&gt;」这几个字。 */
+        const lines = t.split('\n').map((l) => inline(l.replace(/^>\s?/, '')));
+        return `<blockquote><p>${lines.join('<br>')}</p></blockquote>`;
       }
       if (/^[-*]\s+/.test(t)) {
         const items = t.split('\n').filter((l) => l.trim()).map((l) => `<li>${inline(l.replace(/^[-*]\s+/, ''))}</li>`);

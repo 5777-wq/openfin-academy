@@ -39,12 +39,24 @@ function arg(name, def) {
 
 async function resolveSource() {
   const given = arg('--src');
+  const commit = arg('--commit');
   if (given) {
     if (/^https?:\/\//.test(given) || /\.git$/.test(given)) {
       const tmp = path.join(ROOT, '.tmp-upstream');
       await rm(tmp, { recursive: true, force: true });
-      console.log(`[sync] 克隆上游 ${given}`);
-      await exec('git', ['clone', '--depth', '1', given, tmp]);
+      if (commit) {
+        /* 要检出指定的 commit，就不能用 --depth 1：
+           浅克隆的历史里没有那个提交，checkout 会直接失败。
+           改成不裁剪历史的克隆（blob 仍然按需拉取），再切到目标提交。
+           这是 CI 校验 vendor 用法：拿 vendor/HEAD 里钉住的那个 commit 比对，
+           而不是拿上游最新 HEAD——否则上游一有新提交，CI 就永久失败。 */
+        console.log(`[sync] 克隆上游 ${given}（检出 ${commit}）`);
+        await exec('git', ['clone', '--filter=blob:none', given, tmp]);
+        await exec('git', ['-C', tmp, 'checkout', commit]);
+      } else {
+        console.log(`[sync] 克隆上游 ${given}`);
+        await exec('git', ['clone', '--depth', '1', given, tmp]);
+      }
       return tmp;
     }
     if (!existsSync(given)) throw new Error(`源目录不存在：${given}`);
@@ -86,6 +98,7 @@ async function main() {
 
   // 记录来源（只记仓库名与上游地址，不写本机绝对路径——这是要公开的仓库）
   const label = /(^|[\\/])([^\\/]+)$/.exec(src.replace(/\.git$/, ''));
+  const headPath = path.join(VENDOR, 'HEAD');
   const head = [
     '# vendor 目录由 _scripts/sync-core.mjs 自动生成，勿手改。',
     `# source: ${label ? label[2] : 'openfinlens'}`,
@@ -94,7 +107,22 @@ async function main() {
     `# synced: ${new Date().toISOString()}`,
     '',
   ].join('\n');
-  await writeFile(path.join(VENDOR, 'HEAD'), head, 'utf8');
+
+  /* 上游 commit 没变就别改 HEAD 文件。
+     否则每次同步都会刷新一次「synced」时间戳，
+     CI 里的 `git diff --quiet -- vendor` 就永远不干净——
+     校验项会变成「永远红」，等于没有校验。 */
+  let keepHead = false;
+  if (existsSync(headPath)) {
+    const old = await readFile(headPath, 'utf8');
+    const oldSha = (/#\s*commit:\s*(\S+)/.exec(old) || [])[1];
+    keepHead = oldSha === sha;
+  }
+  if (keepHead) {
+    console.log('[sync] 上游 commit 未变，vendor/HEAD 保持原样');
+  } else {
+    await writeFile(headPath, head, 'utf8');
+  }
 
   console.log(`[sync] 完成：同步 ${copied} 个文件，跳过 ${skipped} 个`);
 }

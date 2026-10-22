@@ -36,7 +36,7 @@
 .btn.ghost:hover { border-color: var(--ink-3); color: var(--ink); opacity: 1; }
 .btn.teal { background: var(--teal); border-color: var(--teal); color: #fff; }
 body[data-theme="night"] .btn.teal { color: #0E1214; }
-.btn.gold { background: var(--gold); border-color: var(--gold); color: #fff; }
+.btn.gold { background: var(--gold-text); border-color: var(--gold-text); color: #fff; }
 body[data-theme="night"] .btn.gold { color: #14191C; }
 .btn.sm { height: 28px; padding: 0 10px; font-size: var(--t-micro); }
 
@@ -48,9 +48,9 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
   background: var(--sheet-2); white-space: nowrap;
 }
 .tag.teal { color: var(--teal); border-color: var(--teal-line); background: var(--teal-soft); }
-.tag.gold { color: var(--gold); border-color: var(--gold-line); background: var(--gold-soft); }
-.tag.up { color: var(--up); border-color: rgba(194,64,47,.3); background: var(--up-soft); }
-.tag.down { color: var(--down); border-color: rgba(27,122,87,.3); background: var(--down-soft); }
+.tag.gold { color: var(--gold-text); border-color: var(--gold-line); background: var(--gold-soft); }
+.tag.up { color: var(--up); border-color: rgba(176,54,39,.3); background: var(--up-soft); }
+.tag.down { color: var(--down); border-color: rgba(24,106,75,.3); background: var(--down-soft); }
 
 /* ---------- 时代横轴（两条时间带） ---------- */
 /* 注意：JS 输出的容器 class 是 era-band（不是 era）——名字对不上，这一整段样式就没生效过 */
@@ -108,10 +108,10 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
 }
 .era-node:hover { transform: translateX(-50%) translateY(-2px); }
 .era-node:hover .en-dot { background: var(--gold); border-color: var(--gold); transform: scale(1.25); }
-.era-node:hover .en-year { color: var(--gold); }
+.era-node:hover .en-year { color: var(--gold-text); }
 .era-node:hover .en-label { color: var(--ink); }
 .era-node.now .en-dot { background: var(--gold); border-color: var(--gold); }
-.era-node.now .en-year { color: var(--gold); }
+.era-node.now .en-year { color: var(--gold-text); }
 .era-node.now .en-label { color: var(--ink); font-weight: 500; }
 .era-node .en-tip {
   --tip-w: 214px; --tip-shift: 0px;
@@ -167,7 +167,7 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
   padding-top: 3px;
 }
 .term-part .tp-v { color: var(--ink-2); font-size: 14px; line-height: 1.72; }
-.term-part .tp-v .hl { color: var(--gold); font-family: var(--font-mono); font-weight: 500; }
+.term-part .tp-v .hl { color: var(--gold-text); font-family: var(--font-mono); font-weight: 500; }
 .term-part.pit .tp-k { color: var(--warn); }
 .term-part.pit .tp-v { color: var(--ink-2); }
 .term-part.pit { background: var(--warn-soft); margin: 0 calc(-1 * var(--s-4)) 0 calc(-1 * var(--s-4)); padding-left: var(--s-4); padding-right: var(--s-4); }
@@ -220,7 +220,10 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
 .drawer-head .dx {
   margin-left: auto; width: 28px; height: 28px; display: grid; place-items: center;
   border: 1px solid var(--rule); border-radius: var(--r-2); background: none; color: var(--ink-3);
+  position: relative;
 }
+/* D-6：触控热区撑到 44×44 */
+.drawer-head .dx::after { content: ''; position: absolute; left: -8px; right: -8px; top: -8px; bottom: -8px; }
 .drawer-head .dx:hover { border-color: var(--ink-3); color: var(--ink); }
 .drawer-body { padding: var(--s-5); overflow-y: auto; flex: 1 1 auto; }
 .drawer-foot {
@@ -252,7 +255,7 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
   border-top: 1px dashed var(--rule-2); font-family: var(--font-mono); line-height: 1.6;
 }
 .dpanel.hot { border-color: var(--gold-line); background: linear-gradient(180deg, var(--gold-soft), transparent 55%), var(--sheet); }
-.dpanel.hot .dp-v { color: var(--gold); }
+.dpanel.hot .dp-v { color: var(--gold-text); }
 
 /* ---------- 仪表网格 ---------- */
 .gauges { display: grid; grid-template-columns: repeat(auto-fit, minmax(158px, 1fr)); gap: var(--s-3); }
@@ -364,12 +367,15 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
 .replay-head .rp-title { font-size: var(--t-h3); color: var(--ink); }
 .replay-head .rp-date {
   font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 19px;
-  color: var(--gold); margin-left: auto; letter-spacing: .02em;
+  color: var(--gold-text); margin-left: auto; letter-spacing: .02em;
 }
 .replay-head .rp-btn {
   width: 30px; height: 30px; display: grid; place-items: center; border-radius: var(--r-2);
   border: 1px solid var(--rule); background: var(--sheet); color: var(--ink-2);
+  position: relative;
 }
+/* D-6：触控热区撑到 44×44，视觉仍是 30px 的小方块 */
+.replay-head .rp-btn::after { content: ''; position: absolute; left: -7px; right: -7px; top: -7px; bottom: -7px; }
 .replay-head .rp-btn:hover { border-color: var(--ink-3); color: var(--ink); }
 .replay-body { padding: var(--s-4); }
 .rp-legend {
@@ -421,20 +427,23 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
 .rp-scrub input[type=range]::-webkit-slider-runnable-track { height: 2px; background: var(--rule); border-radius: 1px; }
 .rp-scrub input[type=range]::-moz-range-track { height: 2px; background: var(--rule); border-radius: 1px; }
 .rp-scrub input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance: none; appearance: none; width: 3px; height: 24px; background: var(--gold);
-  border-radius: 1px; margin-top: -11px; box-shadow: 0 0 0 3px var(--gold-soft);
+  -webkit-appearance: none; appearance: none;
+  /* D-6：滑块的可拖区域做到 24×24（原来只有 3px 宽，手指根本抓不住）。
+     看得见的那根金条还是 3px——用渐变把它画在 24px 盒子的正中间。 */
+  width: 24px; height: 24px; background-color: transparent; border: 0; margin-top: -11px;
+  background-image: linear-gradient(90deg, transparent 10.5px, var(--gold) 10.5px, var(--gold) 13.5px, transparent 13.5px);
 }
 .rp-scrub input[type=range]::-moz-range-thumb {
-  width: 3px; height: 24px; background: var(--gold); border: 0; border-radius: 1px;
-  box-shadow: 0 0 0 3px var(--gold-soft);
+  width: 24px; height: 24px; background-color: transparent; border: 0; border-radius: 0; margin-top: -11px;
+  background-image: linear-gradient(90deg, transparent 10.5px, var(--gold) 10.5px, var(--gold) 13.5px, transparent 13.5px);
 }
 .rp-marks { position: relative; height: 26px; margin: 0 8px; }
 .rp-mark {
   position: absolute; top: 0; transform: translateX(-50%); text-align: center;
   background: none; border: 0; padding: 0; cursor: pointer; font: inherit;
 }
-/* 命中区：刻度只有 13px 高，手指点不中；上下各撑出一点，高度补到 24px 以上 */
-.rp-mark::before { content: ''; position: absolute; left: 0; right: 0; top: -6px; bottom: -5px; }
+/* 命中区：刻度只有 13px 高，手指点不中；上下各撑出一点，热区高度补到 34px */
+.rp-mark::before { content: ''; position: absolute; left: -3px; right: -3px; top: -10px; bottom: -11px; }
 .rp-mark i { display: block; width: 1px; height: 7px; background: var(--gold); margin: 0 auto; }
 .rp-mark span { font-family: var(--font-mono); font-size: 9.5px; color: var(--ink-3); white-space: nowrap; }
 .rp-mark:hover span { color: var(--ink); }
@@ -452,7 +461,7 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
 .rp-event:hover { background: var(--sheet-2); }
 .rp-event .re-d { font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-4); }
 .rp-event .re-t { color: var(--ink-2); }
-.rp-event.on .re-d { color: var(--gold); }
+.rp-event.on .re-d { color: var(--gold-text); }
 .rp-event.on .re-t { color: var(--ink); font-weight: 500; }
 
 @media (max-width: 860px) {
@@ -486,6 +495,17 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
 .stat .s-v.down { color: var(--down); }
 .stat .s-n { font-size: 10.5px; color: var(--ink-4); font-family: var(--font-mono); }
 .insight-note { margin: var(--s-3) 0 0; font-size: var(--t-micro); color: var(--ink-3); line-height: 1.7; }
+
+/* 历史分位条：当前读数在历史分布里的位置。
+   这只是陈述事实，不是买卖信号——文案里不出现「该买 / 该卖」。 */
+.pbar {
+  position: relative; display: block; height: 4px; margin: 4px 0 2px;
+  background: var(--rule-2); border-radius: 2px;
+}
+.pbar i {
+  position: absolute; top: -3px; width: 3px; height: 10px; margin-left: -1.5px;
+  background: var(--gold); border-radius: 2px;
+}
 
 /* ============================================================
    术语库：分类导航 + 分类速查表

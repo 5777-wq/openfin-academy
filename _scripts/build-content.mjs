@@ -82,10 +82,29 @@ async function walk(dir) {
   return out;
 }
 
+/**
+ * 这篇文章引用的数据，最新的一点是几号。
+ *
+ * 标的文的 id 就是序列 id，危机文的 id 对应 crisis-<id>.json。
+ * 拿不到就返回 null（比如纯概念文，本来就没有自己的序列）。
+ */
+async function latestDataDate(id, section) {
+  const name = section === 'crisis' ? 'crisis-' + id : id;
+  const p = path.join(ROOT, 'data', 'history', name + '.json');
+  if (!existsSync(p)) return null;
+  try {
+    const j = JSON.parse(await readFile(p, 'utf8'));
+    if (j.points && j.points.length) return j.points[j.points.length - 1].t;
+    if (j.dates && j.dates.length) return j.dates[j.dates.length - 1];
+  } catch (e) { /* 读不了就当没有 */ }
+  return null;
+}
+
 async function main() {
   await mkdir(OUT, { recursive: true });
   const files = await walk(SRC);
   const items = [];
+  const stale = [];
 
   for (const f of files) {
     const raw = await readFile(f, 'utf8');
@@ -95,12 +114,22 @@ async function main() {
       continue;
     }
     const id = String(meta.id);
+    const section = meta.section || path.basename(path.dirname(f));
+    /* dataAsOf 是手写的「本文写于哪天」，它永远停在写作那天。
+       这里再算一个 dataAsOfActual：这篇文章引用的数据实际最新到哪天。
+       页面上两个都显示，读者自己判断新鲜度；
+       手写的那个比实际旧了，就在这里喊一声（不阻断）。 */
+    const dataAsOfActual = await latestDataDate(id, section);
     const payload = Object.assign({}, meta, {
       id,
-      section: meta.section || path.basename(path.dirname(f)),
+      section,
       body: body.trim(),
+      dataAsOfActual: dataAsOfActual,
     });
     await writeFile(path.join(OUT, id + '.json'), JSON.stringify(payload, null, 2), 'utf8');
+    if (dataAsOfActual && meta.dataAsOf && String(dataAsOfActual) > String(meta.dataAsOf)) {
+      stale.push(`${id}：正文写的 dataAsOf=${meta.dataAsOf}，但它引用的数据已经到 ${dataAsOfActual}`);
+    }
     items.push({
       id,
       section: payload.section,
@@ -110,6 +139,7 @@ async function main() {
       tags: meta.tags || [],
       readMinutes: meta.readMinutes || null,
       dataAsOf: meta.dataAsOf || null,
+      dataAsOfActual: dataAsOfActual,
       difficulty: meta.difficulty || null,
       updatedAt: meta.updatedAt || null,
       file: path.relative(SRC, f).replace(/\\/g, '/'),
@@ -153,6 +183,13 @@ async function main() {
   }
 
   console.log(`[build] 完成：${items.length} 篇文章 → data/content/`);
+  if (stale.length) {
+    console.log('');
+    console.warn(`[build] 提醒：${stale.length} 篇的 dataAsOf 比它引用的数据旧——`);
+    stale.forEach((s) => console.warn('  · ' + s));
+    console.warn('  dataAsOf 是「本文写于哪天」，页面会同时显示数据实际截止日；');
+    console.warn('  想更新的话，把 frontmatter 里的 dataAsOf / updatedAt 一起改掉。');
+  }
 }
 
 async function copyJson(from, to) {

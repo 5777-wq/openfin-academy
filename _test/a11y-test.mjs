@@ -221,6 +221,7 @@ const SCRIPTS = [
   'vendor/core/academy-gloss.js',
   'js/site/format.js',
   'js/site/cross.js',
+  'js/site/disclaimer.js',
   'js/store.js',
   'js/router.js',
   'js/engine/series.js',
@@ -285,6 +286,22 @@ async function main() {
     ok(name + ' 对 --paper 的对比度 ≥4.5:1', r >= 4.5,
       c + ' 对 ' + paper + ' = ' + r.toFixed(2) + ':1');
   }
+  /* 语义色也是**文字色**：涨、跌、平、金、警示都要能读。
+     原来的 --gold 只有 3.23:1、--flat 只有 3.00:1，标题级别的字都看不清。
+     图形色（金色圈、游标、滑块）走 --gold，只需要 3:1，不跟文字一个尺子。 */
+  const semantic = ['--gold-text', '--up', '--down', '--flat', '--warn'];
+  const sheet = cssVar(tokens, '--sheet');
+  for (const name of semantic) {
+    const c = cssVar(tokens, name);
+    ok('tokens.css 里取得到 ' + name, !!c, c || '');
+    if (!c || !paper) continue;
+    for (const [label, bg] of [['--paper', paper], ['--sheet', sheet]]) {
+      if (!bg) continue;
+      const r = contrast(c, bg);
+      ok(name + ' 对 ' + label + ' 的对比度 ≥4.5:1', r >= 4.5,
+        c + ' 对 ' + bg + ' = ' + r.toFixed(2) + ':1');
+    }
+  }
   // 夜间皮肤也看一眼：白天的达标不代表夜里达标
   const night = tokens.slice(tokens.indexOf('body[data-theme="night"]'));
   const nPaper = cssVar(night, '--paper');
@@ -338,6 +355,32 @@ async function main() {
   } else {
     skipTest('.bchip:focus-visible 的 outline 不是 none', '本站没有 .bchip 这个类');
   }
+
+  /* ============================================================
+     3b. 触控热区：主要按钮的可点区域至少 44×44
+     ============================================================ */
+  const touchTargets = [
+    ['.mh-btn', layout],
+    ['.replay-head .rp-btn', components],
+    ['.drawer-head .dx', components],
+  ];
+  for (const [sel, css] of touchTargets) {
+    const esc = sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const rule = new RegExp(esc + '\\s*\\{([^}]*)\\}').exec(css);
+    ok('触控目标有样式规则：' + sel, !!rule, 'CSS 里找不到 ' + sel);
+    if (!rule) continue;
+    ok(sel + ' 是定位容器（撑热区用）', /position:\s*relative/.test(rule[1]), rule[1].trim().slice(0, 80));
+    const exp = new RegExp(esc + '::after\\s*\\{([^}]*)\\}').exec(css);
+    ok(sel + ' 有撑热区的 ::after', !!exp, '缺 ' + sel + '::after');
+    if (!exp) continue;
+    const up = /top:\s*-(\d+)px/.exec(exp[1]);
+    ok(sel + ' 热区向上撑出至少 7px（30px + 14px = 44px）', !!up && Number(up[1]) >= 7,
+      exp[1].trim().slice(0, 90));
+  }
+  // 时间轴滑块：看得见的金条只有 3px 宽，但可拖的盒子必须够大
+  const thumb = /input\[type=range\]::-webkit-slider-thumb\s*\{([^}]*)\}/.exec(components);
+  ok('滑块的可拖区域至少 24px 宽', !!thumb && /width:\s*24px/.test(thumb[1]),
+    thumb ? thumb[1].trim().slice(0, 90) : '没找到滑块样式');
 
   /* ============================================================
      4. 跑起来：焦点陷阱 / 背景隔离 / 焦点归还 / 换页播报

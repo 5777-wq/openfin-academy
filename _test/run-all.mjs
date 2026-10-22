@@ -135,7 +135,7 @@ function loadScripts(files) {
    1b. 标的读数：收益率与价格两套口径
    ============================================================ */
 {
-  const W = loadScripts(['js/engine/drawdown.js', 'js/engine/instrument.js']);
+  const W = loadScripts(['js/engine/percentile.js', 'js/engine/drawdown.js', 'js/engine/instrument.js']);
   const I = W.Engine.instrument;
   const price = {
     unit: '点', kind: '月收盘价',
@@ -212,7 +212,7 @@ function loadScripts(files) {
    1c. 全部历史序列：回撤口径 + 末点口径
    ============================================================ */
 {
-  const W = loadScripts(['js/engine/drawdown.js', 'js/engine/instrument.js']);
+  const W = loadScripts(['js/engine/percentile.js', 'js/engine/drawdown.js', 'js/engine/instrument.js']);
   const I = W.Engine.instrument;
   const dir = path.join(ROOT, 'data', 'history');
   const files = readdirSync(dir).filter((f) => f.endsWith('.json') && !f.startsWith('crisis'));
@@ -270,6 +270,71 @@ function loadScripts(files) {
 }
 
 /* ============================================================
+   1f. 内容里的数字不许悄悄过期
+   ============================================================ */
+{
+  const walk = (dir, out = []) => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const p = path.join(dir, e.name);
+      if (e.isDirectory()) walk(p, out);
+      else out.push(p);
+    }
+    return out;
+  };
+  const contentFiles = walk(path.join(ROOT, 'content')).filter((f) => /\.(md|json)$/.test(f));
+
+  /* ① U+FFFD 乱码：已经出过一次（富时100 那条「英国」），还会再犯。
+        乱码一旦进术语库，抽屉、速查表、搜索三处一起坏。 */
+  const bad = contentFiles.filter((f) => readFileSync(f, 'utf8').includes('\uFFFD'));
+  ok('内容里没有 U+FFFD 乱码', bad.length === 0, bad.join(' '));
+
+  /* ② 「今天 + 数字」：这类句子发布第二天就过期。
+        「今天的100块」是讲概念，豁免；「今天 393.80」是报价，不许出现。 */
+  const todayHits = [];
+  for (const f of contentFiles.filter((x) => x.endsWith('.md'))) {
+    readFileSync(f, 'utf8').split('\n').forEach((l, i) => {
+      if (/今天\s*[\d.]/.test(l)) todayHits.push(path.relative(ROOT, f) + ':' + (i + 1));
+    });
+  }
+  ok('正文里不许出现「今天 + 数字」', todayHits.length === 0, todayHits.join(' '));
+
+  /* ③ 手写价格必须还能在站内序列里对上。
+        「最疯 / 最惨」那几行写的是月末价，序列每刷新一次就可能变——
+        写死的数字会悄悄过期，读者对着数据卡一对就发现对不上，整站失信。 */
+  const assetsSrc = readFileSync(path.join(ROOT, 'js/views/assets.js'), 'utf8');
+  const so = /const SERIES_OF = \{([\s\S]*?)\n  \};/.exec(assetsSrc);
+  const SERIES_OF = {};
+  if (so) {
+    for (const line of so[1].split('\n')) {
+      const kv = /^\s*'?([^':]+)'?\s*:\s*'([^']+)'/.exec(line);
+      if (kv) SERIES_OF[kv[1]] = kv[2];
+    }
+  }
+  const priceMiss = [];
+  for (const f of readdirSync(path.join(ROOT, 'content/assets')).filter((x) => x.endsWith('.md'))) {
+    const id = f.replace(/\.md$/, '');
+    const sid = SERIES_OF[id] || id;
+    const sp = path.join(ROOT, 'data/history', sid + '.json');
+    if (!existsSync(sp)) continue;
+    const j = JSON.parse(readFileSync(sp, 'utf8'));
+    const vals = new Set((j.points || []).map((x) => Number(x.v).toFixed(2)));
+    const text = readFileSync(path.join(ROOT, 'content/assets', f), 'utf8');
+    const nums = [];
+    for (const re of [/月末价\s*([\d.]+)/g, /从\s*([\d.]+)\s*到\s*([\d.]+)/g]) {
+      let hit;
+      while ((hit = re.exec(text))) {
+        nums.push(hit[1]);
+        if (hit.length === 3) nums.push(hit[2]);
+      }
+    }
+    for (const v of nums) {
+      if (!vals.has(Number(v).toFixed(2))) priceMiss.push(f + ' 的 ' + v);
+    }
+  }
+  ok('标的文里手写的价格都能在站内序列里对上', priceMiss.length === 0, priceMiss.join(' / '));
+}
+
+/* ============================================================
    2. 格式化层
    ============================================================ */
 {
@@ -289,6 +354,19 @@ function loadScripts(files) {
   ok('fmt.md 生成段落', F.md('第一段\n\n第二段').includes('<p>第二段</p>'));
   ok('fmt.md 生成标题', F.md('## 标题').includes('<h2>标题</h2>'));
   ok('fmt.md 生成列表', F.md('- 甲\n- 乙').includes('<li>甲</li>'));
+
+  // 链接协议白名单：正文里的链接不许变成 javascript: 这种可点的注入面
+  ok('fmt.md 不给 javascript: 链接生成 <a>', !F.md('[x](javascript:alert(1))').includes('<a'),
+    F.md('[x](javascript:alert(1))'));
+  ok('fmt.md 不给 data: 链接生成 <a>', !F.md('[x](data:text/html,x)').includes('<a'));
+  ok('fmt.md 正常外链照样生成', F.md('[x](https://example.com)').includes('<a href="https://example.com"'));
+  ok('fmt.md 外链带 noopener', F.md('[x](https://example.com)').includes('rel="noopener noreferrer"'));
+  ok('fmt.md 站内锚点保留', F.md('[x](#/terms)').includes('<a href="#/terms"'));
+
+  // 多行引用：以前先 join('<br>') 再转义，页面上直接显示「&lt;br&gt;」
+  const quote = F.md('> 第一行\n> 第二行');
+  ok('fmt.md 多行引用有真正的 <br>', quote.includes('<br>'), quote);
+  ok('fmt.md 多行引用不出现 &lt;br&gt;', !quote.includes('&lt;br&gt;'), quote);
 }
 
 /* ============================================================
