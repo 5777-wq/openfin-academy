@@ -565,6 +565,17 @@ async function treasuryDaily(col) {
   return all;
 }
 
+/** 每天按日期把东财序列的采集顺序转一下。
+    为什么：上游（push2his）会限流——一轮下来通常只有前十几条能取到，
+    实测第 19 条之后开始连着 fetch failed。顺序固定的话，
+    被挡住的那几条**永远排不到**，就一直缺着。
+    按天轮转之后，被挡住的下一轮就排到前面了；
+    成功的照旧写盘，失败的保留旧文件（宁缺毋假）。 */
+function orderedEastDefs(defs) {
+  const off = Math.floor(Date.now() / 86400000) % defs.length;
+  return defs.slice(off).concat(defs.slice(0, off));
+}
+
 async function buildCrisis(def) {
   const series = [];
   const missing = [];
@@ -801,7 +812,7 @@ async function main() {
     ['USDJPY', '119.USDJPY', '美元日元', '日元/美元', 3, '东方财富 push2his 119.USDJPY'],
     ['USDHKD', '119.USDHKD', '美元港币', '港元/美元', 4, '东方财富 push2his 119.USDHKD'],
   ];
-  for (const [id, secid, name, unit, digits, source] of eastDefs) {
+  for (const [id, secid, name, unit, digits, source] of orderedEastDefs(eastDefs)) {
     if (!want('east')) break;
     if (!wantedSeries(id)) continue;
     let pts = [], used = source;
