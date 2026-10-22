@@ -32,12 +32,7 @@ jobs:
         run: |
           node _test/run-all.mjs
           node _test/render-test.mjs
-          node _scripts/build-content.mjs
-          if ! git diff --quiet -- data/content; then
-            echo "::error::data/content 与 content/ 不同步，请跑 node _scripts/build-content.mjs"
-            git diff --stat -- data/content
-            exit 1
-          fi
+          node _test/a11y-test.mjs
 
       - name: 提交变更
         run: |
@@ -49,6 +44,16 @@ jobs:
           if git diff --staged --quiet; then
             echo "没有变化，跳过提交"
             exit 0
+          fi
+          # 产物必须与源同步：再编译一次，如果内容又变了，说明刚才那次编译没跑全
+          # （新采到的序列 → 标的清单要重算；漏了这一步，站内就少几个标的页）。
+          # 注意要在 git add 之后查：此时比的是「工作区 vs 暂存区」，
+          # 比 HEAD 的话，采到新数据本身就会让这个检查误报。
+          node _scripts/build-content.mjs
+          if ! git diff --quiet -- data/content; then
+            echo "::error::data/content 与 content/ 不同步，请跑 node _scripts/build-content.mjs"
+            git diff --stat -- data/content
+            exit 1
           fi
           git commit -m "data: refresh 长历史序列与内容产物"
           git push

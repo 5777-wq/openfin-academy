@@ -27,8 +27,10 @@ const wantedSeries = (id) => !SERIES.length || SERIES.includes(id);
 
 async function getText(url, timeout = 25000) {
   // 重试：CDN 偶发失败是常态。采集脚本是每日流水线，不能因为一次抖动就断。
+  // 但重试次数要给够：连着跑两轮时上游会限流，一串「fetch failed」能把
+  // 一整个危机包废掉（实测：5 个包全缺序列）。退避也拉长，让上游缓过来。
   let lastErr = null;
-  for (let attempt = 1; attempt <= 3; attempt++) {
+  for (let attempt = 1; attempt <= 5; attempt++) {
     const ctl = new AbortController();
     const t = setTimeout(() => ctl.abort(), timeout);
     try {
@@ -40,9 +42,9 @@ async function getText(url, timeout = 25000) {
       return await res.text();
     } catch (e) {
       lastErr = e;
-      if (attempt < 3) {
+      if (attempt < 5) {
         console.warn(`  [retry ${attempt}] ${url.slice(0, 64)}… ${e.message}`);
-        await sleep(900 * attempt);
+        await sleep(1500 * attempt);
       }
     } finally { clearTimeout(t); }
   }
@@ -821,7 +823,7 @@ async function main() {
       const p = await writeSeries(id, { name, unit, digits, freq: 'M', source: used, kind: '月收盘价' }, pts);
       if (p) seriesMap[id] = p;
     }
-    await sleep(150);
+    await sleep(500);
   }
 
   // 终端 universe 里的个股：终端能看的每一只，科普站也要能查到它的历史。
