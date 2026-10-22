@@ -333,12 +333,12 @@
       "count": 475
     },
     {
-      "id": "NDX",
-      "name": "纳斯达克100",
+      "id": "IXIC",
+      "name": "纳斯达克综合指数",
       "unit": "点",
       "freq": "M",
       "kind": "月收盘价",
-      "source": "东方财富 push2his 100.NDX",
+      "source": "东方财富 push2his 100.NDX（该 secid 实际返回的是综合指数：与腾讯源 usIXIC 重叠段逐点一致到 ±0.27%，而真正的纳指100 应高 4—5%）",
       "from": "1991-08-30",
       "to": "2026-10-21",
       "count": 423

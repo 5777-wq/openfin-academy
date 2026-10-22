@@ -211,6 +211,51 @@ function loadScripts(files) {
     ok('没有未复权造成的假断崖（单月跌超70%）', cliffs.length === 0, cliffs.join(' | '));
   }
 
+  /* 「名字与数据对不上」的兜底：两条序列如果数值几乎一样，那它们其实是同一条线。
+     这本身不一定有问题——**同一条指数、两个来源、不同历史段**是合法的（下面的白名单）。
+     有问题的是：一条登记成「指数A」、装的却是「指数B」的数据。
+     （踩过的坑：东财的 secid「100.NDX」返回的其实是纳斯达克综合指数，
+       却被登记成「纳斯达克100」，而首页实时仪表也用它——等于把综合指数的数
+       标成纳指100 给用户看。真正的纳指100 应比综合指数高 4—5%。） */
+  {
+    // 已知的「同一条线、两个来源」：登记在这里并写清为什么，白名单才不是掩盖
+    const ALLOWED_TWINS = [
+      ['IXIC', 'usIXIC', '同一个纳斯达克综合指数：IXIC 是东财源（1991 年起的长历史），usIXIC 是腾讯源（2007 年起）'],
+    ];
+    const dir = path.join(ROOT, 'data', 'history');
+    const list = [];
+    for (const f of await readdir(dir)) {
+      if (!f.endsWith('.json') || f.startsWith('crisis')) continue;
+      const j = JSON.parse(await readFile(path.join(dir, f), 'utf8'));
+      if (!j.points || j.points.length < 4) continue;
+      list.push({ id: j.id || f.replace('.json', ''), name: j.name || '', p: j.points });
+    }
+    const twins = [];
+    for (let i = 0; i < list.length; i++) {
+      for (let k = i + 1; k < list.length; k++) {
+        const A = list[i], B = list[k];
+        const bm = new Map(B.p.map((x) => [x.t, x.v]));
+        const ratios = [];
+        for (const x of A.p) {
+          const y = bm.get(x.t);
+          if (y === undefined || !isFinite(x.v) || !isFinite(y) || y === 0) continue;
+          ratios.push(x.v / y);
+        }
+        if (ratios.length < 8) continue;
+        const mean = ratios.reduce((s, v) => s + v, 0) / ratios.length;
+        const sd = Math.sqrt(ratios.reduce((s, v) => s + (v - mean) ** 2, 0) / ratios.length);
+        const near1 = ratios.filter((r) => r > 0.99 && r < 1.01).length / ratios.length;
+        if (near1 > 0.6 && Math.abs(mean - 1) < 0.02 && sd < 0.01) {
+          const allowed = ALLOWED_TWINS.some(([x, y]) => (x === A.id && y === B.id) || (x === B.id && y === A.id));
+          if (!allowed) {
+            twins.push(`${A.id}(${A.name}) ≈ ${B.id}(${B.name})：重叠 ${ratios.length} 点，比值 ${mean.toFixed(4)}`);
+          }
+        }
+      }
+    }
+    ok('不同名字的序列没有其实是同一条线的', twins.length === 0, twins.join(' | '));
+  }
+
   // 危机回放包
   const crisisPath = path.join(ROOT, 'data', 'history', 'crisis-2008.json');
   if (existsSync(crisisPath)) {

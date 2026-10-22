@@ -28,7 +28,7 @@
   const GAUGES = [
     { name: '美债 10 年期收益率', unit: '%', key: 'EM:171.US10Y', digits: 2, hot: true, href: '#/term/risk-free-rate', link: '为什么它是全球无风险利率' },
     { name: 'COMEX 黄金', unit: '美元/盎司', key: 'EM:101.GC00Y', digits: 1, href: '#/assets/gold', link: '黄金到底在防什么' },
-    { name: '纳斯达克 100', unit: '', key: 'usNDX', digits: 2, href: '#/term/nasdaq', link: '纳指为什么对利率最敏感' },
+    { name: '纳斯达克综合指数', unit: '', key: 'usIXIC', digits: 2, href: '#/term/nasdaq', link: '纳指为什么对利率最敏感' },
     { name: 'NYMEX 原油', unit: '美元/桶', key: 'EM:102.CL00Y', digits: 2, href: '#/term/crude-oil', link: '原油是通胀的风向标' },
     { name: '美元指数', unit: '', key: 'EM:100.UDI', digits: 2, href: '#/term/dollar-index', link: '美元为什么是世界的锚' },
     { name: '上证指数', unit: '', key: 'sh000001', digits: 2, href: '#/term/sse-index', link: '大A 的「大盘」指什么' },

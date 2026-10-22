@@ -28,14 +28,14 @@
 
   /* 站内自有序列：终端里没有对应标的，不给「去看历史数据」的链接
      （链过去终端会打开一个空详情页）。 */
-  const NO_LENS = new Set(['VIX', 'NDX']);
+  const NO_LENS = new Set(['VIX', 'IXIC']);
 
   /* 站内自有序列：终端不展示、但本站有月线数据的序列。
      它们以前只能被词条引用（「站内 VIX 月度序列可核对」），读者却找不到地方核对——
      序列收在仓库里，站内没有任何页面能打开它。 */
   const OWN_SERIES = [
     { id: 'VIX', label: 'VIX 恐慌指数', note: 'CBOE 官方月末收盘 · 标普500期权的隐含波动率' },
-    { id: 'NDX', label: '纳斯达克100', note: '纳斯达克100指数月末收盘' },
+    { id: 'IXIC', label: '纳斯达克综合指数（1991 年起）', note: '综合指数的长历史 · 站内另有腾讯源的 usIXIC（2007 年起）' },
   ];
 
   /* 终端的 symbol → 站内专文 id（已写过专文的） */
@@ -192,5 +192,5 @@
     return Number(v).toLocaleString('zh-CN', { minimumFractionDigits: d, maximumFractionDigits: d });
   }
 
-  window.AssetsView = { renderIndex, renderDetail, universe, SERIES_OF, ARTICLE_OF };
+  window.AssetsView = { renderIndex, renderDetail, universe, SERIES_OF, ARTICLE_OF, seriesIdOf, LENS_OF, OWN_SERIES };
 })();

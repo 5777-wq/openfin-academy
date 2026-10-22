@@ -100,6 +100,24 @@
     rail.querySelectorAll('.rail-item').forEach((a) => {
       a.addEventListener('click', (e) => { e.preventDefault(); window.Router.go(a.dataset.path); });
     });
+
+    /* 「标的百科」这一项显示的是**页面上有多少条**（终端有 ∩ 本站有序列的标的，90+ 条），
+       不是专文篇数——两者混在一列数字里，读者会以为点进去只有十几条。
+       序列注册表是异步的，拿到后再回填这一个数字。 */
+    const assetsCount = rail.querySelector('.rail-item[data-path="/assets"] .ri-c');
+    if (assetsCount && window.History && window.History.registry) {
+      window.History.registry().then((reg) => {
+        const have = new Set(((reg && reg.series) || []).map((s) => s.id));
+        const uni = [
+          ...(window.TENCENT_UNIVERSE || []),
+          ...(window.EM_UNIVERSE || []),
+          ...(window.GLOBAL_INDEX || []),
+        ];
+        const n = uni.filter((u) => have.has(window.AssetsView && window.AssetsView.seriesIdOf
+          ? window.AssetsView.seriesIdOf(u.symbol) : u.symbol)).length;
+        if (n) assetsCount.textContent = String(n);
+      }).catch(() => { /* 拿不到就保持原来的篇数 */ });
+    }
   }
 
   function paintTabbar() {

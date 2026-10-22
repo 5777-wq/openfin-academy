@@ -6,11 +6,14 @@
   const HOST = 'https://push2.eastmoney.com/api/qt/ulist.np/get';
   const CACHE_KEY = 'ofa_quotes_cache';
 
-  /** 报价条关注的品种（secid 与 OpenFinLens 的 universe 同源） */
+  /** 报价条关注的品种（secid 与 OpenFinLens 的 universe 同源）
+      ⚠ 东财的 secid 叫「100.NDX」，但它**返回的是纳斯达克综合指数**（与腾讯源 usIXIC
+      在 234 个重叠交易日里数值一致到 ±0.27% 以内；真正的纳指100 应高 4—5%）。
+      所以这里的 key 与名称一律写综合指数，别再标成「纳斯达克100」。 */
   const INSTRUMENTS = [
     { secid: '1.000001',  key: 'sh000001',  name: '上证指数',   digits: 2, unit: '' },
     { secid: '0.399001',  key: 'sz399001',  name: '深证成指',   digits: 2, unit: '' },
-    { secid: '100.NDX',   key: 'usNDX',     name: '纳斯达克100', digits: 2, unit: '' },
+    { secid: '100.NDX',   key: 'usIXIC',    name: '纳斯达克综合指数', digits: 2, unit: '' },
     { secid: '100.SPX',   key: 'usINX',     name: '标普500',    digits: 2, unit: '' },
     { secid: '101.GC00Y', key: 'EM:101.GC00Y', name: 'COMEX黄金', digits: 1, unit: '美元/盎司' },
     { secid: '102.CL00Y', key: 'EM:102.CL00Y', name: 'NYMEX原油', digits: 2, unit: '美元/桶' },
