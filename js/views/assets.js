@@ -64,11 +64,16 @@
     crypto: '加密', fx: '外汇', commodity: '商品', macro: '利率', other: '其它',
   };
 
-  /** 终端 universe（vendor 同步过来的那份）——两边共用同一份标的清单 */
+  /** 终端 universe（vendor 同步过来的那份）——两边共用同一份标的清单。
+      GLOBAL_INDEX（终端顶栏那一排全球指数）也要算进来：
+      它们同样有站内页（日经225 / 德国DAX / 英国富时100 / 法国CAC40 / 韩国KOSPI / 印度SENSEX），
+      漏了的话读者在标的百科里翻不到——页面存在却没人引得到。 */
   function universe() {
     const t = (window.TENCENT_UNIVERSE || []).map((x) => Object.assign({ market: x.group }, x));
     const em = (window.EM_UNIVERSE || []).map((x) => Object.assign({ market: x.group }, x));
-    return t.concat(em);
+    // GLOBAL_INDEX 那份用的是 name 而不是 label，映射时补上——不然索引里会写「undefined」
+    const gi = (window.GLOBAL_INDEX || []).map((x) => Object.assign({ market: 'index', group: 'index' }, x, { label: x.label || x.name }));
+    return t.concat(em, gi);
   }
 
   function seriesIdOf(sym) { return SERIES_OF[sym] || sym; }

@@ -314,6 +314,25 @@ function loadScripts(files) {
     }
   }
 
+  /* 标的页不许有「孤儿」：asset-ids 里有的每个标的，都得在标的百科索引里列得出来。
+     （之前 GLOBAL_INDEX 没进 universe()，6 只全球指数有页面却翻不到。） */
+  {
+    const idsPath = path.join(ROOT, 'data', 'content', 'asset-ids.json');
+    if (existsSync(idsPath)) {
+      const ids = JSON.parse(await readFile(idsPath, 'utf8'));
+      const W = loadScripts(['vendor/core/universe.js', 'js/views/assets.js']);
+      const uni = (W.AssetsView && W.AssetsView.universe) ? W.AssetsView.universe() : [];
+      const listed = new Set(uni.map((u) => u.symbol));
+      const orphan = (ids.symbols || []).filter((s) => !listed.has(s));
+      ok('每个有标的页的标的都出现在标的百科索引里（没有孤儿页）', orphan.length === 0,
+        orphan.length ? '索引里没有：' + orphan.join('、') : '');
+      const noLabel = uni.filter((u) => !u.label).map((u) => u.symbol);
+      ok('索引里每条都有可显示的名字（不能是 undefined）', noLabel.length === 0, noLabel.join('、'));
+      ok('标的页数与清单一致', (ids.symbols || []).length === ids.count,
+        `清单 ${(ids.symbols || []).length} vs count ${ids.count}`);
+    }
+  }
+
   /* 数据契约：三条踩过的坑，各钉一条断言，别再复发。
        1. 财政部 CSV 的**空单元格**曾被写成 0.00% 收益率（Number('') === 0，
           Number.isFinite(0) 也是 true）——美国30年期在 2002 年从 5.40%
