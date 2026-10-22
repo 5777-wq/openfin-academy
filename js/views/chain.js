@@ -56,7 +56,9 @@
       </div>`;
 
     await window.ChainHeat.loadQuotes();
-    window.ChainHeat.render(document.getElementById('chain-heat'), c);
+    // 切走了就别画了；容器也只在自己的视图里找，别去文档里抢同名节点
+    if (!view.isConnected) return;
+    window.ChainHeat.render(view.querySelector('#chain-heat'), c);
   }
 
   window.ChainView = { renderList, renderDetail, chains };

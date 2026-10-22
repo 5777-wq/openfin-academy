@@ -74,7 +74,13 @@ class El {
   addEventListener(type, fn) { (this.__on = this.__on || {})[type] = (this.__on[type] || []).concat(fn || []); }
   removeEventListener() {} dispatchEvent() {}
   querySelectorAll() { return []; }
-  /** 只认一种选择器：[data-page-title] —— 标题约定就靠它 */
+  /**
+   * 两种选择器：
+   * - `[data-page-title]` —— 标题约定就靠它
+   * - `#id` —— **容器作用域**，跟真实浏览器一致：只在自己的子树里找，
+   *   找不到就是 null，绝不越界去文档里别处捞同名节点。
+   *   （回放器改成作用域查询后，桩必须如实还原这条边界。）
+   */
   querySelector(sel) {
     if (sel === '[data-page-title]') {
       const m = /data-page-title="([^"]*)"/.exec(this.innerHTML || '');
@@ -83,7 +89,31 @@ class El {
       stub.attrs['data-page-title'] = m[1];
       return stub;
     }
+    if (typeof sel === 'string') {
+      const m = /^#([A-Za-z0-9_-]+)$/.exec(sel.trim());
+      if (m) {
+        const id = m[1];
+        if (String(this.innerHTML || '').indexOf('id="' + id + '"') >= 0) return this._scopedEl(id);
+        if (this._scoped) {
+          for (const child of this._scoped.values()) {
+            const hit = child.querySelector(sel);
+            if (hit) return hit;
+          }
+        }
+        return null;
+      }
+    }
     return null;
+  }
+  _scopedEl(id) {
+    if (!this._scoped) this._scoped = new Map();
+    if (!this._scoped.has(id)) {
+      const child = new El(id);
+      child._root = this._root || this;
+      this._scoped.set(id, child);
+      REG.set(id, child);
+    }
+    return this._scoped.get(id);
   }
   closest() { return null; }
   appendChild(c) { this.children.push(c); return c; }

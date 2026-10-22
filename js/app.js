@@ -721,31 +721,59 @@
     } catch (e) { /* 忽略 */ }
   }
 
+  /**
+   * file:// 打开时的提示。
+   *
+   * 浏览器不允许 file:// 页面 fetch 本地 JSON（origin 是 null，直接被 CORS 拦掉），
+   * 以前这里什么都不说：页面显示成一个空骨架，左栏计数全是 0，
+   * 读者只会以为这个站坏了。现在明确告诉他怎么打开。
+   */
+  function showFileProtocolNotice() {
+    const v = document.getElementById('view');
+    if (!v) return;
+    v.innerHTML = `<div class="empty">
+      <div class="et">请用本地服务器打开这个页面</div>
+      <div class="ed">浏览器不允许 <code>file://</code> 页面读取数据文件（JSON），
+      所以双击 <code>index.html</code> 只会得到一个空页面。在项目目录里跑
+      <code>node scripts/serve.mjs 8765</code>，然后打开
+      <code>http://127.0.0.1:8765</code>。</div>
+      <p class="ed">也可以直接看线上版：
+      <a href="https://5777-wq.github.io/openfin-academy/" target="_blank" rel="noopener">5777-wq.github.io/openfin-academy</a></p>
+    </div>`;
+  }
+
   async function boot() {
     step('boot:start');
     applyTheme();
     applyLensSetting(false);
     paintMasthead();
     paintTabbar();
+
+    /* file:// 打不开：先说清楚，别让读者对着一个空骨架猜。 */
+    if (location.protocol === 'file:') {
+      showFileProtocolNotice();
+      step('boot:file protocol blocked');
+      return;
+    }
+
     bindInteractions();          // 先让站点活过来
     step('boot:shell painted + interactions bound');
 
     // 内容与行情并行加载；内容最多等 8 秒，超时也先把页面渲染出来
-    let contentArrived = false;
     const contentReady = window.Content.loadAll().catch((e) => {
       console.error('[content] 加载失败', e);
       return null;
     });
-    const contentFlag = contentReady.then(() => { contentArrived = true; });
     const quotesReady = window.Quotes.load().catch(() => window.Quotes.state);
 
     await Promise.race([
-      contentFlag,
+      contentReady,
       new Promise((r) => setTimeout(r, 8000)),
     ]);
     step('boot:content ready ' + (window.Content.idx.list ? 'ok' : 'EMPTY'));
 
-    if (!window.Content.idx.list) {
+    const contentOk = !!window.Content.idx.list;
+    if (!contentOk) {
       const v = document.getElementById('view');
       if (v) {
         v.innerHTML = `<div class="empty"><div class="et">内容没能加载出来</div>
@@ -760,21 +788,24 @@
     paintTicker();
     step('boot:rail+ticker painted');
 
-    // ⚠ 先把路由渲染出来，再等行情。
-    // 行情源可能慢或不可达，但内容页绝不能等它——否则首屏会白着。
+    /* ⚠ 先把路由渲染出来，再等行情。
+       行情源可能慢或不可达，但内容页绝不能等它——否则首屏会白着。 */
+    const renderRoute = () => {
+      if (!location.hash) location.replace('#/');
+      else route();
+    };
     window.Router.onRoute(route);
     window.addEventListener('hashchange', route);
-    if (!location.hash) location.replace('#/');
-    else route();
-    step('boot:routed');
-
-    // 内容迟到（超过 8 秒）才重画一次：那时候屏幕上还摆着「内容没能加载出来」。
-    // 正常情况下首屏只画一遍——以前这里无条件又画一次，冷启动白白渲染两遍。
-    if (!contentArrived) {
-      contentReady.then(() => {
-        if (window.Content.idx.list) route();
-      });
+    /* 内容没加载出来时**不要**渲染路由：
+       route() 会把上面那张错误页覆盖成骨架，读者看到的是「站点像坏了」，
+       而不是「数据没加载出来，点这里重试」。
+       内容也可能只是迟到（8 秒超时）——那时候再补一次渲染。 */
+    if (contentOk) {
+      renderRoute();
+    } else {
+      contentReady.then(() => { if (window.Content.idx.list) renderRoute(); });
     }
+    step('boot:routed');
 
     await quotesReady;
     paintTicker();

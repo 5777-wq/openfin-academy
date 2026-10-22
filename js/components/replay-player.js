@@ -28,6 +28,21 @@
   const YIELD_RE = /^(US2Y|US3M|US5Y|US7Y|US10Y|US20Y|US30Y)$/;
   function isYield(s) { return s.unit === '%' || YIELD_RE.test(s.key); }
 
+  /**
+   * 只在**自己那个容器**里找节点。
+   *
+   * document.getElementById 是在整个文档里找同名节点。危机页的切换是异步的：
+   * 旧页面还在等 JSON，新页面已经渲染好了——这时旧页面回来调
+   * q('rp-date')，拿到的是**新页面**的那个节点，
+   * 于是旧数据被写进了新页面：URL 显示 1998，图却是 1987 的。
+   *
+   * 所以这里一律走容器作用域：查不到就是查不到，绝不越界去别的页面拿。
+   */
+  function q(id) {
+    if (!host) return null;
+    try { return host.querySelector('#' + id); } catch (e) { return null; }
+  }
+
   /** 对齐到统一日期轴：每个日期取「当日或之前最近的一个值」；序列起点之前留空 */
   function align(points, axis) {
     const out = new Array(axis.length).fill(null);
@@ -134,15 +149,15 @@
     drawEvents();
     setIdx(0);
 
-    const range = document.getElementById('rp-range');
-    range.addEventListener('input', (e) => { pause(); setIdx(Number(e.target.value)); });
+    const range = q('rp-range');
+    if (range) range.addEventListener('input', (e) => { pause(); setIdx(Number(e.target.value)); });
 
-    const play = document.getElementById('rp-play');
-    play.addEventListener('click', () => { playing ? pause() : start(); });
+    const play = q('rp-play');
+    if (play) play.addEventListener('click', () => { playing ? pause() : start(); });
   }
 
   function drawRows() {
-    const box = document.getElementById('rp-rows');
+    const box = q('rp-rows');
     if (!box) return;
     const f = F();
     box.innerHTML = pkg.series.map((s, si) => {
@@ -192,7 +207,7 @@
   }
 
   function drawMarks() {
-    const box = document.getElementById('rp-marks');
+    const box = q('rp-marks');
     if (!box || !pkg.events) return;
     const first = dates[0], last = dates[dates.length - 1];
     const span = Math.max(1, daysBetween(first, last));
@@ -257,7 +272,7 @@
   }
 
   function drawEvents() {
-    const box = document.getElementById('rp-events');
+    const box = q('rp-events');
     if (!box || !pkg.events) return;
     // 事件按**时间正序**（最早的在最上面）。
     // 数据包里的顺序是手写的，这里再排一次——
@@ -299,7 +314,7 @@
     });
     pause();
     setIdx(best);
-    const range = document.getElementById('rp-range');
+    const range = q('rp-range');
     if (range) range.value = String(best);
   }
 
@@ -309,11 +324,11 @@
     const d = dates[idx];
     const f = F();
 
-    const dateEl = document.getElementById('rp-date');
+    const dateEl = q('rp-date');
     if (dateEl) dateEl.textContent = d;
 
     // 滑块的值得念得出来：光报「第 123 个」谁也听不懂
-    const rangeEl = document.getElementById('rp-range');
+    const rangeEl = q('rp-range');
     if (rangeEl) rangeEl.setAttribute('aria-valuetext', d);
 
     const spoken = [];
@@ -331,7 +346,7 @@
         dd = yld ? (v - g.peak.v) : ((v / g.peak.v - 1) * 100);
       }
 
-      const el = document.getElementById('val-' + s.key);
+      const el = q('val-' + s.key);
       if (el) {
         const chgTxt = chg === null ? '--'
           : (yld ? (chg > 0 ? '+' : '') + chg.toFixed(2) + 'pp' : f.pct(chg));
@@ -345,10 +360,10 @@
         }
       }
 
-      const cur = document.getElementById('cur-' + s.key);
-      const now = document.getElementById('now-' + s.key);
-      const ddEl = document.getElementById('dd-' + s.key);
-      const clip = document.getElementById('cliprect-' + s.key);
+      const cur = q('cur-' + s.key);
+      const now = q('now-' + s.key);
+      const ddEl = q('dd-' + s.key);
+      const clip = q('cliprect-' + s.key);
 
       if (v === null || v === undefined) {
         if (cur) cur.setAttribute('opacity', '0');
@@ -385,7 +400,7 @@
     });
 
     // 事件高亮 + 说明
-    const evBox = document.getElementById('rp-events');
+    const evBox = q('rp-events');
     if (evBox && curEvents && curEvents.length) {
       evBox.querySelectorAll('.rp-event').forEach((b, i) => {
         const ev = curEvents[i];
@@ -394,7 +409,7 @@
       });
     }
 
-    const note = document.getElementById('rp-note');
+    const note = q('rp-note');
     if (note) {
       let hit = null, bestD = Infinity;
       // 用户点选的事件优先
@@ -422,7 +437,7 @@
 
     // 播报：读屏用户按 ←→ 之后得知道日期变成了哪天、离峰值还差多少。
     // 自动播放时不播——每 0.4 秒念一遍会把人吵死。
-    const live = document.getElementById('rp-live');
+    const live = q('rp-live');
     if (live && !playing && spoken.length) {
       live.textContent = d + '，' + spoken.join('；');
     }
@@ -430,14 +445,14 @@
 
   function start() {
     pause();
-    const btn = document.getElementById('rp-play');
+    const btn = q('rp-play');
     if (btn) btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
     playing = setInterval(() => {
       // 页面已经换走了（宿主脱离文档）：别再空转，把定时器拆掉
       if (!mounted()) { stop(); return; }
       if (idx >= dates.length - 1) { pause(); return; }
       setIdx(idx + 1);
-      const range = document.getElementById('rp-range');
+      const range = q('rp-range');
       if (range) range.value = String(idx);
     }, 420);
   }
@@ -445,7 +460,7 @@
   /** 只停自动播放：包还在，滑块还能拖 */
   function pause() {
     if (playing) { clearInterval(playing); playing = null; }
-    const btn = document.getElementById('rp-play');
+    const btn = q('rp-play');
     if (btn) btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
   }
 
@@ -473,7 +488,7 @@
     if (!dates.length) return;
     pause();
     setIdx(idx + delta);
-    const range = document.getElementById('rp-range');
+    const range = q('rp-range');
     if (range) range.value = String(idx);
   }
 

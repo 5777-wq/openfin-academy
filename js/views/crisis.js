@@ -80,6 +80,10 @@
     // 重挂载前先拆掉上一个回放器：定时器、观察器、宿主引用都不该留着
     if (window.ReplayPlayer) window.ReplayPlayer.stop();
     const pkg = await window.History.crisis(id);
+    /* 切走了就别画了。
+       危机页要等一个几百 KB 的 JSON，这期间用户很可能已经跳去别的页面。
+       不检查这一句，旧页面的内容会覆盖到新页面上——URL 是 A、图却是 B。 */
+    if (!view.isConnected) return;
     const art = window.Content.article(id);
 
     if (!art) {
@@ -133,7 +137,11 @@
   }
 
   function mountReplay(view, pkg) {
-    const box = document.getElementById('crisis-replay');
+    /* 只在自己的容器里找。
+       以前用 document.getElementById('crisis-replay')——那是**整个文档**里的第一个同名节点。
+       旧页面 await 回来时，新页面已经有同名节点了，于是旧数据被写进新页面：
+       URL 显示 1998 亚洲金融危机，图上画的却是 1987 的数据。 */
+    const box = view.querySelector('#crisis-replay');
     if (!box) return;
     if (!pkg || !pkg.series || !pkg.series.length) {
       box.innerHTML = `<div class="panel"><div class="empty" style="padding:var(--s-5) 0">

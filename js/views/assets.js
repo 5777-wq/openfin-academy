@@ -102,7 +102,7 @@
         return `<a class="entry" href="#/assets/${encodeURIComponent(u.symbol)}">
           <span>
             <span class="e-t">${esc(LABEL_OF[u.symbol] || u.label)}</span>
-            <span class="e-d">${esc(s.from)} → ${esc(s.to)} · ${s.count} 个月末点${art ? ' · 有专文' : ''}</span>
+            <span class="e-d">${esc(s.from)} → ${esc(s.to)} · ${s.count} 个月度点${art ? ' · 有专文' : ''}</span>
           </span>
           <span class="e-m">看这一页 →</span>
         </a>`;
@@ -119,7 +119,7 @@
       return `<a class="entry" href="#/assets/${encodeURIComponent(o.id)}">
         <span>
           <span class="e-t">${esc(o.label)}</span>
-          <span class="e-d">${esc(o.note)} · ${esc(s.from)} → ${esc(s.to)} · ${s.count} 个月末点</span>
+          <span class="e-d">${esc(o.note)} · ${esc(s.from)} → ${esc(s.to)} · ${s.count} 个月度点</span>
         </span>
         <span class="e-m">看这一页 →</span>
       </a>`;
@@ -133,7 +133,7 @@
       <div class="art-head">
         <div class="eyebrow">栏目 03 · 标的百科</div>
         <h1 style="font-size:var(--t-hero);letter-spacing:-.015em;margin-bottom:var(--s-3)">和行情终端同一份标的清单</h1>
-        <p class="art-dek">下面是行情终端里能看的每一只标的。点进去有它的真实历史读数（峰值、谷底、峰谷跌幅、近一年涨跌），有专文的还会多一篇讲清楚它靠什么赚钱。</p>
+        <p class="art-dek">下面是行情终端里能看的每一只标的。点进去有它的真实历史读数（历史最高、历史最低、最大回撤、近一年涨跌），有专文的还会多一篇讲清楚它靠什么赚钱。</p>
       </div>
       ${blocks || '<div class="empty"><div class="et">数据还没采齐</div><div class="ed">跑一次采集脚本就能拿到真实历史。</div></div>'}
       ${ownBlock}`;
@@ -146,6 +146,8 @@
     const aid = articleIdOf(sym);
     const art = window.Content.article(aid);
     const series = await window.History.series(sid);
+    // 切走了就别画了：序列是异步取的，这期间用户很可能已经跳去别的页面
+    if (!view.isConnected) return;
     const st = window.Engine.instrument ? window.Engine.instrument.stats(series) : null;
 
     const q = window.Router ? window.Router.parse(location.hash).query : {};
@@ -155,18 +157,18 @@
       <div class="panel" style="margin-bottom:var(--s-6)">
         <div class="eyebrow" style="margin-bottom:var(--s-3)">真实历史读数 · 全部由月线序列算出</div>
         <div class="stat-grid">
-          <div class="stat"><span class="s-k">最新月末</span><span class="s-v num">${esc(fmtNum(st.last.v, series))}</span><span class="s-n">${esc(st.to)}</span></div>
-          <div class="stat"><span class="s-k">峰值</span><span class="s-v num">${esc(fmtNum(st.peak.v, series))}</span><span class="s-n">${esc(st.peak.t)}</span></div>
-          <div class="stat"><span class="s-k">谷底</span><span class="s-v num">${esc(fmtNum(st.trough.v, series))}</span><span class="s-n">${esc(st.trough.t)}</span></div>
+          <div class="stat"><span class="s-k">最新</span><span class="s-v num">${esc(fmtNum(st.last.v, series))}</span><span class="s-n">${esc(st.to)}${st.partial ? ' · 当月未收' : ''}</span></div>
+          <div class="stat"><span class="s-k">历史最高</span><span class="s-v num">${esc(fmtNum(st.peak.v, series))}</span><span class="s-n">${esc(st.peak.t)}</span></div>
+          <div class="stat"><span class="s-k">历史最低</span><span class="s-v num">${esc(fmtNum(st.trough.v, series))}</span><span class="s-n">${esc(st.trough.t)}</span></div>
           ${st.isRate ? `
-          <div class="stat"><span class="s-k">峰谷变动</span><span class="s-v num">${st.spreadPp.toFixed(2)} 个百分点</span><span class="s-n">峰值到谷底</span></div>
+          <div class="stat"><span class="s-k">历史区间</span><span class="s-v num">${st.spreadPp.toFixed(2)} 个百分点</span><span class="s-n">最高到最低</span></div>
           <div class="stat"><span class="s-k">近一年</span><span class="s-v num ${(st.chg1yBp || 0) >= 0 ? 'up' : 'down'}">${st.chg1yBp === null ? '--' : (st.chg1yBp >= 0 ? '+' : '') + st.chg1yBp.toFixed(0) + ' 个基点'}</span><span class="s-n">收益率变化</span></div>`
           : `
-          <div class="stat"><span class="s-k">峰谷跌幅</span><span class="s-v num ${st.dropPct < 0 ? 'down' : 'up'}">${st.dropPct.toFixed(1)}%</span><span class="s-n">峰值到谷底</span></div>
+          <div class="stat"><span class="s-k">最大回撤</span><span class="s-v num ${st.dropPct < 0 ? 'down' : 'up'}">${st.dropPct.toFixed(1)}%</span><span class="s-n">${esc(String(st.mddFrom || '').slice(0, 7))} → ${esc(String(st.mddTo || '').slice(0, 7))}</span></div>
           <div class="stat"><span class="s-k">近一年</span><span class="s-v num ${(st.chg1y || 0) >= 0 ? 'up' : 'down'}">${st.chg1y === null ? '--' : st.chg1y.toFixed(1) + '%'}</span><span class="s-n">不含分红</span></div>`}
-          <div class="stat"><span class="s-k">覆盖区间</span><span class="s-v num">${esc(st.from.slice(0, 7))} 起</span><span class="s-n">${st.count} 个月末点</span></div>
+          <div class="stat"><span class="s-k">覆盖区间</span><span class="s-v num">${esc(st.from.slice(0, 7))} 起</span><span class="s-n">${st.count} 个月度点</span></div>
         </div>
-        <p class="insight-note">口径：${esc(series.kind || '月收盘价')} · ${esc(series.source || '')}${st.unadj ? '。未复权价不含分红，所以这里的涨幅是价格涨幅，不是总回报' : ''}${st.isRate ? '。收益率的变化用「个百分点 / 个基点」说，不用百分比——从 5% 跌到 2% 是跌了 3 个百分点，不是跌了 60%' : ''}。</p>
+        <p class="insight-note">口径：${esc(series.kind || '月收盘价')} · ${esc(series.source || '')}${st.unadj ? '。未复权价不含分红，所以这里的涨幅是价格涨幅，不是总回报' : ''}${st.isRate ? '。收益率的变化用「个百分点 / 个基点」说，不用百分比——从 5% 跌到 2% 是跌了 3 个百分点，不是跌了 60%' : ''}${st.partial ? '。序列的最后一点是采集当天的盘中值，当月还没走完，所以不叫「月末」' : ''}。最大回撤指的是历史里最深的那一次「从高点跌到低点」，峰值在前、谷底在后。</p>
       </div>` : `
       <div class="panel" style="margin-bottom:var(--s-6)">
         <div class="eyebrow">历史数据</div>

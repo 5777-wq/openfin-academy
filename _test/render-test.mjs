@@ -39,7 +39,8 @@ class El {
     this.id = id; this.tag = tag || 'div';
     this.innerHTML = ''; this.textContent = ''; this.value = '';
     this.dataset = {}; this.style = { cssText: '' }; this.attrs = {};
-    this.children = []; this.hidden = false; this.isConnected = true;
+    this.children = []; this.hidden = false;
+    this._connected = true; this._root = null;
     const self = this;
     this.classList = {
       _set: new Set(),
@@ -49,9 +50,45 @@ class El {
       contains(c) { return self.classList._set.has(c); },
     };
   }
+  /** 是否还挂在文档上：子元素跟着根走（真实浏览器就是这样） */
+  get isConnected() { return this._root ? this._root.isConnected : this._connected; }
+  set isConnected(v) { this._connected = !!v; }
   addEventListener() {} removeEventListener() {} dispatchEvent() {}
   querySelectorAll() { return []; }
-  querySelector() { return null; }
+  /**
+   * 容器作用域查询（只认 #id）。
+   *
+   * 真实浏览器里 el.querySelector('#x') 只在 el 的**子树**里找，
+   * 找不到就是 null——**绝不会**去文档里别处捞一个同名节点。
+   * 这个区别就是异步串页 bug 的要害：视图用 document.getElementById 找节点时，
+   * 旧页面 await 回来会命中新页面的同名节点，旧数据就写进了新页面。
+   *
+   * 所以桩里必须如实还原这条边界（还要能往下递归到子树），
+   * 否则测试根本测不出那个 bug。
+   */
+  querySelector(sel) {
+    if (typeof sel !== 'string') return null;
+    const m = /^#([A-Za-z0-9_-]+)$/.exec(sel.trim());
+    if (!m) return null;
+    const id = m[1];
+    if (String(this.innerHTML || '').indexOf('id="' + id + '"') >= 0) return this._scopedEl(id);
+    if (!this._scoped) return null;
+    for (const child of this._scoped.values()) {
+      const hit = child.querySelector(sel);
+      if (hit) return hit;
+    }
+    return null;
+  }
+  _scopedEl(id) {
+    if (!this._scoped) this._scoped = new Map();
+    if (!this._scoped.has(id)) {
+      const child = new El(id);
+      child._root = this._root || this;
+      this._scoped.set(id, child);
+      REG.set(id, child);   // 文档里最后一个同名节点：模拟「后挂载的页面在文档里」
+    }
+    return this._scoped.get(id);
+  }
   closest() { return null; }
   appendChild(c) { this.children.push(c); return c; }
   removeChild(c) { this.children = this.children.filter((x) => x !== c); return c; }
@@ -297,6 +334,46 @@ async function main() {
     ok('危机：含回放器容器', h.includes('id="crisis-replay"'));
   }
 
+  /* ---- 竞态：旧页面慢、新页面快，旧页面回来后不许写进新页面 ----
+     以前视图用 document.getElementById 找容器，
+     旧页面 await 回来时会命中**新页面**的同名节点——
+     于是 URL 显示 1998，图上画的却是 1987 的数据。 */
+  {
+    const realCrisis = sandbox.History.crisis;
+    const delay = { '1987': 60, '1998': 5 };
+    sandbox.History.crisis = (id) => new Promise((res) => {
+      setTimeout(() => { realCrisis(id).then(res); }, delay[id] || 5);
+    });
+
+    // 情形一：路由把旧容器从文档里摘掉了（app.js 换页时就是这么做的）
+    const oldA = new El(null, 'div');
+    const newA = new El(null, 'div');
+    const pOldA = sandbox.CrisisView.renderDetail(oldA, '1987');
+    oldA.isConnected = false;
+    const pNewA = sandbox.CrisisView.renderDetail(newA, '1998');
+    await pNewA;
+    const boxA = newA.querySelector('#crisis-replay');
+    const snapA = boxA ? boxA.innerHTML : '';
+    await pOldA;
+    ok('竞态①：旧页面被摘掉后不写新页面', !!boxA && boxA.innerHTML === snapA);
+    has('竞态①：新页面画的是 1998', snapA, '1998 亚洲金融危机');
+
+    // 情形二：旧容器还挂在文档里（组件级竞态）——只有作用域查询能挡住
+    const oldB = new El(null, 'div');
+    const newB = new El(null, 'div');
+    const pOldB = sandbox.CrisisView.renderDetail(oldB, '1987');
+    const pNewB = sandbox.CrisisView.renderDetail(newB, '1998');
+    await pNewB;
+    const boxB = newB.querySelector('#crisis-replay');
+    const snapB = boxB ? boxB.innerHTML : '';
+    await pOldB;
+    ok('竞态②：旧页面不得写进新页面的容器', !!boxB && boxB.innerHTML === snapB,
+      '旧页面把新页面的回放器覆盖了');
+    has('竞态②：新页面仍是 1998', snapB, '1998 亚洲金融危机');
+
+    sandbox.History.crisis = realCrisis;
+  }
+
   // 回放器：真实数据
   const pkg = await sandbox.History.crisis('2008');
   ok('危机包可加载', !!pkg && !!pkg.series);
@@ -450,12 +527,21 @@ async function main() {
   has('标的百科：标题说明与终端同一份清单', alist, '和行情终端同一份标的清单');
   ok('标的百科：列出了 70 只以上标的', (alist.match(/href="#\/assets\//g) || []).length >= 70,
     '实际 ' + (alist.match(/href="#\/assets\//g) || []).length);
-  has('标的百科：带上覆盖区间', alist, '个月末点');
+  has('标的百科：带上覆盖区间', alist, '个月度点');
   await sandbox.AssetsView.renderDetail(view(), 'usAAPL');
   const adet = view().innerHTML;
   has('标的百科详情：专文标题', adet, '苹果');
   has('标的百科详情：真实数据卡', adet, '真实历史读数');
-  has('标的百科详情：峰谷跌幅', adet, '峰谷跌幅');
+  has('标的百科详情：最大回撤', adet, '最大回撤');
+  has('标的百科详情：历史最高', adet, '历史最高');
+  has('标的百科详情：历史最低', adet, '历史最低');
+  // 「最新月末」是句假话：采集器月中的时候写的是当天盘中价。
+  ok('标的百科详情：不许标成「最新月末」', !adet.includes('最新月末'), adet.slice(0, 200));
+  has('标的百科详情：当月未收要说明', adet, '当月未收');
+  // 真正的最大回撤：苹果 2007-12 → 2008-12 是 -56.9%。
+  // 旧算法拿全局 min/max 相除会算出 -99.1%（谷底在峰值之前）。
+  has('标的百科详情：回撤是按先后顺序算的', adet, '-56.9%');
+  ok('标的百科详情：回撤没有算成 -99%', !adet.includes('-99.'), '出现了 -99% 的假回撤');
   has('标的百科详情：去终端看数据', adet, 'openfinlens/#symbol=usAAPL');
   has('标的百科详情：口径说明（未含分红）', adet, '不含分红');
   // 没有专文的标的：给真实数据 + 老实的说明，不能是空白页

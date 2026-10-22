@@ -393,6 +393,12 @@ async function writeSeries(id, def, points) {
     generatedAt: new Date().toISOString(),
     points,
   }, def);
+  /* 当月还没走完时，最后一点是采集当天的盘中价，不是月末价。
+     在数据里标出来，页面就不必猜——以前它被写成「最新月末」，是句假话。 */
+  const lastPoint = points[points.length - 1];
+  if (lastPoint && String(lastPoint.t).slice(0, 7) === new Date().toISOString().slice(0, 7)) {
+    lastPoint.partial = true;
+  }
   await writeFile(file, JSON.stringify(payload), 'utf8');
   console.log(`  [ok] ${id.padEnd(12)} ${points.length} 点  ${points[0].t} → ${points[points.length - 1].t}`);
   return payload;
@@ -625,6 +631,23 @@ async function buildCrisis(def) {
   console.log(`  [ok] crisis-${def.id}  ${dates.length} 个交易日 × ${series.length} 条序列  ${def.title}`);
 }
 
+/** 标准最大回撤：谷底必须落在峰值之后。
+    拿全局 max / min 直接相除，在谷底早于峰值时会算出两个不相干日期的比值，
+    挂到页面上就是假数字。返回 { peak, trough, signed }。 */
+function maxDrawdown(points) {
+  if (!points || points.length < 2) return null;
+  let peak = null, peakPt = null, worst = 0, troughPt = null;
+  for (let i = 0; i < points.length; i++) {
+    const v = points[i].v;
+    if (v === null || v === undefined) continue;
+    if (peak === null || v > peak) { peak = v; peakPt = points[i]; }
+    const dd = peak ? ((v / peak) - 1) * 100 : 0;
+    if (dd < worst) { worst = dd; troughPt = points[i]; }
+  }
+  if (!peakPt || !troughPt) return null;
+  return { peak: peakPt, trough: troughPt, signed: worst };
+}
+
 /** 危机包轻量索引：列表页只读这个，不加载几百 KB 的完整包
     头条资产由 CRISIS_DEFS 的 headlineKey 指定（是编辑判断），
     但数值一律从数据算（不是手写）——指定"看哪条"，不指定"是多少"。 */
@@ -646,17 +669,24 @@ async function buildCrisisIndex() {
       continue;
     }
 
-    let peak = null, trough = null, worst = { pct: 0, t: '' };
+    let hi = null, lo = null, worst = { pct: 0, t: '' };
     for (let i = 0; i < s.points.length; i++) {
       const q = s.points[i];
-      if (!peak || q.v > peak.v) peak = q;
-      if (!trough || q.v < trough.v) trough = q;
+      if (!hi || q.v > hi.v) hi = q;
+      if (!lo || q.v < lo.v) lo = q;
       if (i > 0) {
         const pct = (q.v / s.points[i - 1].v - 1) * 100;
         if (pct < worst.pct) worst = { pct, t: q.t };
       }
     }
+    // 峰谷要**有先后**：谷底必须落在峰值之后，才算「从高点跌下来」。
+    // 拿全局 max / min 直接相除，在谷底早于峰值时会算出两个不相干日期的比值。
+    const dd = maxDrawdown(s.points);
     const yieldType = isYield(s.key);
+    // 收益率讲的是「区间跨度」（最高 - 最低），不涉及先后，所以用全局 hi/lo；
+    // 价格讲的是「跌了多少」，用真正的最大回撤那一对。
+    const peak = yieldType ? hi : (dd ? dd.peak : hi);
+    const trough = yieldType ? lo : (dd ? dd.trough : lo);
     items.push({
       id: pkg.id, title: pkg.title,
       from: pkg.dates[0], to: pkg.dates[pkg.dates.length - 1],
@@ -667,8 +697,8 @@ async function buildCrisisIndex() {
         key: s.key, name: s.name, kind: yieldType ? 'yield' : 'price',
         peak: { t: peak.t, v: peak.v },
         trough: { t: trough.t, v: trough.v },
-        // 收益率用「区间变动（百分点）」，价格用「峰谷跌幅（%）」——两者不能混
-        dropPct: yieldType ? null : (trough.v / peak.v - 1) * 100,
+        // 收益率用「区间变动（个百分点）」，价格用「峰谷跌幅（%）」——两者不能混
+        dropPct: yieldType ? null : (dd ? dd.signed : (trough.v / peak.v - 1) * 100),
         changePp: yieldType ? (peak.v - trough.v) : null,
         worstDay: worst.pct ? { t: worst.t, pct: worst.pct } : null,
       },

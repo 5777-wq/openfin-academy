@@ -3,17 +3,39 @@
 (function () {
   'use strict';
 
-  /** 单条序列在区间内的峰值与谷底 */
+  /**
+   * 单条序列在区间内的峰值与谷底。
+   *
+   * 峰谷必须是**有先后的那一对**：谷底在峰值之后，才谈得上「从高点跌下来」。
+   * 以前直接拿全样本的 max 和 min —— 谷底早于峰值时（1998 那场的标普就是），
+   * 算出来的是两个不相干日期的比值，页面上会挂出一个假的跌幅。
+   *
+   * 另外保留全样本的 maxRange（区间跨度）：收益率序列讲「区间变动」时用它——
+   * 那是个跨度，不涉及先后，取全局 max/min 恰恰是对的。
+   */
   function extremes(points) {
     if (!points || !points.length) return null;
-    let peak = null, trough = null;
+    let hi = null, lo = null;
     for (const p of points) {
       if (p.v === null || p.v === undefined) continue;
-      if (!peak || p.v > peak.v) peak = p;
-      if (!trough || p.v < trough.v) trough = p;
+      if (!hi || p.v > hi.v) hi = p;
+      if (!lo || p.v < lo.v) lo = p;
     }
-    if (!peak || !trough) return null;
-    return { peak, trough, dropPct: (trough.v / peak.v - 1) * 100 };
+    if (!hi || !lo) return null;
+
+    const dd = (window.Engine && window.Engine.drawdown)
+      ? window.Engine.drawdown.maxDrawdown(points)
+      : null;
+    const peak = dd && dd.peak ? dd.peak : hi;
+    const trough = dd && dd.trough ? dd.trough : lo;
+
+    return {
+      peak, trough,
+      dropPct: dd ? dd.signed : (trough.v / peak.v - 1) * 100,
+      rangePp: hi.v - lo.v,      // 区间跨度（最高 - 最低）
+      high: hi,
+      low: lo,
+    };
   }
 
   /** 单日最大跌幅 */

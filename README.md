@@ -4,7 +4,7 @@
 
 **把美债收益率、黄金、纳指、原油、A股和 AI 产业链，讲成金融小白和宝妈听得懂的话。**
 
-没有后端，没有 API key，没有构建。clone 下来双击 `index.html`，它就跑起来了。
+没有后端，没有 API key，没有构建。clone 下来用本地服务器打开，它就跑起来了（浏览器不允许 `file://` 读取数据文件，所以不能直接双击 `index.html`）。
 
 **[在线体验 →](https://5777-wq.github.io/openfin-academy/)**
 
@@ -96,9 +96,11 @@
 ```bash
 git clone https://github.com/5777-wq/openfin-academy.git
 cd openfin-academy
-# 双击 index.html 就能用——数据源 CORS 全通，file:// 也能跑
-# 或者起个本地服务器（零依赖，正确处理 keep-alive）：
+# 用本地服务器打开（零依赖，正确处理 keep-alive）：
 node scripts/serve.mjs 8765   # → http://127.0.0.1:8765
+#
+# 注意：不能直接双击 index.html。浏览器不允许 file:// 页面读取 JSON，
+# 那样打开只会得到一个空页面（站里会提示你换成服务器打开）。
 ```
 
 **没有任何构建步骤，没有 `node_modules`。** 依赖只有三个：

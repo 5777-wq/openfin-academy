@@ -2,7 +2,7 @@
 /* run-all.mjs —— node 直跑测试（无浏览器、无网络依赖）
    用法：node _test/run-all.mjs */
 import { readdir, readFile } from 'node:fs/promises';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
@@ -135,7 +135,7 @@ function loadScripts(files) {
    1b. 标的读数：收益率与价格两套口径
    ============================================================ */
 {
-  const W = loadScripts(['js/engine/instrument.js']);
+  const W = loadScripts(['js/engine/drawdown.js', 'js/engine/instrument.js']);
   const I = W.Engine.instrument;
   const price = {
     unit: '点', kind: '月收盘价',
@@ -155,6 +155,118 @@ function loadScripts(files) {
   eq('收益率序列：峰谷变动用个百分点', sr.spreadPp, 3);
   ok('收益率序列：不给百分比跌幅', sr.dropPct < 0 && sr.spreadPp !== sr.dropPct, `dropPct=${sr.dropPct} spreadPp=${sr.spreadPp}`);
   ok('收益率序列：近一年用基点', sr.chg1yBp === null || typeof sr.chg1yBp === 'number', String(sr.chg1yBp));
+
+  /* --- 回撤的先后顺序：谷底必须在峰值之后 ---
+     以前的算法拿全样本 max / min 直接相除。谷底早于峰值时，
+     算出来的是两个不相干日期的比值（-95%、-99% 这种），读者一对就发现是假的。 */
+  const midPeak = {
+    unit: '点', kind: '月收盘价',
+    points: [
+      { t: '2020-01-31', v: 80 },
+      { t: '2020-02-29', v: 120 },   // 峰值在中间
+      { t: '2020-03-31', v: 60 },
+      { t: '2020-04-30', v: 40 },
+    ],
+  };
+  const mp = I.stats(midPeak);
+  eq('峰谷跌幅：谷底必须在峰值之后', Math.round(mp.dropPct), -67);   // 120 → 40
+  ok('谷底时间晚于峰值时间', mp.mddTrough.t > mp.mddPeak.t, mp.mddPeak.t + ' / ' + mp.mddTrough.t);
+
+  // 反向夹具：低点在前、高点在后，不能被算成回撤
+  const lowFirst = {
+    unit: '点', kind: '月收盘价',
+    points: [
+      { t: '2020-01-31', v: 40 },
+      { t: '2020-02-29', v: 120 },
+    ],
+  };
+  const lf = I.stats(lowFirst);
+  eq('低点在前时不能报出巨大的负回撤', Math.round(lf.dropPct), 0);
+  ok('低点在前时谷底不能早于峰值', lf.mddTrough.t >= lf.mddPeak.t, lf.mddPeak.t + ' / ' + lf.mddTrough.t);
+
+  // 历史最高 / 历史最低仍然各自独立：不受回撤口径影响
+  eq('历史最高仍取全样本最高点', mp.peak.v, 120);
+  eq('历史最低仍取全样本最低点', mp.trough.v, 40);
+  eq('历史最低的时间不受回撤口径影响', mp.trough.t, '2020-04-30');
+
+  /* --- 最后一点是不是「当月未收」的盘中值 ---
+     采集器月中的时候写的是当天盘中价，页面把它标成「最新月末」就是在撒谎。 */
+  const monthEnd = {
+    unit: '点', kind: '月收盘价',
+    points: [{ t: '2024-01-31', v: 100 }, { t: '2024-02-29', v: 110 }, { t: '2024-03-29', v: 90 }],
+  };
+  eq('月末序列：最后一点不算未收', I.stats(monthEnd).partial, false);
+  const midMonth = {
+    unit: '点', kind: '月收盘价',
+    points: [{ t: '2024-01-31', v: 100 }, { t: '2024-02-29', v: 110 }, { t: '2024-03-21', v: 90 }],
+  };
+  eq('月中快照：标记为当月未收', I.stats(midMonth).partial, true);
+  eq('采集器打了 partial 标记就听标记的', I.stats({
+    unit: '点', kind: '月收盘价',
+    points: [{ t: '2024-01-31', v: 100 }, { t: '2024-02-29', v: 110 }],
+    partial: true,
+  }).partial, true);
+}
+
+/* ============================================================
+   1c. 全部历史序列：回撤口径 + 末点口径
+   ============================================================ */
+{
+  const W = loadScripts(['js/engine/drawdown.js', 'js/engine/instrument.js']);
+  const I = W.Engine.instrument;
+  const dir = path.join(ROOT, 'data', 'history');
+  const files = readdirSync(dir).filter((f) => f.endsWith('.json') && !f.startsWith('crisis'));
+  let mddOrder = 0, mddAbsurd = 0, partialMarked = 0, lastNotMonth = 0;
+  const absurd = [], badOrder = [];
+  for (const f of files) {
+    const j = JSON.parse(readFileSync(path.join(dir, f), 'utf8'));
+    const st = I.stats(j);
+    if (!st) continue;
+    if (st.mddTrough.t < st.mddPeak.t) { mddOrder++; badOrder.push(f); }
+    // 价格类序列不可能跌 95% 以上还叫「最大回撤」——那说明谷底取错了位置
+    if (!st.isRate && st.dropPct < -95) { mddAbsurd++; absurd.push(f + ' ' + st.dropPct.toFixed(1)); }
+    if (st.partial) partialMarked++;
+    const d = new Date(st.to + 'T00:00:00Z');
+    const eom = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).toISOString().slice(0, 10);
+    if (st.to !== eom) lastNotMonth++;
+  }
+  ok('每条序列的谷底都不早于峰值', mddOrder === 0, badOrder.join(' '));
+  ok('没有序列算出 -95% 以下的假回撤', mddAbsurd === 0, absurd.join(' '));
+  ok('末点不是自然月末的序列都被标成「当月未收」', partialMarked === lastNotMonth,
+    `标了 ${partialMarked} 条 / 实际 ${lastNotMonth} 条`);
+}
+
+/* ============================================================
+   1d. 视图不许用全局查找找自己的节点
+   ============================================================ */
+{
+  /* document.getElementById 是在**整个文档**里找同名节点。
+     视图渲染是异步的：旧页面 await 回来时，新页面已经有同名节点了，
+     旧数据就会被写进新页面——URL 显示 A，图上画的却是 B。
+     所以这些文件里只许用容器作用域（view.querySelector / host.querySelector）。 */
+  const scoped = ['js/views/crisis.js', 'js/views/chain.js', 'js/components/replay-player.js'];
+  for (const f of scoped) {
+    const src = readFileSync(path.join(ROOT, f), 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '')   // 注释里写的反例不算
+      .replace(/^\s*\/\/.*$/gm, '');
+    ok(f + '：不许用 document.getElementById 找自己的节点',
+      !/document\.getElementById\s*\(/.test(src),
+      '命中：' + (src.match(/document\.getElementById\s*\([^)]*\)/g) || []).join(' '));
+  }
+}
+
+/* ============================================================
+   1e. 文档承诺与实现一致
+   ============================================================ */
+{
+  const appSrc = readFileSync(path.join(ROOT, 'js/app.js'), 'utf8');
+  ok('file:// 打开有明确提示', /location\.protocol\s*===\s*['"]file:['"]/.test(appSrc),
+    'app.js 里没有 file:// 守卫');
+  const readme = readFileSync(path.join(ROOT, 'README.md'), 'utf8');
+  ok('README 不再承诺「双击就能用」',
+    !/双击[^。\n]*就能用/.test(readme) && !/clone 下来双击/.test(readme),
+    'README 里还有「双击就能用」');
+  ok('README 说清了用本地服务器打开', /scripts\/serve\.mjs/.test(readme));
 }
 
 /* ============================================================
