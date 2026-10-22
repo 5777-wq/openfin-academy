@@ -18,6 +18,26 @@
     gold: 'GC00Y',            // 老链接 #/assets/gold 也要能拿到数据卡
   };
 
+  /* 站内 id → 终端的 symbol。
+     两者**不是一回事**：#/assets/gold 是站内老链接，终端里没有 gold 这个 symbol
+     （只有 EM:101.GC00Y）。用站内 id 去链终端，终端会打开一个名为「ld」、
+     没有数据的空详情页。 */
+  const LENS_OF = {
+    gold: 'EM:101.GC00Y',
+  };
+
+  /* 站内自有序列：终端里没有对应标的，不给「去看历史数据」的链接
+     （链过去终端会打开一个空详情页）。 */
+  const NO_LENS = new Set(['VIX', 'NDX']);
+
+  /* 站内自有序列：终端不展示、但本站有月线数据的序列。
+     它们以前只能被词条引用（「站内 VIX 月度序列可核对」），读者却找不到地方核对——
+     序列收在仓库里，站内没有任何页面能打开它。 */
+  const OWN_SERIES = [
+    { id: 'VIX', label: 'VIX 恐慌指数', note: 'CBOE 官方月末收盘 · 标普500期权的隐含波动率' },
+    { id: 'NDX', label: '纳斯达克100', note: '纳斯达克100指数月末收盘' },
+  ];
+
   /* 终端的 symbol → 站内专文 id（已写过专文的） */
   const ARTICLE_OF = {
     'EM:101.GC00Y': 'gold',
@@ -70,13 +90,32 @@
         <div class="entries">${rows}</div>`;
     }).join('');
 
+    // 站内自有序列：终端不展示，但本站有数据、词条也在引用它们。
+    // 不列出来的话，「站内 VIX 月度序列可核对」这句话就是空头支票。
+    const ownRows = OWN_SERIES.map((o) => {
+      const s = map.get(o.id);
+      if (!s) return '';
+      return `<a class="entry" href="#/assets/${encodeURIComponent(o.id)}">
+        <span>
+          <span class="e-t">${esc(o.label)}</span>
+          <span class="e-d">${esc(o.note)} · ${esc(s.from)} → ${esc(s.to)} · ${s.count} 个月末点</span>
+        </span>
+        <span class="e-m">看这一页 →</span>
+      </a>`;
+    }).filter(Boolean).join('');
+    const ownBlock = ownRows ? `
+      <div class="eyebrow" style="margin:var(--s-6) 0 var(--s-3)">站内自有序列 · ${ownRows.split('<a class="entry"').length - 1}</div>
+        <div class="entries">${ownRows}</div>
+        <p class="cat-desc" style="margin-top:var(--s-2)">这几条行情终端里不展示，但本站有完整的月线数据——词条里说「可在站内核对」的就是它们。</p>` : '';
+
     view.innerHTML = `
       <div class="art-head">
         <div class="eyebrow">栏目 03 · 标的百科</div>
         <h1 style="font-size:var(--t-hero);letter-spacing:-.015em;margin-bottom:var(--s-3)">和行情终端同一份标的清单</h1>
         <p class="art-dek">下面是行情终端里能看的每一只标的。点进去有它的真实历史读数（峰值、谷底、峰谷跌幅、近一年涨跌），有专文的还会多一篇讲清楚它靠什么赚钱。</p>
       </div>
-      ${blocks || '<div class="empty"><div class="et">数据还没采齐</div><div class="ed">跑一次采集脚本就能拿到真实历史。</div></div>'}`;
+      ${blocks || '<div class="empty"><div class="et">数据还没采齐</div><div class="ed">跑一次采集脚本就能拿到真实历史。</div></div>'}
+      ${ownBlock}`;
   }
 
   /** 标的详情页：专文（如果有）+ 真实数据卡 */
@@ -110,8 +149,12 @@
       </div>`;
 
     // —— 与行情终端的双向跳转 ——
+    // lensSym：站内 id 不一定是终端的 symbol（gold → EM:101.GC00Y）；
+    // 站内自有序列（VIX / NDX）终端根本没有，就不给「去看历史数据」。
+    const lensSym = LENS_OF[sym] || (NO_LENS.has(sym) ? '' : sym);
     const cross = window.Cross.bar({
       sym: sym,
+      lensSym: lensSym,
       fromLens: fromLens,
       moreHref: '#/assets',
       moreLabel: '看别的标的 →',

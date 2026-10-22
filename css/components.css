@@ -9,6 +9,8 @@
 }
 .panel.tight { padding: var(--s-4); }
 .panel.flush { padding: 0; overflow: hidden; }
+/* 首页 hero 用的时代横轴：提示卡会探出面板，所以这一处不裁 */
+.panel.flush.open { overflow: visible; }
 .panel-title {
   display: flex; align-items: baseline; gap: var(--s-3);
   padding-bottom: var(--s-3); margin-bottom: var(--s-4);
@@ -51,7 +53,8 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
 .tag.down { color: var(--down); border-color: rgba(27,122,87,.3); background: var(--down-soft); }
 
 /* ---------- 时代横轴（两条时间带） ---------- */
-.era {
+/* 注意：JS 输出的容器 class 是 era-band（不是 era）——名字对不上，这一整段样式就没生效过 */
+.era-band {
   position: relative; margin: var(--s-6) 0 0;
   padding: var(--s-6) 0 var(--s-5);
   border-top: 1px solid var(--rule);
@@ -111,25 +114,38 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
 .era-node.now .en-year { color: var(--gold); }
 .era-node.now .en-label { color: var(--ink); font-weight: 500; }
 .era-node .en-tip {
-  position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%) translateY(4px);
-  width: 214px; padding: 10px 12px; background: var(--ink); color: var(--paper);
+  --tip-w: 214px; --tip-shift: 0px;
+  position: absolute; bottom: calc(100% + 10px); left: 50%;
+  transform: translateX(calc(-50% + var(--tip-shift))) translateY(4px);
+  width: var(--tip-w); padding: 10px 12px; background: var(--ink); color: var(--paper);
   border-radius: var(--r-2); box-shadow: var(--sh-2); opacity: 0; pointer-events: none;
   transition: opacity var(--dur-2), transform var(--dur-2) var(--ease-out); z-index: 20;
   text-align: left;
 }
+/* 首/末节点的提示卡以节点为中心会探出轴的两端，各被裁掉约 60px：
+   改成「以节点中心为边」向轴内展开（挪半张卡宽），整张卡就都在轴里了。 */
+.era-axis a.era-node:first-of-type .en-tip { --tip-shift: calc(var(--tip-w) / 2); }
+.era-axis a.era-node:last-of-type .en-tip { --tip-shift: calc(var(--tip-w) / -2); }
 .era-node .en-tip b { display: block; font-size: 12.5px; margin-bottom: 3px; color: #fff; }
 .era-node .en-tip span { font-size: 11.5px; line-height: 1.55; opacity: .82; }
-.era-node:hover .en-tip { opacity: 1; transform: translateX(-50%) translateY(0); }
+.era-node:hover .en-tip { opacity: 1; transform: translateX(calc(-50% + var(--tip-shift))) translateY(0); }
 @media (max-width: 860px) {
   .era-axis { height: auto; margin: 0; display: flex; flex-direction: column; gap: 0; }
   .era-axis .axis-line, .era-axis .axis-fill { display: none; }
-  .era-node { position: static; transform: none !important; width: 100%; flex-direction: row;
+  .era-node { position: static; transform: none !important; width: 100%; flex-direction: row; flex-wrap: wrap;
     align-items: center; gap: var(--s-3); padding: 9px 0; border-bottom: 1px solid var(--rule-2); }
   .era-node .en-year { margin: 0; width: 42px; flex: none; }
   .era-node .en-dot { display: none; }
   .era-node .en-stem { display: none; }
   .era-node .en-label { margin: 0; flex: 1 1 auto; text-align: left; }
-  .era-node .en-tip { display: none; }
+  /* 窄屏没有悬停，那句话就没了——摊开成常驻文字（不要小标题，年份和名字上面已经有了） */
+  .era-node .en-tip {
+    position: static; transform: none; opacity: 1; pointer-events: auto;
+    flex: 0 0 100%; order: 9; width: auto; margin: 2px 0 0; padding: 0;
+    background: none; color: var(--ink-3); box-shadow: none; text-align: left;
+  }
+  .era-node .en-tip b { display: none; }
+  .era-node .en-tip span { font-size: 11.5px; line-height: 1.6; opacity: 1; }
 }
 
 /* ============================================================
@@ -176,10 +192,14 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
 .drawer {
   position: fixed; top: 0; right: 0; bottom: 0; width: min(430px, 92vw);
   background: var(--sheet); border-left: 1px solid var(--rule); z-index: calc(var(--z-drawer) + 1);
-  transform: translateX(100%); transition: transform var(--dur-3) var(--ease-out);
+  transform: translateX(100%);
+  /* 关着的抽屉必须真正移出可聚焦序列：只 translate 出去的话，
+     里面的「关闭」按钮和上次的词条链接还能被 Tab 到，焦点圈会跑到视口外。 */
+  visibility: hidden;
+  transition: transform var(--dur-3) var(--ease-out), visibility var(--dur-3);
   display: flex; flex-direction: column; box-shadow: var(--sh-3);
 }
-.drawer.on { transform: translateX(0); }
+.drawer.on { transform: translateX(0); visibility: visible; }
 .drawer-head {
   display: flex; align-items: center; gap: var(--s-3);
   padding: var(--s-4) var(--s-5); border-bottom: 1px solid var(--rule);
@@ -386,6 +406,8 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
   position: absolute; top: 0; transform: translateX(-50%); text-align: center;
   background: none; border: 0; padding: 0; cursor: pointer; font: inherit;
 }
+/* 命中区：刻度只有 13px 高，手指点不中；上下各撑出一点，高度补到 24px 以上 */
+.rp-mark::before { content: ''; position: absolute; left: 0; right: 0; top: -6px; bottom: -5px; }
 .rp-mark i { display: block; width: 1px; height: 7px; background: var(--gold); margin: 0 auto; }
 .rp-mark span { font-family: var(--font-mono); font-size: 9.5px; color: var(--ink-3); white-space: nowrap; }
 .rp-mark:hover span { color: var(--ink); }
@@ -506,6 +528,12 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
   .ds td { border: 0; padding: 0 0 var(--s-2); }
   .ds .ds-n { width: auto; margin-bottom: 4px; }
   .ds .ds-p { padding-top: 2px; }
+  /* 表头被藏了，列名就得随身带着：不然读者分不清第二段是「是什么」还是「什么时候会骗人」 */
+  .ds td::before {
+    content: attr(data-label); display: block; margin-bottom: 3px;
+    font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .1em; color: var(--ink-4);
+  }
+  .ds .ds-n::before { margin-bottom: 2px; }
 }
 
 /* ============================================================
@@ -523,6 +551,8 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
   border: 1px solid var(--rule); border-radius: 2px; background: var(--sheet-2);
   cursor: pointer; transition: background var(--dur-1), border-color var(--dur-1);
 }
+/* 命中区：视觉高 22px 不够手指点，用一层透明的伪元素把可点区域撑到 26px */
+.switch::before { content: ''; position: absolute; left: 0; right: 0; top: -2px; bottom: -2px; }
 .switch::after {
   content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px;
   background: var(--ink-3); transition: transform var(--dur-1) var(--ease-out), background var(--dur-1);

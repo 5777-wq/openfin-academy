@@ -59,13 +59,26 @@ export async function buildAssetIds() {
 
   const symbols = [];
   const detail = {};
+  const labels = [];
   for (const u of uni) {
     const sid = of[u.symbol] || u.symbol;
     if (!have.has(sid)) continue;
     symbols.push(u.symbol);
+    labels.push(u.label);
     detail[u.symbol] = { series: sid, label: u.label };
   }
   symbols.sort();
+
+  // 「科普站真能搜到的词」：词条名 + 标的页的标题。
+  // 终端据此决定要不要给「去科普站里搜这个词」的入口——
+  // 给一个搜不到词的搜索链接，就是给用户一条必然扑空的路。
+  const g = JSON.parse(await readFile(path.join(ROOT, 'content', '_meta', 'glossary.json'), 'utf8'));
+  const terms = g.terms || {};
+  const searchable = [...new Set([
+    ...Object.keys(terms).map((id) => terms[id].term).filter(Boolean),
+    ...Object.keys(terms).map((id) => terms[id].alias).filter(Boolean),
+    ...labels,
+  ])].sort();
 
   return {
     // 用序列表的生成日，不用今天——产物必须可复现，
@@ -76,6 +89,7 @@ export async function buildAssetIds() {
     count: symbols.length,
     symbols,
     detail,
+    searchable,
   };
 }
 

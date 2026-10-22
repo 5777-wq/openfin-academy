@@ -25,9 +25,11 @@ const version = /^\d{8}$/.test(arg || '') ? arg : new Date().toISOString().slice
 
 let html = readFileSync(INDEX, 'utf8');
 
-// 业务资源：css/… 与 js/…（vendor/ 与第三方库不动）
+// 业务资源：css/… 与 js/…，以及 vendor/core/…（从 OpenFinLens 同步来的副本，
+// 它们也会随同步改动，同样要能被浏览器重新拉——不然就是「改了没生效」）
+// 注意：文件名部分不能把已有的 ?v= 一起吃掉，否则会变成 xxx.js?v=old?v=new
 let touched = 0;
-html = html.replace(/(href|src)="(css\/[^"]+|js\/[^"]+?)(\?v=[^"]*)?"/g, (m, attr, file) => {
+html = html.replace(/(href|src)="((?:css|js|vendor\/core)\/[^"?]+)(\?v=[^"]*)?"/g, (m, attr, file) => {
   touched++;
   return `${attr}="${file}?v=${version}"`;
 });

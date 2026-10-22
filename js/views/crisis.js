@@ -15,6 +15,8 @@
   }
 
   async function renderList(view) {
+    // 从详情页回列表：上一个回放器必须拆掉，否则它的方向键还挂在全局
+    if (window.ReplayPlayer) window.ReplayPlayer.stop();
     const items = await loadIndex();
     const arts = window.Content.bySection('crisis');
     const artIds = arts.map((a) => a.id);
@@ -60,14 +62,19 @@
   }
 
   async function renderDetail(view, id) {
+    // 重挂载前先拆掉上一个回放器：定时器、观察器、宿主引用都不该留着
+    if (window.ReplayPlayer) window.ReplayPlayer.stop();
     const pkg = await window.History.crisis(id);
     const art = window.Content.article(id);
 
     if (!art) {
+      // 这支复盘还没写，但回放数据可能已经有了：
+      // 容器必须一起输出，否则 mountReplay 找不到 #crisis-replay，页面上什么都没有。
       view.innerHTML = `<div class="empty"><div class="et">这场复盘还没写</div>
         <div class="ed">回放数据${pkg ? '已经有了' : '也需要先跑一次采集'}。</div>
-        <a class="btn ghost sm" href="#/crisis">回复盘列表</a></div>`;
-      if (pkg) mountReplay(view, pkg);
+        <a class="btn ghost sm" href="#/crisis">回复盘列表</a></div>
+        <div id="crisis-replay" style="margin-top:var(--s-6)"></div>`;
+      mountReplay(view, pkg);
       return;
     }
 
@@ -119,6 +126,8 @@
         <div class="ed">跑一次 <code>node _scripts/collect-history.mjs</code> 就能拿到真实长历史。</div></div></div>`;
       return;
     }
+    // 挂新实例之前先拆旧的
+    if (window.ReplayPlayer) window.ReplayPlayer.stop();
     window.ReplayPlayer.render(box, pkg);
   }
 

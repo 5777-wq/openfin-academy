@@ -19,6 +19,7 @@
    * 跨站跳转条
    * @param {Object} o
    * @param {string} [o.sym]      终端里的 symbol（有它就跳它的详情页）
+   * @param {string} [o.lensSym]  站内 id 对应的终端 symbol（两者不一致时用它）
    * @param {string} [o.lens]     没有 sym 时给的板块链接（如 #etf=spmo）
    * @param {string} [o.lensLabel]
    * @param {boolean}[o.fromLens] 是不是从终端点进来的（是才给"回到 OpenFinLens"）
@@ -29,7 +30,9 @@
     const opt = o || {};
     if (!enabled()) return '';
     const out = [];
-    const sym = opt.sym || '';
+    // lensSym：站内的 id 常常不是终端的 symbol（老链接 #/assets/gold 就是），
+    // 用错 symbol 链过去，终端会打开一个名为「ld」、没有数据的空详情页。
+    const sym = opt.lensSym || opt.sym || '';
     if (sym) {
       out.push(`<a class="btn sm" href="${LENS}#symbol=${encodeURIComponent(sym)}" target="_blank" rel="noopener">去看历史数据 →</a>`);
     } else if (opt.lens) {

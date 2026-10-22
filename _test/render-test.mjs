@@ -39,7 +39,7 @@ class El {
     this.id = id; this.tag = tag || 'div';
     this.innerHTML = ''; this.textContent = ''; this.value = '';
     this.dataset = {}; this.style = { cssText: '' }; this.attrs = {};
-    this.children = []; this.hidden = false;
+    this.children = []; this.hidden = false; this.isConnected = true;
     const self = this;
     this.classList = {
       _set: new Set(),
@@ -58,6 +58,7 @@ class El {
   remove() {}
   getAttribute(k) { return this.attrs[k] !== undefined ? this.attrs[k] : null; }
   setAttribute(k, v) { this.attrs[k] = String(v); }
+  removeAttribute(k) { delete this.attrs[k]; }
   getBoundingClientRect() { return { x: 0, y: 0, width: 100, height: 20, top: 0, left: 0, right: 100, bottom: 20 }; }
   getTotalLength() { return 100; }
   focus() {} blur() {} click() {}
@@ -264,6 +265,24 @@ async function main() {
       ok('文章 ' + a.id + ' 有数据截止日期', html.includes('数据截至'));
       ok('文章 ' + a.id + ' 正文非空', html.includes('class="prose"'));
     }
+  }
+
+  // 「接着读」：related 里既有文章 id 也有术语 id，两个都得渲染出来。
+  // 以前只查文章索引，术语型 related 会让整块「接着读」无声消失（页面上什么都不报）。
+  {
+    sandbox.ArticleView.render(view(), 'assets', 'hk00700');
+    const rel = view().innerHTML;
+    has('文章「接着读」：区块渲染', rel, '接着读');
+    ok('文章「接着读」：四个术语都渲染成条目',
+      (rel.match(/href="#\/term\//g) || []).length === 4,
+      '实际 ' + (rel.match(/href="#\/term\//g) || []).length + ' 个');
+    has('文章「接着读」：术语指向自己的页', rel, 'href="#/term/a-share"');
+    has('文章「接着读」：术语显示中文名', rel, '股息 / 分红');
+    // 文章型 related 与术语型 related 混在一起时，两种链接都要有
+    sandbox.ArticleView.render(view(), 'family', 'money-jar');
+    const mix = view().innerHTML;
+    has('文章「接着读」：文章型 related 指向文章页', mix, 'href="#/concepts/inflation"');
+    has('文章「接着读」：术语型 related 指向术语页', mix, 'href="#/term/etf"');
   }
 
   // 危机详情
@@ -632,6 +651,169 @@ async function main() {
   // 页面引用的脚本都应被本测试加载过
   for (const s of SCRIPTS) {
     ok('index.html 加载了 ' + s, html.includes(s));
+  }
+
+  /* ---- 9. 站内链接不许有死链 ----
+     首页时代横轴曾经有 4 个节点指向不存在的文章（#/crisis/2013、#/cycles/ai-cycle 等），
+     点进去只有一句「没找到这篇文章」——最显眼的还是那个「现在」节点。
+     这里把全站写死的站内链接都扫一遍：必须能在路由表 / 内容索引 / 术语库 / 产业链清单里解析到。 */
+  {
+    const routePaths = sandbox.Router.ROUTES.map((r) => r.path);
+    const contentIds = new Set(sandbox.Content.list().map((a) => a.section + '/' + a.id));
+    const termIds = new Set(Object.keys(sandbox.Content.glossary()));
+    const chainIds = new Set((sandbox.INDUSTRY_CHAINS || []).map((c) => c.id));
+    const crisisPkgs = new Set(['1987', '1990', '1994', '1998', '2008']);
+
+    /** 一条站内链接能不能解析到真实内容 */
+    const resolves = (href) => {
+      const p = href.slice(2).split('?')[0].split('#')[0];
+      const segs = p.split('/').filter(Boolean);
+      if (!segs.length) return true;                                   // 首页
+      if (segs.length === 1) return routePaths.indexOf('/' + segs[0]) >= 0;
+      const [sec, id] = segs;
+      if (sec === 'term') return termIds.has(decodeURIComponent(id));
+      if (sec === 'chains') return chainIds.has(id);
+      if (sec === 'crisis') return contentIds.has('crisis/' + id) || crisisPkgs.has(id);
+      return contentIds.has(sec + '/' + id);
+    };
+
+    // 全站写死的站内链接（模板拼出来的 ${...} 静态扫不了，跳过）
+    const hrefRe = /(?:href=|href:\s*)['"]([^'"]*)['"]/g;
+    let checked = 0;
+    for (const f of SCRIPTS.filter((x) => x.startsWith('js/'))) {
+      const src = await readFile(path.join(ROOT, f), 'utf8');
+      for (const m of src.matchAll(hrefRe)) {
+        const raw = m[1];
+        if (!raw.startsWith('#/') || raw.includes('${')) continue;
+        checked++;
+        ok('站内链接可解析 ' + raw + '（' + f + '）', resolves(raw), '路由表和内容索引里都没有它');
+      }
+    }
+    ok('站内链接扫描覆盖到写死的链接', checked >= 15, '只扫到 ' + checked + ' 条');
+
+    // 时代横轴：每个节点的链接都要能解析
+    const eraHrefs = sandbox.EraTimeline.DEFAULT_BANDS.flatMap((b) => b.eras.map((e) => e.href));
+    ok('时代横轴有 10 个节点', eraHrefs.length === 10, '实际 ' + eraHrefs.length);
+    for (const href of eraHrefs) {
+      ok('时代横轴链接可解析 ' + href, resolves(href), '这条点了只会「没找到这篇文章」');
+    }
+    // 渲染出来的锚点也要一样
+    const eraHtml = getElementById('home-era').innerHTML;
+    const rendered = [...eraHtml.matchAll(/href="(#\/[^"]+)"/g)].map((m) => m[1]);
+    ok('时代横轴渲染出了链接', rendered.length === eraHrefs.length, '实际 ' + rendered.length);
+    for (const href of rendered) ok('时代横轴渲染出的链接可解析 ' + href, resolves(href));
+  }
+
+  /* ---- 10. 速查表：窄屏没有表头，列名必须带在每个单元格上 ---- */
+  {
+    const css = await readFile(path.join(ROOT, 'css/components.css'), 'utf8');
+    ok('速查表：窄屏用 data-label 显示列名', /\.ds td::before\s*\{[^}]*attr\(data-label\)/.test(css));
+    for (const c of sandbox.TermView.CATS) {
+      sandbox.TermView.renderDataSheet(view(), { cat: c.id });
+      const h = view().innerHTML;
+      const cols = sandbox.TermView.SHEET_COLS[c.id];
+      const tbody = (h.match(/<tbody>([\s\S]*?)<\/tbody>/) || [])[1] || '';
+      const labels = [...tbody.matchAll(/data-label="([^"]*)"/g)].map((m) => m[1]);
+      ok('速查表 ' + c.id + '：每个单元格都带列名', labels.length > 0 && labels.length % 3 === 0,
+        '扫到 ' + labels.length + ' 个 data-label');
+      ok('速查表 ' + c.id + '：列名等于该分类的列标题',
+        cols.every((col) => labels.includes(col)) && labels.every((l, i) => l === cols[i % 3]),
+        '表头 ' + cols.join(' / ') + '，单元格 ' + [...new Set(labels)].join(' / '));
+    }
+  }
+
+  /* ---- 11. 回放器：停掉之后必须彻底退出（不然方向键会在别的页面被吞） ---- */
+  {
+    const p = await sandbox.History.crisis('1987');
+    ok('危机包可加载 1987（用于生命周期测试）', !!p);
+    if (p) {
+      sandbox.ReplayPlayer.render(getElementById('replay-life'), p);
+      ok('回放器挂上后是激活的', sandbox.ReplayPlayer.isActive() === true);
+      sandbox.ReplayPlayer.stop();
+      ok('回放器停止后不再激活', sandbox.ReplayPlayer.isActive() === false);
+      // 路由把视图整块换掉之后，宿主脱离文档：这时也不算还挂着
+      sandbox.ReplayPlayer.render(getElementById('replay-life'), p);
+      getElementById('replay-life').isConnected = false;
+      ok('宿主脱离文档后不再激活', sandbox.ReplayPlayer.isActive() === false);
+      ok('宿主脱离文档后方向键不再被拦截', (() => {
+        let prevented = false;
+        sandbox.ReplayPlayer.onKey({ key: 'ArrowRight', target: { tagName: 'BODY' }, preventDefault() { prevented = true; } });
+        return !prevented;
+      })());
+    }
+  }
+
+  /* ---- 12. 今日一词：同一天必须是同一个词 ---- */
+  {
+    const ids = Object.keys(sandbox.Content.glossary());
+    const d1 = new Date(2026, 9, 21);
+    ok('今日一词：取词逻辑是纯函数', typeof sandbox.HomeView.pickTodayTerm === 'function');
+    ok('今日一词：同一天取到同一个词',
+      sandbox.HomeView.pickTodayTerm(ids, d1) === sandbox.HomeView.pickTodayTerm(ids, d1));
+    ok('今日一词：取到的词在术语库里', ids.indexOf(sandbox.HomeView.pickTodayTerm(ids, d1)) >= 0);
+    // 连着渲染两次，读者看到的词不能变
+    sandbox.HomeView.render(view());
+    const homeA = view().innerHTML;
+    sandbox.HomeView.render(view());
+    const homeB = view().innerHTML;
+    ok('首页：两次渲染结果一致（今日一词不会在眼前自己换）', homeA === homeB);
+    const titleOf = (h) => (h.match(/class="tt">([^<]*)</) || [])[1] || '';
+    ok('首页：今日一词两次渲染是同一个词', !!titleOf(homeA) && titleOf(homeA) === titleOf(homeB),
+      titleOf(homeA) + ' vs ' + titleOf(homeB));
+    // 「第 N 天」按当年算，不能写死某一年
+    ok('首页：第 N 天按当前年份算', sandbox.HomeView.dayOfYear(new Date(2027, 0, 1)) === 1
+      && sandbox.HomeView.dayOfYear(new Date(2026, 0, 1)) === 1
+      && sandbox.HomeView.dayOfYear(new Date(2026, 11, 31)) === 365);
+  }
+
+  /* ---- 13. 危机空态：说了「回放数据已经有了」就得真挂上回放器 ---- */
+  {
+    await sandbox.CrisisView.renderDetail(view(), '2013');   // 没有这一篇复盘
+    const h = view().innerHTML;
+    has('危机空态：写明还没写', h, '这场复盘还没写');
+    ok('危机空态：回放器容器还在', h.includes('id="crisis-replay"'));
+  }
+
+  /* ---- 14. 抽屉：关着时必须退出可聚焦序列 ---- */
+  {
+    const css = await readFile(path.join(ROOT, 'css/components.css'), 'utf8');
+    ok('抽屉：关着时 visibility:hidden', /\.drawer\s*\{[^}]*visibility:\s*hidden/.test(css));
+    const drawerEl = getElementById('drawer');
+    sandbox.TermDrawer.init();
+    sandbox.TermDrawer.close();          // 先确保是关着的状态
+    ok('抽屉关着时没有 role=dialog', drawerEl.getAttribute('role') !== 'dialog');
+    ok('抽屉关着时标记为 inert', drawerEl.getAttribute('inert') !== null);
+    sandbox.TermDrawer.open('gold');
+    ok('抽屉打开时有 role=dialog', drawerEl.getAttribute('role') === 'dialog');
+    ok('抽屉打开时不再是 inert', drawerEl.getAttribute('inert') === null);
+    sandbox.TermDrawer.close();
+    ok('抽屉关掉后 role=dialog 被摘掉', drawerEl.getAttribute('role') !== 'dialog');
+    ok('抽屉关掉后 inert 回来了', drawerEl.getAttribute('inert') !== null);
+  }
+
+  /* ---- 15. 文章页：标签配平 + 命中区够大 ---- */
+  {
+    const css = await readFile(path.join(ROOT, 'css/components.css'), 'utf8');
+    sandbox.ArticleView.render(view(), 'concepts', 'inflation');
+    const h = view().innerHTML;
+    const openTag = (h.match(/<section/g) || []).length;
+    const closeTag = (h.match(/<\/section>/g) || []).length;
+    ok('文章页：section 标签配平', openTag === closeTag, '开 ' + openTag + ' 个，关 ' + closeTag + ' 个');
+    ok('文章页：书签按钮命中区 ≥24px', /id="art-bookmark"[^>]*height:24px/.test(h),
+      (h.match(/id="art-bookmark"[^>]*/) || [])[0] || '(没找到)');
+    ok('开关命中区 ≥24px', /\.switch::before\s*\{[^}]*top:\s*-\d/.test(css));
+    ok('回放器刻度命中区 ≥24px', /\.rp-mark::before\s*\{[^}]*top:\s*-\d/.test(css));
+  }
+
+  /* ---- 16. 时代横轴：CSS 类名要和 JS 输出对上 ---- */
+  {
+    const css = await readFile(path.join(ROOT, 'css/components.css'), 'utf8');
+    const eraSrc = await readFile(path.join(ROOT, 'js/components/era-timeline.js'), 'utf8');
+    ok('时代横轴：JS 输出的容器类名有对应的 CSS',
+      /\.era-band\s*\{/.test(css) && eraSrc.includes('class="era-band"'));
+    ok('时代横轴：没有只写 CSS 不生效的 .era 选择器', !/(^|[^-\w])\.era\s*\{/.test(css));
+    ok('时代横轴：提示卡不会再被容器裁掉',
+      /\.era-node \.en-tip\s*\{[^}]*--tip-w/.test(css) && /\.panel\.flush\.open\s*\{/.test(css));
   }
 
   console.log('');

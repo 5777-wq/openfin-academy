@@ -1,0 +1,78 @@
+@@ berkshire-hathaway
+patch: yes
+one: 1839 年创立的美国公司，本是纺织厂，如今是横跨保险、铁路与消费的控股集团。
+
+@@ blackrock
+patch: yes
+one: 全球规模最大的资产管理机构，也是全球最大的 ETF 管理人。
+
+@@ bridgewater
+patch: yes
+one: 1975 年由瑞·达利奥创立的宏观对冲基金，以「全天候」策略著称。
+
+@@ chinext
+patch: yes
+one: 创业板 100 只龙头的加权指数，偏成长与科技，波动比主板大。
+
+@@ citadel
+patch: yes
+one: 1990 年创立于芝加哥的对冲基金，旗下做市商是美国最大的之一。
+
+@@ discount-rate
+patch: yes
+one: 把「未来的一笔钱」换算成「今天值多少钱」用的折扣率。
+
+@@ divergence
+patch: yes
+one: 价格创新高但指标没创新高（顶背离），或反过来（底背离）。
+
+@@ hstech
+patch: yes
+one: 港股 30 只科技龙头的指数，腾讯、阿里、美团权重居前。
+
+@@ index-naming
+patch: yes
+one: 指数名里的数字常常只是历史遗留——数字留下了，成分早换了。
+
+@@ industry-chain
+patch: yes
+one: 把一个行业按「谁给谁供货」拆成上中下游的链条。
+
+@@ jane-street
+patch: yes
+one: 1980 年成立于纽约的交易公司，以做市起家，现在也做多策略自营。
+
+@@ kechuang-50
+patch: yes
+one: 科创板 50 只硬科技公司的指数，2020 年 7 月才发布。
+
+@@ macd
+patch: yes
+one: 两条不同速度的均线之差再做一次平滑，看趋势差距在变大还是变小。
+
+@@ renaissance
+patch: yes
+one: 1988 年由 Jim Simons 创立的量化机构，长期回报极高且极稳定。
+number: 创办人 Jim Simons 是普林斯顿的数学教授，专攻数理统计。文艺复兴旗下最著名的 Medallion 基金自 1993 年起停止对外申购，只对内部员工开放。公开报道长期引用它的「中位数业绩」与「整体业绩」之间的巨大差额，这个差额本身就是它策略封闭性的证据。
+
+@@ silver
+patch: yes
+one: 比黄金更小众也更极端的贵金属：一半像黄金，一半像工业品。
+
+@@ templeton
+patch: yes
+one: 1947 年创立的基金，主张在全球最悲观的时候最乐观。
+
+@@ two-sigma
+patch: yes
+one: 2001 年成立的量化投资机构，用算法和另类数据做交易。
+
+@@ vanguard
+patch: yes
+one: 1975 年成立的低成本资产管理公司，指数基金的发起者之一。
+number: 先锋领航旗下的先锋 500 指数基金是全球规模最大的共同基金之一，规模在 2023 年超过 5000 亿美元；集团整体管理规模在 2025 年约为 9 万亿美元量级，稳居全球第二。它 1975 年成立时的种子资金只有 100 万美元，其中 30 万来自伯克希尔·哈撒韦。
+source: 公司公开数据、基金定期报告与伯克希尔公开披露
+
+@@ risk-free-rate
+patch: yes
+source: 本站概念文章《为什么美债收益率是「全球无风险利率」》

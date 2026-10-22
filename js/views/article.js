@@ -21,8 +21,28 @@
 
     // 编译产物是扁平结构（{ id, title, dek, body, ... }）；保留对嵌套 meta 的兼容
     const m = art.meta || art;
+    // related 里混着两种 id：文章 id 与术语 id。
+    // 只查文章索引的话，术语型 related 会整块查不到——页面上「接着读」直接消失，还一声不响。
+    // 所以先查文章，再查术语库，两边都没有才丢掉。
     const related = (m.related || [])
-      .map((rid) => window.Content.meta(rid))
+      .map((rid) => {
+        const id = String(rid);
+        const a = window.Content.meta(id);
+        if (a) {
+          return {
+            href: `#/${a.section}/${a.id}`, title: a.title || id,
+            dek: a.dek || '', min: a.readMinutes || null,
+          };
+        }
+        const t = window.Content.term(id);
+        if (t) {
+          return {
+            href: `#/term/${encodeURIComponent(id)}`, title: t.term || id,
+            dek: t.one || '', min: null,
+          };
+        }
+        return null;
+      })
       .filter(Boolean);
 
     view.innerHTML = `
@@ -35,7 +55,7 @@
           <span>数据截至 ${esc(m.dataAsOf || '—')}</span>
           ${m.updatedAt ? `<span class="msep">·</span><span>更新于 ${esc(m.updatedAt)}</span>` : ''}
           <span class="msep">·</span>
-          <button class="btn ghost sm" id="art-bookmark" style="height:22px;padding:0 8px">${bookmarkLabel(m.id)}</button>
+          <button class="btn ghost sm" id="art-bookmark" style="height:24px;padding:0 8px;margin:-1px 0">${bookmarkLabel(m.id)}</button>
         </div>
       </article>
 
@@ -61,14 +81,13 @@
         <section style="margin-top:var(--s-7)">
           <div class="eyebrow">接着读</div>
           <div class="entries">
-            ${related.map((c) => `<a class="entry" href="#/${c.section}/${c.id}">
+            ${related.map((c) => `<a class="entry" href="${esc(c.href)}">
               <span><span class="e-t">${esc(c.title)}</span><span class="e-d">${esc(c.dek || '')}</span></span>
-              <span class="e-m">${c.readMinutes ? c.readMinutes + ' min' : ''}</span></a>`).join('')}
+              <span class="e-m">${c.min ? c.min + ' min' : ''}</span></a>`).join('')}
           </div>
         </section>` : ''}
 
-      <section style="margin-top:var(--s-7)">
-        <section class="lens-only">
+      <section class="lens-only" style="margin-top:var(--s-7)">
         <div class="panel" style="display:flex;gap:var(--s-4);align-items:center;flex-wrap:wrap">
           <div style="flex:1 1 240px">
             <div class="eyebrow">想看此刻的行情</div>

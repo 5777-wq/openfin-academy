@@ -159,7 +159,7 @@
         return `<a class="entry" href="${esc(linkOf(id))}">
           <span>
             <span class="e-t">${esc(t.term || id)}</span>
-            <span class="e-d">${esc(t.one || '')}</span>
+            <span class="e-d">${window.TermCard.inline(t.one || '')}</span>
           </span>
           <span class="e-m">看解释 →</span>
         </a>`;
@@ -210,12 +210,13 @@
 
     const ids = orderTerms(Object.keys(g).filter((id) => (g[id].cat || 'basic') === cur), g, hotIds(), cur);
     const cols = SHEET_COLS[cur] || SHEET_COLS.data;
+    // 窄屏表头会被藏起来，列名要随身带着（data-label），否则读者分不清哪段是哪列
     const rows = ids.map((id) => {
       const t = g[id];
       return `<tr>
-        <td class="ds-n"><a href="${esc(linkOf(id))}">${esc(t.term || id)}</a><span class="ds-a">${esc(t.alias || '')}</span></td>
-        <td class="ds-o">${esc(t.one || '')}</td>
-        <td class="ds-p">${esc(t.pit || '')}</td>
+        <td class="ds-n" data-label="${esc(cols[0])}"><a href="${esc(linkOf(id))}">${esc(t.term || id)}</a><span class="ds-a">${esc(t.alias || '')}</span></td>
+        <td class="ds-o" data-label="${esc(cols[1])}">${window.TermCard.inline(t.one || '')}</td>
+        <td class="ds-p" data-label="${esc(cols[2])}">${window.TermCard.inline(t.pit || '')}</td>
       </tr>`;
     }).join('');
 
@@ -321,5 +322,5 @@
       </p>`;
   }
 
-  window.TermView = { render, renderIndex, renderDataSheet, linkOf, CATS, CAT_OF };
+  window.TermView = { render, renderIndex, renderDataSheet, linkOf, CATS, CAT_OF, SHEET_COLS };
 })();

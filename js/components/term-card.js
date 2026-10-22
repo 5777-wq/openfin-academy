@@ -38,8 +38,21 @@
   function part(k, v, pit) {
     return `<div class="term-part${pit ? ' pit' : ''}">
       <span class="tp-k">${esc(k)}</span>
-      <span class="tp-v">${esc(v)}</span>
+      <span class="tp-v">${inline(v)}</span>
     </div>`;
+  }
+
+  /** 行内 Markdown（只这一小段：加粗 / 斜体 / 代码）
+      为什么不用 Fmt.md：那个是块级渲染器，会把一句话包成 <p>，
+      而词条卡的值都放在 <span class="tp-v"> 里，块级标签会撑坏版式。
+      词条里出现的 `**加粗**` 之前是原样打印星号的——读者看到的是
+      「**隐含波动率**是……」这种半成品排版。 */
+  function inline(v) {
+    if (v === null || v === undefined) return '';
+    return esc(v)
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>');
   }
 
   /** 把正文里的「术语引用」标记成可点元素
@@ -55,5 +68,5 @@
     });
   }
 
-  window.TermCard = { render, markTerms, part };
+  window.TermCard = { render, markTerms, part, inline };
 })();

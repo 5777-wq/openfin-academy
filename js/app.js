@@ -13,12 +13,15 @@
     { id: 'chains',   path: '/chains',        label: '产业链图谱', n: '04', section: 'chains' },
     { id: 'cycles',   path: '/cycles',        label: '周期与镜鉴', n: '05', section: 'cycles' },
     { id: 'family',   path: '/family',        label: '家庭理财',   n: '06', section: 'family' },
+    { id: 'terms',    path: '/terms',         label: '术语库',     n: '07' },
+    { id: 'data',     path: '/data',          label: '速查表',     n: '08' },
     { id: 'path',     path: '/path',          label: '新手路径',   n: '★' },
   ];
 
   const TABS = [
     { path: '/',         label: '首页',   icon: 'M3 11l9-8 9 8M5 10v10h14V10' },
     { path: '/concepts', label: '概念',   icon: 'M4 5h16M4 12h16M4 19h10' },
+    { path: '/terms',    label: '术语',   icon: 'M4 5a2 2 0 0 1 2-2h5v18H6a2 2 0 0 1-2-2zM20 5a2 2 0 0 0-2-2h-5v18h5a2 2 0 0 0 2-2z' },
     { path: '/crisis',   label: '复盘',   icon: 'M3 12a9 9 0 1 0 3-6.7M3 4v5h5' },
     { path: '/chains',   label: '产业链', icon: 'M4 4v16h16M8 15l3-4 3 2 4-6' },
     { path: '/search',   label: '搜索',   icon: 'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14M20 20l-3.5-3.5' },
@@ -56,9 +59,13 @@
   function paintRail() {
     const rail = document.getElementById('rail');
     if (!rail) return;
+    // 三组：栏目（六大栏目）· 查词（术语库与速查表）· 开始（新手路径）
+    // 「查词」这一组是后加的——术语库 189 条、速查表十张表是站内最大的两块内容，
+    // 之前只挂在正文链接里，左栏没有入口，等于把一半内容藏起来了。
     const groups = [
       { label: '栏目', items: NAV.slice(0, 7) },
-      { label: '开始', items: [NAV[7]] },
+      { label: '查词', items: NAV.slice(7, 9) },
+      { label: '开始', items: [NAV[9]] },
     ];
     rail.innerHTML = groups.map((g) => `
       <div class="rail-group">
@@ -66,7 +73,11 @@
         ${g.items.map((it) => {
           // 产业链的条目来自 vendor（10 条链），不是内容索引
           let count = null;
-          if (it.section === 'chains') {
+          if (it.id === 'terms') {
+            count = Object.keys((window.Content && window.Content.glossary && window.Content.glossary()) || {}).length;
+          } else if (it.id === 'data') {
+            count = (window.TermView && window.TermView.CATS ? window.TermView.CATS : []).length;
+          } else if (it.section === 'chains') {
             count = (typeof window.INDUSTRY_CHAINS !== 'undefined' && window.INDUSTRY_CHAINS) || [];
             count = count.length;
           } else if (it.section) {
@@ -153,6 +164,7 @@
     if (!m) { window.Router.go('/'); return; }
 
     const key = location.hash;
+    const prevKey = currentKey;
     if (key !== currentKey) {
       window.Router.stashScroll(currentKey);
       currentKey = key;
@@ -172,57 +184,126 @@
       </div>`;
     }
 
+    /* 每次路由换一个**新的容器节点**给视图用。
+       为什么：assets / crisis 的渲染是 async（要先等 JSON），而用户在这期间
+       可能已经切到别的页面。以前所有路由共用同一个 #view，旧页面的 await 回来后
+       直接 view.innerHTML = ... —— 于是 URL 显示 A 页、页面上却是 B 页的内容。
+       换成独立容器后，旧页面的异步结果写进的是**已经被换掉的旧容器**，屏幕上看不见。
+       这是不改各个视图文件就能修掉竞态的办法。 */
+    const host = document.createElement('div');
+    host.className = 'route-host';
+    view.innerHTML = '';
+    view.appendChild(host);
+
+    const errHtml = (e) => `<div class="empty"><div class="et">这一页出了点问题</div>
+        <div class="ed">${esc(e && e.message ? e.message : String(e))}</div>
+        <a class="btn ghost sm" href="#/">回首页</a></div>`;
+
+    let pending = null;
     try {
       switch (r.id) {
-        case 'home': window.HomeView.render(view); break;
-        case 'concepts': window.ListView.render(view, 'concepts'); break;
-        case 'concept': window.ArticleView.render(view, 'concepts', params.id); break;
-        case 'assets': window.AssetsView.renderIndex(view); break;
-        case 'cycles': window.ListView.render(view, 'cycles'); break;
-        case 'family': window.ListView.render(view, 'family'); break;
-        case 'family-one': window.ArticleView.render(view, 'family', params.id); break;
-        case 'chains': window.ChainView.renderList(view); break;
-        case 'path': window.PathView.render(view); break;
-        case 'terms': window.TermView.renderIndex(view); break;
-        case 'data': window.TermView.renderDataSheet(view, query); break;
-        case 'term': window.TermView.render(view, params.id, query); break;
-        case 'search': window.SearchView.render(view, query.q || ''); break;
+        case 'home': pending = window.HomeView.render(host); break;
+        case 'concepts': pending = window.ListView.render(host, 'concepts'); break;
+        case 'concept': pending = window.ArticleView.render(host, 'concepts', params.id); break;
+        case 'assets': pending = window.AssetsView.renderIndex(host); break;
+        case 'cycles': pending = window.ListView.render(host, 'cycles'); break;
+        case 'family': pending = window.ListView.render(host, 'family'); break;
+        case 'family-one': pending = window.ArticleView.render(host, 'family', params.id); break;
+        case 'chains': pending = window.ChainView.renderList(host); break;
+        case 'path': pending = window.PathView.render(host); break;
+        case 'terms': pending = window.TermView.renderIndex(host); break;
+        case 'data': pending = window.TermView.renderDataSheet(host, query); break;
+        case 'term': pending = window.TermView.render(host, params.id, query); break;
+        case 'search': pending = window.SearchView.render(host, query.q || ''); break;
         case 'crisis':
-          if (params.id) window.CrisisView.renderDetail(view, params.id);
-          else window.CrisisView.renderList(view);
+          if (params.id) pending = window.CrisisView.renderDetail(host, params.id);
+          else pending = window.CrisisView.renderList(host);
           break;
-        case 'crisis-one': window.CrisisView.renderDetail(view, params.id); break;
-        case 'asset': window.AssetsView.renderDetail(view, params.id); break;
-        case 'chain': window.ChainView.renderDetail(view, params.id); break;
-        case 'cycle': window.ArticleView.render(view, 'cycles', params.id); break;
+        case 'crisis-one': pending = window.CrisisView.renderDetail(host, params.id); break;
+        case 'asset': pending = window.AssetsView.renderDetail(host, params.id); break;
+        case 'chain': pending = window.ChainView.renderDetail(host, params.id); break;
+        case 'cycle': pending = window.ArticleView.render(host, 'cycles', params.id); break;
         default:
-          window.ListView.render(view, 'concepts');
+          pending = window.ListView.render(host, 'concepts');
       }
     } catch (e) {
       console.error('[render]', e);
-      view.innerHTML = `<div class="empty"><div class="et">这一页出了点问题</div>
-        <div class="ed">${esc(e.message || String(e))}</div>
-        <a class="btn ghost sm" href="#/">回首页</a></div>`;
+      host.innerHTML = errHtml(e);
+    }
+
+    // 视图是 async 的时候，上面的 try/catch 抓不到它内部的异常——
+    // 异常会变成 unhandledRejection，用户看到的是**上一次的残页**而不是错误页，
+    // 同时 index.html 的全局兜底会在屏幕底部压一条永不消失的红色调试条。
+    if (pending && typeof pending.then === 'function') {
+      pending.catch((e) => {
+        console.error('[render]', e);
+        if (!host.isConnected) return;   // 已经切走，这一页不在屏幕上了
+        host.innerHTML = errHtml(e);
+      });
     }
 
     applyLensSetting(false);   // 跨站链接总开关：每次重画都要跟着当前设置走
     markActive(path);
     document.title = (r.title && r.title !== '首页' ? r.title + ' · ' : '') + '白话金融';
-    window.Router.restoreScroll(currentKey);
-    if (r.id !== 'search') window.scrollTo(0, 0);
+    // 滚动位置：先恢复（用**离开时**的 key），再决定要不要归零。
+    // 以前是「先恢复、再无条件 scrollTo(0,0)」——恢复的结果 100% 被覆盖，
+    // 浏览器后退回长文时会被强行拉回顶部。
+    window.Router.restoreScroll(prevKey);
+    if (r.id !== 'search' && key !== prevKey) window.scrollTo(0, 0);
   }
 
-  /* ---------------- 命令面板 ---------------- */
+  /* ---------------- 命令面板 ----------------
+     面板底部写着「↑↓ 选择 / ⏎ 打开 / Esc 关闭」，那这三条就必须真的能用。
+     以前只有鼠标能点：↑↓ 不动、⏎ 不开、Esc 只把输入框 blur 一下（面板还留在屏幕上，
+     读者以为已经关了）。这一版把三件事补齐，并把焦点还给打开它的那个元素。 */
+  let paletteItems = [];
+  let paletteSel = 0;
+  let paletteLastFocus = null;
+
+  function isPaletteOpen() {
+    const wrap = document.getElementById('palette-wrap');
+    return !!(wrap && wrap.classList.contains('on'));
+  }
+
   function openPalette() {
     const wrap = document.getElementById('palette-wrap');
     const input = document.getElementById('palette-input');
+    paletteLastFocus = document.activeElement;
     wrap.classList.add('on');
     input.value = '';
     paintPalette('');
     input.focus();
   }
   function closePalette() {
-    document.getElementById('palette-wrap').classList.remove('on');
+    const wrap = document.getElementById('palette-wrap');
+    if (!wrap || !wrap.classList.contains('on')) return;
+    wrap.classList.remove('on');
+    // 焦点还回去：面板是 display:none，焦点会自动掉到 body，
+    // 键盘用户下一次 Tab 得从页面最顶部重新走一遍。
+    if (paletteLastFocus && document.contains(paletteLastFocus) && paletteLastFocus.focus) {
+      try { paletteLastFocus.focus(); } catch (e) { /* 元素已经没了就算了 */ }
+    }
+    paletteLastFocus = null;
+  }
+
+  /** ↑↓ 移动选中项 */
+  function paletteMove(d) {
+    if (!paletteItems.length) return;
+    const n = Math.min(paletteItems.length, 40);
+    paletteSel = (paletteSel + d + n) % n;
+    const list = document.getElementById('palette-list');
+    if (!list) return;
+    list.querySelectorAll('.pl-item').forEach((el, i) => el.classList.toggle('sel', i === paletteSel));
+    const cur = list.querySelector('.pl-item.sel');
+    if (cur && cur.scrollIntoView) cur.scrollIntoView({ block: 'nearest' });
+  }
+
+  /** ⏎ 打开选中项 */
+  function paletteEnter() {
+    const it = paletteItems[paletteSel];
+    if (!it) return;
+    closePalette();
+    it.go();
   }
 
   function paintPalette(q) {
@@ -233,6 +314,8 @@
     r.terms.forEach((t) => items.push({ g: '术语', t: t.term, s: t.one || '', go: () => window.TermDrawer.open(t.id) }));
     r.articles.forEach((a) => items.push({ g: '文章', t: a.title, s: a.dek || '', go: () => window.Router.go('/' + a.section + '/' + a.id) }));
     r.assets.forEach((a) => items.push({ g: '标的', t: a.name, s: '', go: () => window.Router.go('/assets') }));
+    paletteItems = items;
+    paletteSel = 0;
 
     if (!items.length) {
       list.innerHTML = `<div class="pl-group">无结果</div><div class="pl-item muted">换个词试试，或者按 Esc 关闭</div>`;
@@ -241,7 +324,7 @@
     let lastG = null, html = '';
     items.slice(0, 40).forEach((it, i) => {
       if (it.g !== lastG) { html += `<div class="pl-group">${esc(it.g)}</div>`; lastG = it.g; }
-      html += `<div class="pl-item${i === 0 ? ' sel' : ''}" data-i="${i}">
+      html += `<div class="pl-item${i === 0 ? ' sel' : ''}" data-i="${i}" role="option" aria-selected="${i === 0}">
         <span class="pli-t">${esc(it.t)}</span>
         ${it.s ? `<span class="pli-k">${esc(String(it.s).slice(0, 22))}</span>` : ''}
       </div>`;
@@ -346,9 +429,18 @@
   }
 
   /* ---------------- 键盘 ---------------- */
+  let pendingG = 0;   // 「G 然后 H」的第一下：G
   function onKey(e) {
     const tag = (e.target && e.target.tagName) || '';
     if (tag === 'INPUT' || tag === 'TEXTAREA') {
+      // 命令面板开着的时候，键盘归它管（↑↓ 选、⏎ 开、Esc 关）
+      if (isPaletteOpen()) {
+        if (e.key === 'Escape') { e.preventDefault(); closePalette(); return; }
+        if (e.key === 'ArrowDown') { e.preventDefault(); paletteMove(1); return; }
+        if (e.key === 'ArrowUp') { e.preventDefault(); paletteMove(-1); return; }
+        if (e.key === 'Enter') { e.preventDefault(); paletteEnter(); return; }
+        return;
+      }
       if (e.key === 'Escape') e.target.blur();
       return;
     }
@@ -361,6 +453,15 @@
     if (e.key === '/') { e.preventDefault(); openPalette(); return; }
     if (e.key === '?') { e.preventDefault(); showKeys(); return; }
     if (e.key.toLowerCase() === 't' && !e.metaKey && !e.ctrlKey) { toggleTheme(); return; }
+    // G 然后 H 回首页（快捷键面板里写着这一条，就得真的能用）
+    const k = e.key.toLowerCase();
+    if (k === 'g' && !e.metaKey && !e.ctrlKey) { pendingG = Date.now(); return; }
+    if (k === 'h' && !e.metaKey && !e.ctrlKey && pendingG && Date.now() - pendingG < 1500) {
+      pendingG = 0;
+      e.preventDefault();
+      window.Router.go('/');
+      return;
+    }
     if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
       window.ReplayPlayer.onKey(e);
     }

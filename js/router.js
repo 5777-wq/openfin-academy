@@ -25,6 +25,14 @@
 
   const scrollMemo = new Map();
 
+  /** 解码失败时退回原串，不抛。
+      hash 是用户可控的（手抄、分享、旧链接），一个没编码完的 % 序列
+      会让 decodeURIComponent 抛 URIError——那会冲出 hashchange 处理器，
+      导航静默失败，页面停在旧内容。 */
+  function safeDecode(s) {
+    try { return decodeURIComponent(s); } catch { return String(s); }
+  }
+
   function parse(hash) {
     let h = String(hash || '').replace(/^#/, '') || '/';
     const qIdx = h.indexOf('?');
@@ -35,8 +43,8 @@
       qs.split('&').forEach((kv) => {
         if (!kv) return;
         const i = kv.indexOf('=');
-        const k = decodeURIComponent(i < 0 ? kv : kv.slice(0, i));
-        const v = i < 0 ? '' : decodeURIComponent(kv.slice(i + 1).replace(/\+/g, ' '));
+        const k = safeDecode(i < 0 ? kv : kv.slice(0, i));
+        const v = i < 0 ? '' : safeDecode(kv.slice(i + 1).replace(/\+/g, ' '));
         query[k] = v;
       });
     }
@@ -51,7 +59,7 @@
       const params = {};
       let ok = true;
       for (let i = 0; i < rp.length; i++) {
-        if (rp[i].startsWith(':')) params[rp[i].slice(1)] = decodeURIComponent(segs[i]);
+        if (rp[i].startsWith(':')) params[rp[i].slice(1)] = safeDecode(segs[i]);
         else if (rp[i] !== segs[i]) { ok = false; break; }
       }
       if (ok) return { route: r, params };

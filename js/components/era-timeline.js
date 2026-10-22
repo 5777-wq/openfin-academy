@@ -14,13 +14,16 @@
           tip: '叙事先于盈利，估值先行崩塌。之后用了整整五年才回到起点。' },
         { year: '2008', label: '次贷危机', stat: '标普 -57%', href: '#/crisis/2008',
           tip: '房价、CDS、银行股、美股、美债——危机沿着资产负债表一路传导。' },
-        { year: '2013', label: '缩减恐慌', stat: '标普 -6%', href: '#/crisis/2013',
+        // 这三个年代还没有专文：不能指向不存在的文章（点了只会「没找到这篇文章」），
+        // 改成站内真实存在的、同一件事的词条页／文章页。
+        { year: '2013', label: '缩减恐慌', stat: '标普 -6%', href: '#/term/monetary-policy',
           tip: '央行怎么说话，市场就能怎么抖。史上最温和的一次「崩盘」。' },
-        { year: '2020', label: '疫情熔断', stat: '标普 -34%', href: '#/crisis/2020',
+        { year: '2020', label: '疫情熔断', stat: '标普 -34%', href: '#/term/circuit-breaker',
           tip: '10 个交易日的极速下跌，流动性危机而非基本面危机。' },
-        { year: '2022', label: '暴力加息', stat: '纳指 -33%', href: '#/crisis/2022',
+        { year: '2022', label: '暴力加息', stat: '纳指 -33%', href: '#/concepts/inflation',
           tip: '40 年最狠通胀，利率从 0 拉到 5%，成长股被杀估值。' },
-        { year: '2026', label: 'AI 周期', stat: '进行中', href: '#/cycles/ai-cycle', now: true,
+        // 「现在」这个节点指向本轮真正在跑的东西：算力产业链
+        { year: '2026', label: 'AI 周期', stat: '进行中', href: '#/chains/ai', now: true,
           tip: '本轮由算力资本开支驱动。哪些像 2000，哪些不像——用数据来比。' },
       ],
     },

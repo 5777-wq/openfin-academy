@@ -21,6 +21,7 @@
   let pkg = null, dates = [], idx = 0, playing = null, host = null;
   let pinned = null;   // 用户点选的事件：它的说明优先显示（游标离开 ±20 天后自动失效）
   let geoms = [];     // 每条序列的对齐值 + 画图几何（render 时算一次，setIdx 直接复用）
+  let ro = null;      // 刻度标签避让用的观察器：离开页面必须断开，否则一直挂着
 
   /** 收益率类序列：单位是 %，变化用「百分点」而不是「百分比」 */
   const YIELD_RE = /^(US2Y|US3M|US5Y|US7Y|US10Y|US20Y|US30Y)$/;
@@ -86,6 +87,7 @@
   /** 渲染整块回放器 */
   function render(container, data) {
     if (!container) return;
+    stop();                       // 换包之前先把上一个实例彻底拆掉
     pkg = data;
     dates = (data.dates || []).slice();
     if (!dates.length) {
@@ -131,10 +133,10 @@
     setIdx(0);
 
     const range = document.getElementById('rp-range');
-    range.addEventListener('input', (e) => { stop(); setIdx(Number(e.target.value)); });
+    range.addEventListener('input', (e) => { pause(); setIdx(Number(e.target.value)); });
 
     const play = document.getElementById('rp-play');
-    play.addEventListener('click', () => { playing ? stop() : start(); });
+    play.addEventListener('click', () => { playing ? pause() : start(); });
   }
 
   function drawRows() {
@@ -227,12 +229,24 @@
   }
 
   function scheduleMarkLayout(box) {
-    const run = () => layoutMarks(box);
+    const run = () => {
+      // 宿主已经不在页面上了：观察器也别再挂着
+      if (!mounted()) {
+        if (ro) { try { ro.disconnect(); } catch (e) { /* 忽略 */ } ro = null; }
+        return;
+      }
+      layoutMarks(box);
+    };
     if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run);
     else setTimeout(run, 0);
     // 宽度变了要重新避让：桌面和手机能排下的标签数完全不同
     if (typeof ResizeObserver === 'function') {
-      try { new ResizeObserver(run).observe(box); } catch (e) { /* 观察不了就算了 */ }
+      // 观察器要留着句柄：离开页面时 disconnect，否则它一直盯着已经不在页面上的节点
+      try {
+        if (ro) ro.disconnect();
+        ro = new ResizeObserver(run);
+        ro.observe(box);
+      } catch (e) { /* 观察不了就算了 */ }
     }
   }
 
@@ -273,7 +287,7 @@
       const dd = Math.abs(daysBetween(d, t));
       if (dd < bd) { bd = dd; best = i; }
     });
-    stop();
+    pause();
     setIdx(best);
     const range = document.getElementById('rp-range');
     if (range) range.value = String(best);
@@ -389,26 +403,49 @@
   }
 
   function start() {
-    stop();
+    pause();
     const btn = document.getElementById('rp-play');
     if (btn) btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
     playing = setInterval(() => {
-      if (idx >= dates.length - 1) { stop(); return; }
+      // 页面已经换走了（宿主脱离文档）：别再空转，把定时器拆掉
+      if (!mounted()) { stop(); return; }
+      if (idx >= dates.length - 1) { pause(); return; }
       setIdx(idx + 1);
       const range = document.getElementById('rp-range');
       if (range) range.value = String(idx);
     }, 420);
   }
 
-  function stop() {
+  /** 只停自动播放：包还在，滑块还能拖 */
+  function pause() {
     if (playing) { clearInterval(playing); playing = null; }
     const btn = document.getElementById('rp-play');
     if (btn) btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
   }
 
+  /** 彻底停掉：定时器、观察器、宿主引用全清。
+      离开危机页必须调用——不然 pkg/host 一直挂着，
+      全局方向键会在别的页面继续 preventDefault，把默认行为吞掉。 */
+  function stop() {
+    pause();
+    if (ro) { try { ro.disconnect(); } catch (e) { /* 忽略 */ } ro = null; }
+    pkg = null; dates = []; idx = 0; host = null; geoms = []; pinned = null;
+  }
+
+  /** 回放器是否还「在页面上」：
+      路由把视图整块换掉之后，宿主元素已经脱离文档，这时不算还挂着。 */
+  function mounted() {
+    if (!pkg || !host) return false;
+    if (typeof host.isConnected === 'boolean' && !host.isConnected) return false;
+    return true;
+  }
+
+  /** 页面上还有没有回放器（全局方向键用它来守卫） */
+  function isActive() { return mounted(); }
+
   function step(delta) {
     if (!dates.length) return;
-    stop();
+    pause();
     setIdx(idx + delta);
     const range = document.getElementById('rp-range');
     if (range) range.value = String(idx);
@@ -416,12 +453,15 @@
 
   /** 全局键盘：←/→ 步进（仅当页面内有回放器且焦点不在输入框） */
   function onKey(e) {
-    if (!pkg || !host) return;
+    if (!mounted()) return;
     const tag = (e.target && e.target.tagName) || '';
     if (tag === 'INPUT' || tag === 'TEXTAREA') return;
     if (e.key === 'ArrowLeft') { e.preventDefault(); step(-1); }
     else if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
   }
 
-  window.ReplayPlayer = { render, jumpTo, step, onKey, stop, get index() { return idx; } };
+  window.ReplayPlayer = {
+    render, jumpTo, step, onKey, pause, stop, reset: stop, isActive,
+    get index() { return idx; },
+  };
 })();

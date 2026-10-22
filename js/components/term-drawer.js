@@ -17,6 +17,16 @@
     document.getElementById('drawer-close').addEventListener('click', close);
     scrim.addEventListener('click', close);
 
+    // 抽屉关着的时候，它必须彻底退出可聚焦序列：
+    // CSS 里是 visibility:hidden，这里再补一个 inert，并摘掉 role="dialog"——
+    // 否则读屏会念出一个空的对话框。
+    syncA11y();
+    // 快捷键面板、站点设置也是直接加 .on 类打开的：用观察器跟着同步，别只盯着 open()
+    if (typeof MutationObserver === 'function') {
+      try { new MutationObserver(syncA11y).observe(el, { attributes: true, attributeFilter: ['class'] }); }
+      catch (e) { /* 观察不了就算了，open()/close() 里也会同步 */ }
+    }
+
     // 事件委托：正文里的术语锚点
     document.addEventListener('click', (e) => {
       const ref = e.target.closest('[data-term]');
@@ -31,6 +41,20 @@
       e.preventDefault();
       open(ref.getAttribute('data-term'));
     });
+  }
+
+  /** 开合状态 ↔ 无障碍属性：role="dialog" 只在打开时挂，关着就彻底不可聚焦 */
+  function syncA11y() {
+    if (!el) return;
+    if (el.classList.contains('on')) {
+      el.setAttribute('role', 'dialog');
+      el.setAttribute('aria-modal', 'true');
+      el.removeAttribute('inert');
+    } else {
+      el.removeAttribute('role');
+      el.removeAttribute('aria-modal');
+      el.setAttribute('inert', '');
+    }
   }
 
   function open(termId) {
@@ -58,6 +82,7 @@
     el.classList.add('on');
     scrim.classList.add('on');
     document.body.style.overflow = 'hidden';
+    syncA11y();
     const closeBtn = document.getElementById('drawer-close');
     if (closeBtn) closeBtn.focus();
     if (onOpen) onOpen(termId);
@@ -68,6 +93,7 @@
     el.classList.remove('on');
     scrim.classList.remove('on');
     document.body.style.overflow = '';
+    syncA11y();
     if (lastFocus && lastFocus.focus) { try { lastFocus.focus(); } catch (e) { /* 忽略 */ } }
   }
 

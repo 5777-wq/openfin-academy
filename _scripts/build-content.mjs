@@ -11,6 +11,19 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = path.join(ROOT, 'content');
 const OUT = path.join(ROOT, 'data', 'content');
 
+/* 语义上就是数字的字段：只有这几个。
+   其余一律保持字符串——related 里混着「1990」这类年份和术语 id，
+   一旦被转成 Number，页面按字符串查索引就查不到，整块「接着读」会消失。 */
+const NUMERIC_FIELDS = new Set(['readMinutes', 'difficulty']);
+
+/** 只有字段名已知时才做数字强转；数组元素一律按字符串处理 */
+function toNumberIfNumericField(key, val) {
+  if (!NUMERIC_FIELDS.has(key)) return val;
+  if (typeof val !== 'string') return val;
+  const s = val.trim();
+  return /^-?\d+(\.\d+)?$/.test(s) ? Number(s) : val;
+}
+
 function parseScalar(v) {
   const s = String(v).trim();
   if (!s) return '';
@@ -18,7 +31,7 @@ function parseScalar(v) {
   if (s === 'true') return true;
   if (s === 'false') return false;
   if (s === 'null') return null;
-  if (/^-?\d+(\.\d+)?$/.test(s)) return Number(s);
+  // 数字不在这里转：id、related 里混着年份和术语 id，转成 Number 就查不到了
   return s;
 }
 
@@ -44,7 +57,7 @@ function parseFrontmatter(text) {
     const item = /^\s*-\s+(.*)$/.exec(line);
     if (item && currentKey) {
       if (!Array.isArray(meta[currentKey])) meta[currentKey] = [];
-      meta[currentKey].push(parseScalar(item[1]));
+      meta[currentKey].push(toNumberIfNumericField(currentKey, parseScalar(item[1])));
       continue;
     }
     const kv = /^([A-Za-z0-9_]+)\s*:\s*(.*)$/.exec(line);
@@ -52,7 +65,7 @@ function parseFrontmatter(text) {
     const key = kv[1];
     const val = kv[2];
     if (val.trim() === '') { meta[key] = []; currentKey = key; }
-    else { meta[key] = parseValue(val); currentKey = null; }
+    else { meta[key] = toNumberIfNumericField(key, parseValue(val)); currentKey = null; }
   }
   return { meta, body: m[2] };
 }

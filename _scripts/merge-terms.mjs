@@ -24,12 +24,15 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const META = path.join(ROOT, 'content', '_meta', 'glossary.json');
 
-/** 直引号 → 中文引号：JSON 字符串里嵌引号时最常见的翻车点 */
-function smartQuotes(s) {
-  return String(s).replace(/"/g, '「').replace(/"/g, '」');
+/** 直引号 → 中文引号：成对替换。
+    从前两个 replace 的正则一模一样（都是 /"/g），所有直引号都变成孤立的「，永远配不成对。
+    现在按对替换；落单的那半个直接去掉，不留半边引号。 */
+export function smartQuotes(s) {
+  const out = String(s).replace(/"([^"]*)"/g, '「$1」');
+  return out.indexOf('"') >= 0 ? out.replace(/"/g, '') : out;
 }
 
-function parseDraft(text) {
+export function parseDraft(text) {
   const out = [];
   let cur = null;
   for (const rawLine of text.split(/\r?\n/)) {
@@ -56,6 +59,36 @@ function parseDraft(text) {
   return out;
 }
 
+/** 一条稿子 → 一条词条记录：只带稿子里真的写了的字段。
+    term 与 alias 同理：稿子没写就不带，patch 时才不会把老词条的中文名冲成英文 id。 */
+export function buildRec(d) {
+  const rec = {};
+  if (d.term) rec.term = d.term;
+  if (d.alias) rec.alias = d.alias;
+  if (d.cat) rec.cat = d.cat;
+  for (const k of ['one', 'name', 'metaphor', 'number', 'pit', 'source', 'sym', 'lens']) {
+    if (d[k]) rec[k] = smartQuotes(d[k]);
+  }
+  if (d._links.length) rec.links = d._links.map((l) => ({ text: smartQuotes(l.text), href: l.href }));
+  return rec;
+}
+
+/** 把一条稿子合并进术语库，返回合并后的词条。
+    patch: yes —— 只改稿子里写了的字段，其余保留原样。
+    用来给老词条补一个字段（比如补「名称由来」），不必把整条重抄一遍。 */
+export function mergeTerm(terms, d) {
+  const rec = buildRec(d);
+  if (d.patch && terms[d.id]) {
+    const merged = Object.assign({}, terms[d.id]);
+    Object.keys(rec).forEach((k) => { merged[k] = rec[k]; });
+    return merged;
+  }
+  // 全量写入：整条换掉。稿子没写 term / cat 时按老规矩兜底。
+  if (!rec.term) rec.term = d.id;
+  if (!rec.cat) rec.cat = 'basic';
+  return rec;
+}
+
 async function main() {
   const args = process.argv.slice(2);
   const files = args.filter((a) => !a.startsWith('--'));
@@ -80,29 +113,9 @@ async function main() {
       if (seen.has(d.id)) throw new Error(`稿子里有重复 id：${d.id}`);
       seen.add(d.id);
 
-      const rec = { term: d.term || d.id, alias: d.alias || '' };
-      if (d.alias) rec.alias = d.alias;
-      else delete rec.alias;
-      rec.cat = d.cat || 'basic';
-      for (const k of ['one', 'name', 'metaphor', 'number', 'pit', 'source', 'sym', 'lens']) {
-        if (d[k]) rec[k] = smartQuotes(d[k]);
-      }
-      if (d._links.length) rec.links = d._links.map((l) => ({ text: smartQuotes(l.text), href: l.href }));
-
-      // patch: yes —— 只改稿子里写了的字段，其余保留原样。
-      // 用来给老词条补一个字段（比如补「名称由来」），不必把整条重抄一遍。
-      if (d.patch && terms[d.id]) {
-        const base = terms[d.id];
-        const merged = Object.assign({}, base);
-        Object.keys(rec).forEach((k) => { merged[k] = rec[k]; });
-        if (!d.cat) merged.cat = base.cat;   // 没写 cat 就别把老的分类冲掉
-        terms[d.id] = merged;
-        updated++;
-        continue;
-      }
-
-      if (terms[d.id]) updated++; else added++;
-      terms[d.id] = rec;
+      const existed = !!terms[d.id];
+      terms[d.id] = mergeTerm(terms, d);
+      if (existed) updated++; else added++;
     }
   }
 
@@ -115,4 +128,14 @@ async function main() {
   console.log(`[merge] 新增 ${added} 条，更新 ${updated} 条，术语库共 ${Object.keys(sorted).length} 条`);
 }
 
-main().catch((e) => { console.error('[merge] 失败：', e.message); process.exit(1); });
+// 当脚本跑才合并术语库；被测试 import 时只导出纯函数，不会碰 content/_meta/glossary.json
+const SELF = fileURLToPath(import.meta.url);
+const isSelf = (p) => {
+  if (!p) return false;
+  const a = path.resolve(p), b = path.resolve(SELF);
+  return process.platform === 'win32' ? a.toLowerCase() === b.toLowerCase() : a === b;
+};
+
+if (isSelf(process.argv[1])) {
+  main().catch((e) => { console.error('[merge] 失败：', e.message); process.exit(1); });
+}

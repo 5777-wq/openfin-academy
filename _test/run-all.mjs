@@ -264,6 +264,28 @@ function loadScripts(files) {
         ok(`术语 ${id} 有 metaphor`, !!t.metaphor);
         ok(`术语 ${id} 有 number`, !!t.number);
         ok(`术语 ${id} 有 cat`, !!t.cat);
+        // 「一句话」是读者扫一眼就带走的那句，写作指南定了 40 字上限。
+        // 超了不是小事：它会把比喻和数字挤下去，也会让索引页每行都在换行。
+        const oneLen = [...String(t.one || '')].length;
+        ok(`术语 ${id} 的一句话不超过 40 字`, oneLen > 0 && oneLen <= 40, `实际 ${oneLen} 字`);
+        // term 必须是中文词名，不能是英文 id。
+        // （踩过的坑：merge-terms 的 patch 模式会把没写的 term 冲成 id，
+        //   于是「上证指数」的词条页标题变成 sse-index，而终端链过去的正是这批。）
+        ok(`术语 ${id} 的 term 不是英文 id`, t.term !== id, `term=${t.term}`);
+      }
+      // 源与产物必须一致：审的是源、读者看的是产物，两者漂了就会「审的不是上线的」
+      {
+        const src = JSON.parse(await readFile(path.join(ROOT, 'content', '_meta', 'glossary.json'), 'utf8'));
+        const built = JSON.parse(await readFile(gPath, 'utf8'));
+        const srcIds = Object.keys(src.terms || {}).sort();
+        const builtIds = Object.keys(built.terms || {}).sort();
+        ok('术语库源与产物的 id 集合一致', JSON.stringify(srcIds) === JSON.stringify(builtIds),
+          `源 ${srcIds.length} 条 / 产物 ${builtIds.length} 条`);
+        let drift = 0;
+        for (const id of srcIds) {
+          if (JSON.stringify(src.terms[id]) !== JSON.stringify(built.terms[id])) drift++;
+        }
+        ok('术语库源与产物逐字段一致', drift === 0, `${drift} 条字段不一致（请跑 build-content 后提交）`);
       }
       // 十个分类都必须有词，否则速查页的分类切换会开天窗
       const CATS = ['data', 'fund', 'asset', 'option', 'macro', 'basic', 'micro', 'player', 'risk', 'tech'];
@@ -292,6 +314,95 @@ function loadScripts(files) {
 }
 
 /* ============================================================
+   5.1 「接着读」的 related 契约
+   ------------------------------------------------------------
+   related 里混着两种 id：文章 id 和术语 id。编译期若把数字强转成 Number，
+   页面按字符串查索引就查不到，整块「接着读」会无声消失——页面上没有任何报错，
+   只是那一段不见了。所以产物里的 id 必须：
+   ① 全是字符串；② 每个都能在文章索引或术语库里找到。 */
+{
+  const idxPath = path.join(ROOT, 'data', 'content', 'index.json');
+  const gPath = path.join(ROOT, 'data', 'content', 'glossary.json');
+  if (existsSync(idxPath) && existsSync(gPath)) {
+    const idx = JSON.parse(await readFile(idxPath, 'utf8'));
+    const g = JSON.parse(await readFile(gPath, 'utf8'));
+    const terms = g.terms || {};
+    const artIds = new Set((idx.items || []).map((it) => String(it.id)));
+    let withRelated = 0, termOnly = 0, total = 0;
+
+    for (const it of idx.items || []) {
+      const a = JSON.parse(await readFile(path.join(ROOT, 'data', 'content', it.id + '.json'), 'utf8'));
+      const rel = a.related || [];
+      if (!rel.length) continue;
+      withRelated++;
+      total += rel.length;
+      const bad = rel.filter((r) => typeof r !== 'string');
+      ok(`${it.id} 的 related 全是字符串`, bad.length === 0,
+        `非字符串元素：${JSON.stringify(bad)}`);
+      for (const r of rel) {
+        const id = String(r);
+        ok(`${it.id} 的 related「${id}」在文章索引或术语库里`, artIds.has(id) || !!terms[id]);
+      }
+      if (rel.some((r) => !artIds.has(String(r)) && terms[String(r)])) termOnly++;
+    }
+    ok('有 related 的文章不为空', withRelated > 0, `实际 ${withRelated} 篇`);
+    ok('related 的条目总数不为空', total >= 40, `实际 ${total} 条`);
+    ok('至少有一篇文章的 related 只含术语 id', termOnly > 0, `实际 ${termOnly} 篇`);
+
+    // 年份型 id（「1990」）编译后必须还是字符串，不能变成 Number
+    const c1987 = JSON.parse(await readFile(path.join(ROOT, 'data', 'content', '1987.json'), 'utf8'));
+    eq('1987 的 related 编译成字符串数组',
+      JSON.stringify(c1987.related), JSON.stringify(['1990', '2008', 'liquidity']));
+  }
+}
+
+/* ============================================================
+   5.2 术语稿合并：引号成对、patch 不冲掉 term
+   ------------------------------------------------------------
+   这两处各坏过一次：引号替换的第二个正则与第一个一模一样（都是 /"/g），
+   所有直引号都变成孤立的「；patch 稿只写一个字段，却把老词条的中文名冲成英文 id。 */
+{
+  const { smartQuotes, parseDraft, buildRec, mergeTerm } = await import('../_scripts/merge-terms.mjs');
+
+  eq('merge-terms 成对直引号 → 成对中文引号',
+    smartQuotes('他说"这是股债跷跷板"'), '他说「这是股债跷跷板」');
+  eq('merge-terms 多个引号各自成对',
+    smartQuotes('"一"和"二"'), '「一」和「二」');
+  eq('merge-terms 奇数引号不产生半边（落单的半个去掉）',
+    smartQuotes('他说"这是半句'), '他说这是半句');
+  ok('merge-terms 奇数引号不留任何半边引号',
+    !/[「」]/.test(smartQuotes('他说"这是半句')), smartQuotes('他说"这是半句'));
+  eq('merge-terms 没有引号时原样返回', smartQuotes('没有引号的句子'), '没有引号的句子');
+
+  // 稿子没写 term 就不带 term（老词条的中文名不能被冲成 id）
+  const rec = buildRec({ id: 'pe-ratio', _links: [] });
+  ok('merge-terms 稿子没写 term 就不带 term', !('term' in rec));
+  ok('merge-terms 稿子没写 alias 就不带 alias', !('alias' in rec));
+
+  // patch：只写一句话，老词条的 term / alias / cat 都不能被冲掉
+  const terms = {
+    'pe-ratio': {
+      term: '市盈率', alias: 'PE / P/E', cat: 'data',
+      one: '旧一句话', metaphor: '旧比喻', number: '旧数字', pit: '旧坑',
+    },
+  };
+  const d = parseDraft('@@ pe-ratio\npatch: yes\none: 新一句话\n')[0];
+  const merged = mergeTerm(terms, d);
+  eq('patch 合并后 term 不被冲成 id', merged.term, '市盈率');
+  eq('patch 合并后 alias 保留', merged.alias, 'PE / P/E');
+  eq('patch 合并后 cat 保留', merged.cat, 'data');
+  eq('patch 合并后写了的字段被更新', merged.one, '新一句话');
+  eq('patch 合并后没写的字段保留', merged.metaphor, '旧比喻');
+  eq('patch 合并后 number 保留', merged.number, '旧数字');
+  eq('patch 合并后 pit 保留', merged.pit, '旧坑');
+
+  // 非 patch 的全量写入：新词条没写 term 时按老规矩用 id 兜底
+  const fresh = mergeTerm({}, parseDraft('@@ new-term\ncat: basic\none: 一句话\n')[0]);
+  eq('新词条没写 term 时用 id 兜底', fresh.term, 'new-term');
+  eq('新词条没写 cat 时兜底 basic', fresh.cat, 'basic');
+}
+
+/* ============================================================
    5.45 发布卫生：业务资源的 ?v= 必须同版本
    ------------------------------------------------------------
    静态托管给 js/css 设了缓存头，发布之后用户可能拿到旧文件——
@@ -304,8 +415,14 @@ function loadScripts(files) {
   ok('index.html 的业务资源都带了 ?v=', vers.length >= 20, `实际 ${vers.length} 个`);
   const uniq = [...new Set(vers)];
   ok('业务资源 ?v= 全部同版本', uniq.length === 1, `版本号不统一：${uniq.join(' ')}`);
-  ok('vendor 的第三方库不被业务版本号覆盖',
-    !/vendor\/[^"?]+\?v=\d{8}/.test(indexHtml), 'vendor 资源的版本号被改了');
+  // vendor/core 是从 OpenFinLens 同步来的**代码副本**，它会随同步改动，
+  // 所以必须跟着版本号走（不然改了 vendor 却让浏览器吃缓存）。
+  // 真正的第三方库（本仓没有）才不该被业务版本号覆盖。
+  ok('vendor/core 同步副本带上了版本号',
+    /vendor\/core\/[^"?]+\?v=/.test(indexHtml), 'vendor/core 没带 ?v=，同步后浏览器会吃旧缓存');
+  ok('没有资源漏掉版本号',
+    ![...indexHtml.matchAll(/(?:href|src)="((?:css|js|vendor\/core)\/[^"]+)"/g)]
+      .some((m) => m[1].indexOf('?v=') < 0), '有 css/js 资源没带 ?v=');
 }
 
 /* ============================================================

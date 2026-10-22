@@ -26,12 +26,12 @@
   }
 
   const GAUGES = [
-    { name: '美债 10 年期收益率', unit: '%', key: 'EM:171.US10Y', digits: 2, hot: true, href: '#/concepts/risk-free-rate', link: '为什么它是全球无风险利率' },
+    { name: '美债 10 年期收益率', unit: '%', key: 'EM:171.US10Y', digits: 2, hot: true, href: '#/term/risk-free-rate', link: '为什么它是全球无风险利率' },
     { name: 'COMEX 黄金', unit: '美元/盎司', key: 'EM:101.GC00Y', digits: 1, href: '#/assets/gold', link: '黄金到底在防什么' },
-    { name: '纳斯达克 100', unit: '', key: 'usNDX', digits: 2, href: '#/assets', link: '纳指为什么对利率最敏感' },
-    { name: 'NYMEX 原油', unit: '美元/桶', key: 'EM:102.CL00Y', digits: 2, href: '#/assets', link: '原油是通胀的风向标' },
-    { name: '美元指数', unit: '', key: 'EM:100.UDI', digits: 2, href: '#/concepts', link: '美元为什么是世界的锚' },
-    { name: '上证指数', unit: '', key: 'sh000001', digits: 2, href: '#/assets', link: '大A 的「大盘」指什么' },
+    { name: '纳斯达克 100', unit: '', key: 'usNDX', digits: 2, href: '#/term/nasdaq', link: '纳指为什么对利率最敏感' },
+    { name: 'NYMEX 原油', unit: '美元/桶', key: 'EM:102.CL00Y', digits: 2, href: '#/term/crude-oil', link: '原油是通胀的风向标' },
+    { name: '美元指数', unit: '', key: 'EM:100.UDI', digits: 2, href: '#/term/dollar-index', link: '美元为什么是世界的锚' },
+    { name: '上证指数', unit: '', key: 'sh000001', digits: 2, href: '#/term/sse-index', link: '大A 的「大盘」指什么' },
   ];
 
   /** 只重绘仪表区：行情到达时补上，不动整页 */
@@ -45,21 +45,44 @@
     })).join('');
   }
 
+  /** 今天是本年的第几天（本地时区；1 月 1 日算第 1 天）
+      原来写死 Date.UTC(2026,0,1)，2027 年起就会变成「第 366 天」并一直长下去。 */
+  function dayOfYear(d) {
+    const now = d || new Date();
+    const start = new Date(now.getFullYear(), 0, 1);
+    return Math.floor((now.getTime() - start.getTime()) / 86400000) + 1;
+  }
+
+  /** 今日一词：按当天日期做种子，同一天永远是同一个词。
+      （原来用 Math.random()：内容加载完后 route() 会再渲染一次，
+        读者眼睁睁看着词在自己眼前换掉。） */
+  function pickTodayTerm(ids, date) {
+    if (!ids || !ids.length) return null;
+    const d = date || new Date();
+    const seed = d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+    let h = 2166136261;                    // FNV-1a：同一个种子永远落到同一个词
+    for (let i = 0; i < seed.length; i++) {
+      h ^= seed.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return ids[(h >>> 0) % ids.length];
+  }
+
   function render(view) {
     const G = window.Quotes;
 
     const glossary = window.Content.glossary();
     const termIds = Object.keys(glossary);
-    const pick = termIds.length ? termIds[Math.floor(Math.random() * termIds.length)] : null;
+    const pick = pickTodayTerm(termIds);
     const termHtml = pick ? window.TermCard.render(Object.assign({ id: pick }, glossary[pick])) : '';
 
     const latestCrisis = window.Content.bySection('crisis').slice(0, 2);
     const latestConcept = window.Content.bySection('concepts').slice(0, 3);
 
     view.innerHTML = `
-      <section class="panel flush" style="border:0;background:transparent;padding:0">
+      <section class="panel flush open" style="border:0;background:transparent;padding:0">
         <div class="art-head" style="margin-bottom:var(--s-5)">
-          <div class="eyebrow">${esc(F().cnDateWithWeek(F().today()))} · 第 ${Math.ceil((Date.now() - Date.UTC(2026,0,1)) / 86400000)} 天</div>
+          <div class="eyebrow">${esc(F().cnDateWithWeek(F().today()))} · 第 ${dayOfYear()} 天</div>
           <h1 style="font-size:var(--t-hero);line-height:1.32;letter-spacing:-.015em;margin-bottom:var(--s-3)">
             把美债收益率、黄金、纳指、原油、A股<br>讲成你听得懂的话。
           </h1>
@@ -132,5 +155,5 @@
     </a>`;
   }
 
-  window.HomeView = { render, paintGauges };
+  window.HomeView = { render, paintGauges, pickTodayTerm, dayOfYear };
 })();
