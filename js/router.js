@@ -16,6 +16,8 @@
     { id: 'cycle',    path: '/cycles/:id',       title: '周期详情' },
     { id: 'family',   path: '/family',           title: '家庭理财', section: 'family' },
     { id: 'family-one', path: '/family/:id',     title: '家庭理财详情' },
+    { id: 'reports',  path: '/reports',          title: '读懂财报', section: 'reports' },
+    { id: 'report',   path: '/reports/:id',      title: '财报详解' },
     { id: 'path',     path: '/path',             title: '新手路径' },
     { id: 'terms',    path: '/terms',            title: '术语库' },
     { id: 'data',     path: '/data',             title: '速查表' },

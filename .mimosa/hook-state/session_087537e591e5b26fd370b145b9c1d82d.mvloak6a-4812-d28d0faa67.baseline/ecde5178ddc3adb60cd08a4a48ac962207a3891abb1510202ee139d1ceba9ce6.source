@@ -1,0 +1,59 @@
+name: collect
+
+on:
+  schedule:
+    - name: 每日 18:00 (UTC+8 凌晨 2 点)
+      cron: '0 18 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  history:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 采集长历史
+        run: node _scripts/collect-history.mjs
+
+      - name: 重新编译内容
+        run: node _scripts/build-content.mjs
+
+      # 闸门必须在**提交之前**。
+      # 之前的数据提交带 [skip ci]，push 触发的 CI 直接跳过，
+      # 于是「收益率被写成 0」「月末变月初」这类问题只能等某个人手动推代码才暴露——
+      # 而坏数据已经上线好几天了。契约检查要挡在 push 前面，不是事后补票。
+      - name: 数据契约检查（提交前闸门）
+        run: |
+          node _test/run-all.mjs
+          node _test/render-test.mjs
+          node _test/a11y-test.mjs
+
+      - name: 提交变更
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # content/_meta/ 也要提交：它记着术语库与标的清单的**源**，
+          # 终端的采集脚本本地自测读的就是它。不提交的话，源和产物会各走各的。
+          git add data/ content/_meta/
+          if git diff --staged --quiet; then
+            echo "没有变化，跳过提交"
+            exit 0
+          fi
+          # 产物必须与源同步：再编译一次，如果内容又变了，说明刚才那次编译没跑全
+          # （新采到的序列 → 标的清单要重算；漏了这一步，站内就少几个标的页）。
+          # 注意要在 git add 之后查：此时比的是「工作区 vs 暂存区」，
+          # 比 HEAD 的话，采到新数据本身就会让这个检查误报。
+          node _scripts/build-content.mjs
+          if ! git diff --quiet -- data/content; then
+            echo "::error::data/content 与 content/ 不同步，请跑 node _scripts/build-content.mjs"
+            git diff --stat -- data/content
+            exit 1
+          fi
+          git commit -m "data: refresh 长历史序列与内容产物"
+          git push

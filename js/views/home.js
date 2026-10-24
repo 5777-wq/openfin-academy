@@ -92,6 +92,8 @@
     // 但它没有入口——左栏第 06 项埋得深，手机上更是完全找不到。
     // 这里直接链到文章本身，不链栏目页：点了就知道会看到哪一篇。
     const family = window.Content.list().filter((a) => a.section === 'family');
+    // 读懂财报：同样直接链文章，别让新栏目只有左栏一个入口
+    const reports = window.Content.list().filter((a) => a.section === 'reports');
 
     view.innerHTML = `
       <section class="panel flush open" style="border:0;background:transparent;padding:0">
@@ -126,6 +128,19 @@
         <div class="eyebrow">给家里人的那份说明书</div>
         <div class="entries">
           ${family.map((f) => `<a class="entry" href="#/family/${esc(f.id)}">
+            <span>
+              <span class="e-t">${esc(f.title)}</span>
+              <span class="e-d">${esc(f.dek || '')}</span>
+            </span>
+            <span class="e-m">${f.readMinutes ? f.readMinutes + ' min' : ''} 读一篇 →</span>
+          </a>`).join('')}
+        </div>
+      </section>` : ''}
+
+      ${reports.length ? `<section style="margin-top:var(--s-7)">
+        <div class="eyebrow">读懂财报</div>
+        <div class="entries">
+          ${reports.map((f) => `<a class="entry" href="#/reports/${esc(f.id)}">
             <span>
               <span class="e-t">${esc(f.title)}</span>
               <span class="e-d">${esc(f.dek || '')}</span>

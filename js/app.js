@@ -13,8 +13,9 @@
     { id: 'chains',   path: '/chains',        label: '产业链图谱', n: '04', section: 'chains' },
     { id: 'cycles',   path: '/cycles',        label: '周期与镜鉴', n: '05', section: 'cycles' },
     { id: 'family',   path: '/family',        label: '家庭理财',   n: '06', section: 'family' },
-    { id: 'terms',    path: '/terms',         label: '术语库',     n: '07' },
-    { id: 'data',     path: '/data',          label: '速查表',     n: '08' },
+    { id: 'reports',  path: '/reports',       label: '读懂财报',   n: '07', section: 'reports' },
+    { id: 'terms',    path: '/terms',         label: '术语库',     n: '08' },
+    { id: 'data',     path: '/data',          label: '速查表',     n: '09' },
     { id: 'path',     path: '/path',          label: '新手路径',   n: '★' },
   ];
 
@@ -192,6 +193,7 @@
   const SECTION_NAME = {
     concepts: '货币与利率', crisis: '危机复盘', assets: '标的百科',
     chains: '产业链图谱', cycles: '周期与镜鉴', family: '家庭理财',
+    reports: '读懂财报',
   };
   const DEFAULT_DESC = '把美债收益率、黄金、纳指、原油、A股和 AI 产业链讲成金融小白听得懂的话。零后端、零密钥、零构建的金融科普站。';
 
@@ -346,6 +348,8 @@
         case 'cycles': return window.ListView.render(host, 'cycles');
         case 'family': return window.ListView.render(host, 'family');
         case 'family-one': return window.ArticleView.render(host, 'family', params.id);
+        case 'reports': return window.ListView.render(host, 'reports');
+        case 'report': return window.ArticleView.render(host, 'reports', params.id);
         case 'chains': return window.ChainView.renderList(host);
         case 'path': return window.PathView.render(host);
         case 'terms': return window.TermView.renderIndex(host);

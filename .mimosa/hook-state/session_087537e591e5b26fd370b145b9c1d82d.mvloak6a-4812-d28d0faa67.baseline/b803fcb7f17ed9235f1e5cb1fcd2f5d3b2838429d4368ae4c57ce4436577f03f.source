@@ -1,0 +1,74 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 测试（引擎 / 数据契约 / 内容契约）
+        run: node _test/run-all.mjs
+
+      - name: 渲染测试（无浏览器跑真视图）
+        run: node _test/render-test.mjs
+
+      - name: 无障碍测试（焦点 / 对比度 / 首屏请求 / 分享标签）
+        run: node _test/a11y-test.mjs
+
+      - name: 内容编译一致性（产物必须与源同步）
+        run: |
+          node _scripts/build-content.mjs
+          if ! git diff --quiet -- data/content; then
+            echo "::error::data/content 与 content/ 不同步，请运行 node _scripts/build-content.mjs 并提交"
+            git diff --stat -- data/content
+            exit 1
+          fi
+
+      - name: 校验所有 JSON 合法
+        run: |
+          for f in $(find data content -name '*.json'); do
+            node -e "JSON.parse(require('fs').readFileSync('$f','utf8'))" || exit 1
+          done
+
+      - name: 一致性审计（分类 / 链接 / 跨站）
+        # 词条的 sym、links、cat 错位都不会报错，只是页面上的链接悄悄扑空。
+        # 这里把它们查出来：sym 指向终端没有的 symbol、links 指向不存在的词条、
+        # 分类缺失或不在十个分类里。
+        run: |
+          node _scripts/audit.mjs
+
+      - name: 文档数字与数据一致（README 里的词条数 / 标的数不许漂）
+        # 这些数字靠人记一定会再错。脚本从数据里算，README 里对不上就报错。
+        run: |
+          node _scripts/sync-docs.mjs --check
+
+  vendor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: vendor 与 vendor/HEAD 记录的上游 commit 一致
+        # 以前这里只 echo 一句 notice，没有 exit 1——这个 job 永远不会红，
+        # 等于没有校验。而且拉的是上游最新 HEAD：上游一有新提交，
+        # 即使加了 exit 1 也会永久失败。
+        # 现在按 vendor/HEAD 里钉住的 commit 检出再比对。
+        run: |
+          SHA=$(sed -n 's/^# commit: //p' vendor/HEAD)
+          echo "pinned upstream commit: $SHA"
+          if [ -z "$SHA" ]; then
+            echo "::error::vendor/HEAD 里没有 commit 记录"
+            exit 1
+          fi
+          node _scripts/sync-core.mjs --src https://github.com/5777-wq/openfinlens.git --commit "$SHA"
+          if ! git diff --quiet -- vendor; then
+            echo "::error::vendor 与上游 $SHA 不一致，请运行 node _scripts/sync-core.mjs 并提交"
+            git diff --stat -- vendor
+            exit 1
+          fi

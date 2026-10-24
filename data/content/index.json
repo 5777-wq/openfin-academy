@@ -422,6 +422,26 @@
       "difficulty": 1,
       "updatedAt": "2026-10-21",
       "file": "family/money-jar.md"
+    },
+    {
+      "id": "reading-reports",
+      "section": "reports",
+      "title": "看懂财报：三张表和 PE、ROE 这些词到底在说什么",
+      "dek": "财报不是给会计看的，是给「想知道这家公司是不是真赚钱」的人看的。三张表各回答一个问题，PE、ROE 这些指标全是从三张表里算出来的。",
+      "tag": "读懂财报",
+      "tags": [
+        "财报",
+        "入门",
+        "PE",
+        "ROE",
+        "三张表"
+      ],
+      "readMinutes": 12,
+      "dataAsOf": "2026-10-23",
+      "dataAsOfActual": null,
+      "difficulty": 2,
+      "updatedAt": "2026-10-23",
+      "file": "reports/reading-reports.md"
     }
   ]
 }
