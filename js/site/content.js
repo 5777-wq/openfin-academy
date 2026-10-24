@@ -5,7 +5,7 @@
   'use strict';
 
   const BASE = 'data/content/';
-  const idx = { list: null, byId: new Map(), articles: new Map(), glossary: null, path: null, assetIds: null };
+  const idx = { list: null, byId: new Map(), articles: new Map(), glossary: null, path: null, assetIds: null, assetNotes: null };
   const inflight = new Map();   // id → 正在进行的请求：同一篇别重复拉
   const warned = new Set();     // 已经提醒过的 id：正文没到时别刷屏
 
@@ -32,14 +32,16 @@
     // 三份附属文件互相不依赖，一起拉完，谁先到先谁。
     // 标的清单（94 个终端标的在本站有对应标的页）：search 要用它们的名字和代码做匹配，
     // 否则「工商银行」「600519」这类词永远搜不到。20KB，一次拉够。
-    const [glossary, path, assetIds] = await Promise.all([
+    const [glossary, path, assetIds, assetNotes] = await Promise.all([
       loadJSON(BASE + 'glossary.json').catch(() => ({ terms: {} })),
       loadJSON(BASE + 'path.json').catch(() => null),
       loadJSON(BASE + 'asset-ids.json').catch(() => null),
+      loadJSON(BASE + 'asset-notes.json').catch(() => null),
     ]);
     idx.glossary = glossary;
     idx.path = path;
     idx.assetIds = assetIds;
+    idx.assetNotes = assetNotes;
     return idx;
   }
 
@@ -114,5 +116,8 @@
     return list().filter((x) => x.section === section);
   }
 
-  window.Content = { BASE, loadAll, ensureArticle, list, meta, article, glossary, term, bySection, pathPlan, assetPages, idx };
+  /** 标的三段短注（没有专文的标的页用）：symbol → { what, moves, trap } */
+  function assetNotes() { return (idx.assetNotes && idx.assetNotes.symbols) || null; }
+
+  window.Content = { BASE, loadAll, ensureArticle, list, meta, article, glossary, term, bySection, pathPlan, assetPages, assetNotes, idx };
 })();

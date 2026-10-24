@@ -404,11 +404,11 @@ async function main() {
   const contentReqs = fetched.filter((u) => u.indexOf('data/content/') === 0)
     .map((u) => u.replace('data/content/', ''));
   const bodyReqs = contentReqs.filter((u) => u !== 'index.json' && u !== 'glossary.json'
-    && u !== 'path.json' && u !== 'asset-ids.json');
+    && u !== 'path.json' && u !== 'asset-ids.json' && u !== 'asset-notes.json');
   ok('首屏没有拉文章正文', bodyReqs.length === 0, '多拉了：' + bodyReqs.join(' '));
-  ok('首屏只拉四份内容文件', contentReqs.length === 4,
+  ok('首屏只拉五份内容文件', contentReqs.length === 5,
     '实际 ' + contentReqs.length + ' 个：' + contentReqs.join(' '));
-  for (const f of ['index.json', 'glossary.json', 'path.json', 'asset-ids.json']) {
+  for (const f of ['index.json', 'glossary.json', 'path.json', 'asset-ids.json', 'asset-notes.json']) {
     ok('首屏拉了 ' + f, contentReqs.indexOf(f) >= 0, '实际：' + contentReqs.join(' '));
   }
 

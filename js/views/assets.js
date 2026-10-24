@@ -99,10 +99,12 @@
     const blocks = order.filter((g) => groups.has(g)).map((g) => {
       const rows = groups.get(g).map(({ u, s }) => {
         const art = window.Content.article(articleIdOf(u.symbol));
+        const notes = (window.Content.assetNotes && window.Content.assetNotes()) || {};
+        const badge = art ? ' · 有专文' : (notes[u.symbol] ? ' · 三段短注' : '');
         return `<a class="entry" href="#/assets/${encodeURIComponent(u.symbol)}">
           <span>
             <span class="e-t">${esc(LABEL_OF[u.symbol] || u.label)}</span>
-            <span class="e-d">${esc(s.from)} → ${esc(s.to)} · ${s.count} 个月度点${art ? ' · 有专文' : ''}</span>
+            <span class="e-d">${esc(s.from)} → ${esc(s.to)} · ${s.count} 个月度点${badge}</span>
           </span>
           <span class="e-m">看这一页 →</span>
         </a>`;
@@ -197,6 +199,18 @@
 
     const body = art ? window.TermCard.markTerms(window.Fmt.md(art.body || ''), window.Content.glossary()) : '';
 
+    // 没有专文的标的页不再只是一张数据表：三段短注（这是什么 / 它跟着什么走 / 最容易踩的坑）。
+    // 内容在 content/_meta/asset-notes.json，口径与校验见 drafts/asset-notes/stats.json。
+    const notesMap = (window.Content.assetNotes && window.Content.assetNotes()) || null;
+    const note = (!art && notesMap && notesMap[sym]) || null;
+    const noteHtml = note ? `
+      <div class="panel" style="margin-bottom:var(--s-6)">
+        <div class="eyebrow" style="margin-bottom:var(--s-3)">三段话读懂它</div>
+        <p class="cat-desc" style="margin:0 0 var(--s-3)"><b>这是什么：</b>${esc(note.what)}</p>
+        <p class="cat-desc" style="margin:0 0 var(--s-3)"><b>它跟着什么走：</b>${esc(note.moves)}</p>
+        <p class="cat-desc" style="margin:0"><b>最容易踩的坑：</b>${esc(note.trap)}</p>
+      </div>` : '';
+
     view.innerHTML = `
       <article class="art-head">
         <div class="eyebrow">标的百科</div>
@@ -209,8 +223,8 @@
       ${(window.Site && window.Site.disclaimer) ? window.Site.disclaimer.GENERIC : ''}
       ${cross}
 
-      ${art ? `<div class="prose">${body}</div>` : `
-        <div class="empty"><div class="et">这一只还没有专文</div>
+      ${art ? `<div class="prose">${body}</div>` : (noteHtml || `
+        <div class="empty"><div class="et">这一只还没有解释</div>
           <div class="ed">数据卡是真的（上面每个数都能对着月线序列核）；但"它靠什么赚钱、什么时候会跌"这类解释还在写。${
             (window.Cross && window.Cross.enabled())
               ? '想看它的实时行情与走势，去 OpenFinLens。'
@@ -218,9 +232,9 @@
           ${(window.Cross && window.Cross.enabled())
             ? `<a class="btn ghost sm" href="${LENS}#symbol=${encodeURIComponent(sym)}" target="_blank" rel="noopener">去 OpenFinLens 看行情 →</a>`
             : ''}
-        </div>`}
+        </div>`)}
 
-      ${art ? `<p style="margin-top:var(--s-6)"><a class="btn ghost sm" href="#/assets">看全部标的 →</a></p>` : ''}`;
+      ${(art || noteHtml) ? `<p style="margin-top:var(--s-6)"><a class="btn ghost sm" href="#/assets">看全部标的 →</a></p>` : ''}`;
   }
 
   function fmtNum(v, series) {

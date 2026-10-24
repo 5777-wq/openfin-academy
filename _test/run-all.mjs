@@ -523,6 +523,33 @@ function loadScripts(files) {
     }
   }
 
+  /* 标的短注契约：素材表（stats.json）里每个待写标的，短注库里都必须有——
+     守住「标的页不再只有一张数据表」；多余/超长/禁用词由 merge 脚本在写盘前拦截。 */
+  {
+    const statsPath = path.join(ROOT, 'drafts', 'asset-notes', 'stats.json');
+    const notesPath = path.join(ROOT, 'content', '_meta', 'asset-notes.json');
+    if (existsSync(statsPath)) {
+      const stats = JSON.parse(await readFile(statsPath, 'utf8'));
+      if (!existsSync(notesPath)) {
+        ok('asset-notes.json 已生成（node _scripts/merge-asset-notes.mjs）', false, '文件不存在');
+      } else {
+        const notes = JSON.parse(await readFile(notesPath, 'utf8'));
+        const have = new Set(Object.keys(notes.symbols || {}));
+        const missing = Object.keys(stats.symbols).filter((s) => !have.has(s));
+        ok('每个没有专文的标的页都有三段短注（不再只有一张数据表）', missing.length === 0,
+          missing.map((s) => s + '·' + stats.symbols[s].label).join('、'));
+        const extra = [...have].filter((s) => !stats.symbols[s]);
+        ok('短注库里没有待写清单之外的标的', extra.length === 0, extra.join('、'));
+        const prodPath = path.join(ROOT, 'data', 'content', 'asset-notes.json');
+        if (existsSync(prodPath)) {
+          const prod = JSON.parse(await readFile(prodPath, 'utf8'));
+          ok('asset-notes 源与产物一致（跑 node _scripts/build-content.mjs）',
+            JSON.stringify(prod.symbols) === JSON.stringify(notes.symbols));
+        }
+      }
+    }
+  }
+
   /* 数据契约：三条踩过的坑，各钉一条断言，别再复发。
        1. 财政部 CSV 的**空单元格**曾被写成 0.00% 收益率（Number('') === 0，
           Number.isFinite(0) 也是 true）——美国30年期在 2002 年从 5.40%

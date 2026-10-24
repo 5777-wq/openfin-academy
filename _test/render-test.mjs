@@ -564,11 +564,12 @@ async function main() {
   ok('标的百科详情：回撤没有算成 -99%', !adet.includes('-99.'), '出现了 -99% 的假回撤');
   has('标的百科详情：去终端看数据', adet, 'openfinlens/#symbol=usAAPL');
   has('标的百科详情：口径说明（未含分红）', adet, '不含分红');
-  // 没有专文的标的：给真实数据 + 老实的说明，不能是空白页
+  // 没有专文的标的：真实数据 + 三段短注（不再是只有一张数据表的半空页）
   await sandbox.AssetsView.renderDetail(view(), 'sh601398');
   const noart = view().innerHTML;
   has('标的百科详情：无专文也给数据卡', noart, '真实历史读数');
-  has('标的百科详情：无专文时说明白', noart, '还没有专文');
+  has('标的百科详情：无专文有三段短注', noart, '三段话读懂它');
+  has('标的百科详情：短注含坑提示', noart, '最容易踩的坑');
 
   // 术语页：给行情终端深链用的落地页
   sandbox.TermView.render(view(), 'gold');
