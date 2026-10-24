@@ -16,21 +16,22 @@ node _test/run-all.mjs && node _test/render-test.mjs
 
 稿子里的引号请用中文引号「」——直引号会在 JSON 里变成转义，脚本会把它们统一转成中文引号。
 
-## ⚠ 别整批 merge（2026-10 核实过）
+## 稿子与正库的同步（2026-10-23 已回填）
 
-**`drafts/` 里的稿子比 `content/_meta/glossary.json` 旧。**
-213 条术语里有 39 条在稿子里没有这条、或者缺字段（比如 `kw` 整条没有）。
-对涉及的 batch 跑一次整批 merge，**这 39 条会被回退成稿子里的样子**——
-字段直接丢失，不是覆盖成旧值。
+历史上稿子落后于正库：213 条术语里，稿子覆盖 168 条，其中 95 条缺字段
+（`kw` / `lens` / `name` 这些后来才加的），整批 merge 会把字段丢掉。
+2026-10-23 用 `_scripts/sync-drafts.mjs` 把稿子全部回填成正库内容，现在：
 
-所以：
+- **整批 merge 是空操作**，不会回退任何字段。自检：`node _scripts/sync-drafts.mjs --verify`。
+- 另有 45 条只在正库、稿子里没有（不受 merge 影响，但如果想「以稿子重建正库」就得先补进稿子）。
+- 同一个 id 出现在多个 batch 文件里（历史上打补丁留下的）：**一次 merge 传多个含同一 id 的文件会报「重复 id」**，
+  这是保护不是 bug；分开传或只传你改的那个文件。
 
-- **只 merge 你真的改过的那几条。** 把要改的条目摘成一个临时稿再合：
-  ```bash
-  node _scripts/merge-terms.mjs drafts/_tmp-merge.txt   # 只放你改的那几条
-  ```
-  合完把临时稿删掉。
-- 改完跑 `node _test/run-all.mjs`——有一条断言会比对「术语库源与产物逐字段一致」，
-  少字段就会报出来。
+**改了正库里的词条（直接编辑 JSON 或打 patch）之后，记得跑一次回填，让稿子跟上：**
 
-长期要根治，得先把这 39 条补回稿子里；在那之前，整批 merge 是有风险的。
+```bash
+node _scripts/sync-drafts.mjs          # 正库 → 稿子
+node _scripts/sync-drafts.mjs --verify # 确认整批 merge 仍是空操作
+```
+
+新词条仍然走稿子：写进 `batch16.txt` 这样的新文件再 merge。
