@@ -11,7 +11,7 @@
   async function loadSecidMap() {
     if (secidMap) return secidMap;
     try {
-      const res = await fetch('data/chain-secids.json', { cache: 'no-cache' });
+      const res = await window.SafeNet.fetch('data/chain-secids.json', { cache: 'no-cache' });
       secidMap = res.ok ? await res.json() : {};
     } catch (e) { secidMap = {}; }
     return secidMap;
@@ -29,7 +29,7 @@
       const url = 'https://push2.eastmoney.com/api/qt/ulist.np/get?fields=f1,f2,f3,f4,f12,f13,f14&secids='
         + encodeURIComponent(secids);
       try {
-        const res = await fetch(url);
+        const res = await window.SafeNet.fetch(url);
         if (!res.ok) continue;
         const j = await res.json();
         ((j.data && j.data.diff) || []).forEach((d) => {

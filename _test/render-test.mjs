@@ -178,6 +178,7 @@ const SCRIPTS = [
   'vendor/core/industry-chains.js',
   'vendor/core/academy-gloss.js',
   'js/site/format.js',
+  'js/site/net.js',
   'js/site/cross.js',
   'js/site/disclaimer.js',
   'js/store.js',
@@ -231,6 +232,21 @@ async function main() {
     && !!sandbox.Engine.crisis && !!sandbox.Engine.instrument,
     'percentile / drawdown / crisis / instrument 缺了');
 
+  /* ---- 2b. 网络收口：SSRF 防线 ---- */
+  const SN = sandbox.SafeNet;
+  ok('SafeNet 存在', !!SN);
+  ok('SafeNet 放行同源相对路径', SN.allowed('data/content/index.json').ok);
+  ok('SafeNet 放行公网 https', SN.allowed('https://push2.eastmoney.com/api/qt/ulist.np/get').ok);
+  const blocked = [
+    'http://localhost/x', 'http://127.0.0.1/x', 'http://10.0.0.1/x', 'http://192.168.1.1/x',
+    'http://172.16.0.1/x', 'http://169.254.169.254/latest/meta-data', 'http://[::1]/x',
+    'file:///etc/passwd', 'javascript:alert(1)',
+  ];
+  for (const u of blocked) ok('SafeNet 拒绝 ' + u, !SN.allowed(u).ok, JSON.stringify(SN.allowed(u)));
+  // ensureArticle 的 id 白名单：路径拼接进不来
+  const evil = await sandbox.Content.ensureArticle('../_meta/glossary');
+  ok('ensureArticle 拒绝路径穿越 id', evil === null);
+
   /* ---- 3. 内容加载 ---- */
   await sandbox.Content.loadAll();
   ok('内容索引非空', sandbox.Content.list().length >= 6, '实际 ' + sandbox.Content.list().length);
@@ -240,11 +256,11 @@ async function main() {
   /* ---- 4. 路由表覆盖所有内容分区 ---- */
   const paths = sandbox.Router.ROUTES.map((r) => r.path);
   for (const p of ['/concepts/:id', '/crisis/:id', '/assets/:id', '/chains/:id', '/cycles/:id', '/family/:id',
-    '/term/:id', '/terms']) {
+    '/reports/:id', '/term/:id', '/terms']) {
     ok('路由存在 ' + p, paths.indexOf(p) >= 0);
   }
   // 每篇文章的 section 都要有对应的详情路由
-  const routeOf = { concepts: '/concepts/:id', assets: '/assets/:id', crisis: '/crisis/:id', cycles: '/cycles/:id', family: '/family/:id' };
+  const routeOf = { concepts: '/concepts/:id', assets: '/assets/:id', crisis: '/crisis/:id', cycles: '/cycles/:id', family: '/family/:id', reports: '/reports/:id' };
   for (const a of sandbox.Content.list()) {
     ok('文章 ' + a.id + ' 有详情路由', paths.indexOf(routeOf[a.section]) >= 0, 'section=' + a.section);
   }

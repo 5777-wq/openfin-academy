@@ -16,7 +16,7 @@
     const ctl = new AbortController();
     const timer = setTimeout(() => ctl.abort(), 12000);
     try {
-      const res = await fetch(path, { signal: ctl.signal });
+      const res = await window.SafeNet.fetch(path, { signal: ctl.signal });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       return await res.json();
     } finally { clearTimeout(timer); }
@@ -53,7 +53,18 @@
     if (!key) return Promise.resolve(null);
     if (idx.articles.has(key)) return Promise.resolve(idx.articles.get(key));
     if (inflight.has(key)) return inflight.get(key);
-    const p = loadJSON(BASE + key + '.json')
+    // id 来自路由参数（用户可控），不直接拼进请求路径。
+    // 索引还没加载完就先等索引——见 app.js 的 boot，正常情况下这一步不会走。
+    if (!idx.list) return loadAll().then(() => ensureArticle(id)).catch(() => null);
+    // 用遍历比较而不是 Map.get：请求路径只由 index.json（服务端数据）里的字段拼出，
+    // 入参除了参与 === 比较外不进入任何数据流。索引里没有的 id，站内就没有对应文件。
+    const items = idx.list.items || [];
+    let hit = null;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].id === key) { hit = items[i]; break; }
+    }
+    if (!hit) return Promise.resolve(null);
+    const p = loadJSON(BASE + hit.id + '.json')
       .then((full) => {
         idx.articles.set(key, full);
         inflight.delete(key);

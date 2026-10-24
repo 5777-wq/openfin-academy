@@ -66,7 +66,7 @@
     const ctl = new AbortController();
     const timer = setTimeout(() => ctl.abort(), 6000);
     try {
-      const res = await fetch(url, { signal: ctl.signal });
+      const res = await window.SafeNet.fetch(url, { signal: ctl.signal });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       return parseJson(await res.json(), list);
     } finally { clearTimeout(timer); }

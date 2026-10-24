@@ -15,7 +15,7 @@
       const timer = setTimeout(() => ctl.abort(), 12000);
       try {
         // 同 content.js：走默认缓存，不强制回源
-        const res = await fetch(path, { signal: ctl.signal });
+        const res = await window.SafeNet.fetch(path, { signal: ctl.signal });
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const j = await res.json();
         cache.set(path, j);

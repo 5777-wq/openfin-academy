@@ -6,7 +6,7 @@
    1. 分享卡片该有的标签有没有（og / twitter / canonical）；
    2. 两级灰字对纸底的对比度够不够 4.5:1（**实算**，不靠眼睛）；
    3. 焦点环够不够明显，Tab 能不能出得来（焦点陷阱、背景隔离、焦点归还）；
-   4. 正文是不是真的按需加载：首屏不拉 22 篇，open 哪篇才拉哪篇。
+   4. 正文是不是真的按需加载：首屏不拉 23 篇，open 哪篇才拉哪篇。
 
    跑法：node _test/a11y-test.mjs */
 import { readFile } from 'node:fs/promises';
@@ -220,6 +220,7 @@ const SCRIPTS = [
   'vendor/core/industry-chains.js',
   'vendor/core/academy-gloss.js',
   'js/site/format.js',
+  'js/site/net.js',
   'js/site/cross.js',
   'js/site/disclaimer.js',
   'js/store.js',
@@ -528,10 +529,10 @@ async function main() {
   ok('关掉面板后背景的 inert 摘掉了', masthead.getAttribute('inert') === null);
 
   /* ============================================================
-     5. 正文按需加载：22 篇逐一取回，正文一个字都不能少
+     5. 正文按需加载：23 篇逐一取回，正文一个字都不能少
      ============================================================ */
   const items = sandbox.Content.list();
-  ok('内容索引有 22 篇', items.length === 22, '实际 ' + items.length);
+  ok('内容索引有 23 篇', items.length === 23, '实际 ' + items.length);
   let missing = 0, noBody = 0;
   for (const it of items) {
     const art = await sandbox.Content.ensureArticle(it.id);
@@ -539,7 +540,7 @@ async function main() {
     const got = sandbox.Content.article(it.id);
     if (!got || !got.body || !got.body.length) noBody++;
   }
-  ok('22 篇正文都取得到', missing === 0, missing + ' 篇取不到');
+  ok('23 篇正文都取得到', missing === 0, missing + ' 篇取不到');
   ok('取回来之后 Content.article() 拿得到完整正文', noBody === 0, noBody + ' 篇正文是空的');
   const one = sandbox.Content.article(items[0].id);
   ok('正文里确实有内容', !!(one && one.body && one.body.length > 200),
