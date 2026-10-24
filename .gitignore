@@ -19,3 +19,6 @@ Thumbs.db
 # 注意：vendor/ 与 data/ 是**要提交**的
 # vendor/ 由 _scripts/sync-core.mjs 生成，data/ 由采集与编译脚本生成
 # 两者都进仓库，是本站"零构建、可直接打开"的前提
+
+# mimosa 本地扫描状态，不进仓库
+.mimosa/
