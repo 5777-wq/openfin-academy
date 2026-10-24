@@ -3,13 +3,34 @@
    frontmatter 支持：key: value、key: [a, b, c]、key: "带引号"
    数组也支持多行 - item 形式。 */
 import { readFile, writeFile, mkdir, readdir, stat } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = path.join(ROOT, 'content');
 const OUT = path.join(ROOT, 'data', 'content');
+
+/* ---------- 构建期占位符：{{series:<序列id>|<YYYY-MM>}} ----------
+   正文里的「会动的数字」（月末价、从 X 到 Y）不许手写：前复权序列会在
+   分红/基准变化时整体重缩放历史值，手写数字隔天就和数据卡对不上
+   （2026-10-23 collect 闸门首次拦下）。写成占位符，这里从 data/history
+   解析成数字——文章与序列永远一致。解析失败 = 构建失败，不许留空。 */
+const SERIES_DIR = path.join(ROOT, 'data', 'history');
+const seriesCache = new Map();
+async function resolvePlaceholders(raw) {
+  if (!raw.includes('{{series:')) return raw;
+  return String(raw).replace(/\{\{series:([A-Za-z0-9._-]+)\|(\d{4}-\d{2})\}\}/g, (m, sid, month) => {
+    if (!seriesCache.has(sid)) {
+      try { seriesCache.set(sid, JSON.parse(readFileSync(path.join(SERIES_DIR, sid + '.json'), 'utf8'))); }
+      catch (e) { throw new Error(`占位符引用的序列不存在：${sid}（data/history/${sid}.json 读不到：${e.message}）`); }
+    }
+    const j = seriesCache.get(sid);
+    const pt = (j.points || []).find((x) => String(x.t).startsWith(month));
+    if (!pt) throw new Error(`占位符解析失败：${sid} 在 ${month} 没有月末点`);
+    return Number(pt.v).toFixed(2);
+  });
+}
 
 /* 语义上就是数字的字段：只有这几个。
    其余一律保持字符串——related 里混着「1990」这类年份和术语 id，
@@ -107,7 +128,7 @@ async function main() {
   const stale = [];
 
   for (const f of files) {
-    const raw = await readFile(f, 'utf8');
+    const raw = await resolvePlaceholders(await readFile(f, 'utf8'));
     const { meta, body } = parseFrontmatter(raw);
     if (!meta.id) {
       console.warn(`[build] 跳过（没有 id）：${path.relative(SRC, f)}`);
