@@ -352,7 +352,7 @@
         case 'report': return window.ArticleView.render(host, 'reports', params.id);
         case 'chains': return window.ChainView.renderList(host);
         case 'path': return window.PathView.render(host);
-        case 'terms': return window.TermView.renderIndex(host);
+        case 'terms': return window.TermView.renderIndex(host, query);
         case 'data': return window.TermView.renderDataSheet(host, query);
         case 'term': return window.TermView.render(host, params.id, query);
         case 'search': return window.SearchView.render(host, query.q || '');

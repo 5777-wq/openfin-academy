@@ -597,6 +597,65 @@ async function main() {
   ok('术语库：按分类分组', tlist.includes('class="cat-block"') && tlist.includes('入门三词'));
   ok('术语库：每组有速查表出口', tlist.includes('#/data?cat=macro'));
 
+  /* ---- 术语库词典化：查一个词不用再翻文章（反馈点名「想查 PE 很麻烦」） ---- */
+  {
+    // 词条默认展开完整四段：索引页本身就是词典，不是一列只能点开的链接
+    ok('术语库：词条默认展开完整四段卡',
+      (tlist.match(/class="term-link"/g) || []).length === Object.keys(sandbox.Content.glossary()).length,
+      'term-link 卡 ' + (tlist.match(/class="term-link"/g) || []).length + ' 张，词条 '
+        + Object.keys(sandbox.Content.glossary()).length + ' 个');
+    has('术语库：卡片含四段标记（一句话）', tlist, '一句话');
+    has('术语库：卡片含四段标记（坑）', tlist, '坑');
+
+    // ?q=PE：进页面就是过滤态
+    sandbox.TermView.renderIndex(view(), { q: 'PE' });
+    const tq = view().innerHTML;
+    has('词典 ?q=PE：市盈率在列', tq, 'href="#/term/pe-ratio"');
+    ['一句话', '比喻', '数字', '坑'].forEach((k) =>
+      has('词典 ?q=PE：页面含四段标记（' + k + '）', tq, k));
+    ok('词典 ?q=PE：无关词条被滤掉', !tq.includes('href="#/term/moving-average"'));
+    ok('词典 ?q=PE：过滤框带初始值', /id="terms-q"[^>]*value="PE"/.test(tq),
+      (tq.match(/<input[^>]*>/) || [''])[0]);
+    ok('词典 ?q=PE：有命中计数', tq.includes('命中'), '计数行没渲染');
+    // 过滤规则与站内搜索同一套：pe 不能命中 sharpe（词边界），两处不能两个规则
+    const keep = sandbox.TermView.filterIds(sandbox.Content.glossary(), 'PE');
+    ok('词典过滤：PE 命中市盈率', keep && keep.has('pe-ratio'));
+    ok('词典过滤：PE 不命中夏普（词边界规则与搜索一致）', !keep || !keep.has('sharpe-ratio'));
+    // 空结果：友好引导，而不是一张空页
+    sandbox.TermView.renderIndex(view(), { q: '不存在的词xyz' });
+    const te = view().innerHTML;
+    has('词典空结果：说清没命中', te, '没有命中');
+    ok('词典空结果：给全站搜索出口', te.includes('#/search?q='));
+    ok('词典空结果：给清掉过滤的出口', te.includes('href="#/terms"'));
+  }
+
+  /* ---- 搜索页：命中的术语直接读完整词条卡，文章与标的排其后 ---- */
+  {
+    sandbox.SearchView.render(view(), 'PE');
+    const sp = view().innerHTML;
+    ok('搜索页：术语命中渲染成完整词条卡', sp.includes('class="term"') && sp.includes('href="#/term/pe-ratio"'));
+    has('搜索页：词条卡里有市盈率', sp, '市盈率');
+    ['一句话', '比喻', '数字', '坑'].forEach((k) =>
+      has('搜索页：词条卡含四段标记（' + k + '）', sp, k));
+    // 词条卡用的与术语库同一份渲染（term.js 的 dictCard），不是另写的一套
+    ok('搜索页：词条卡复用 term.js 的 dictCard',
+      (typeof sandbox.TermView.dictCard === 'function')
+      && sandbox.TermView.dictCard('pe-ratio').includes('class="term"')
+      && sp.includes(sandbox.TermView.dictCard('pe-ratio')));
+    // 顺序：术语在最前，文章与标的排其后
+    const iT = sp.indexOf('术语 ·');
+    const iA = sp.indexOf('文章 ·');
+    const iS = sp.indexOf('标的 ·');
+    ok('搜索页：文章排在词条卡之后', iT >= 0 && (iA < 0 || iA > iT), '术语@' + iT + ' 文章@' + iA);
+    ok('搜索页：标的排在词条卡之后', iT >= 0 && (iS < 0 || iS > iT), '术语@' + iT + ' 标的@' + iS);
+  }
+
+  // 首页：hero 按钮区有词典入口（查一个词，一眼可见）
+  sandbox.HomeView.render(view());
+  const homeDic = view().innerHTML;
+  ok('首页：词典入口链到 #/terms?q=PE', homeDic.includes('href="#/terms?q=PE"'));
+  ok('首页：词典入口文案「查一个词」', homeDic.includes('查一个词'));
+
   // 速查页：按分类切换
   const idsOf = (html) => new Set((html.match(/href="#\/term\/([^"]+)"/g) || [])
     .map((s) => s.replace(/href="#\/term\//, '').replace(/"/g, '')));

@@ -325,15 +325,35 @@
          <div class="entries">${items.map(renderItem).join('')}</div></div>`
       : '';
 
+    /* 术语命中：直接把完整词条卡画出来（一句话/比喻/数字/坑），
+       读者搜一个词要的就是这个答案，不该再点一层。
+       渲染用 term.js 的 dictCard——与术语库词典页同一份，两处不长两个样。
+       命中太多时前 5 张画整卡，其余收成紧凑行：页面还能用，答案也不埋没。 */
+    const CARD_CAP = 5;
+    const dictCardOf = (id) => (window.TermView && window.TermView.dictCard)
+      ? window.TermView.dictCard(id) : '';
+    const compactTerm = (t) => `<a class="entry" href="#/term/${encodeURIComponent(t.id)}">
+        <span><span class="e-t">${esc(t.term)}</span><span class="e-d">${esc(t.one || '')}</span></span>
+        <span class="e-m">看解释 →</span></a>`;
+    const termsBlock = r.terms.length
+      ? `<div style="margin-bottom:var(--s-5)">
+          <div class="eyebrow">术语 · ${r.terms.length}</div>
+          <div style="display:grid;gap:var(--s-3);margin-top:var(--s-3)">
+            ${r.terms.slice(0, CARD_CAP).map((t) => dictCardOf(t.id)).join('')}
+          </div>
+          ${r.terms.length > CARD_CAP ? `<div class="entries" style="margin-top:var(--s-3)">
+            ${r.terms.slice(CARD_CAP).map(compactTerm).join('')}
+          </div>` : ''}
+        </div>`
+      : '';
+
     view.innerHTML = `
       <div class="art-head">
         <div class="eyebrow">站内搜索</div>
         <h1 style="font-size:var(--t-h1);margin-bottom:var(--s-2)">${q1 ? '「' + q1 + '」的搜索结果' : '搜索'}</h1>
         <p class="art-dek">${total ? `找到 ${total} 条结果。` : '没有匹配结果。'} 术语会告诉你"这是什么"，文章会告诉你"为什么"。</p>
       </div>
-      ${group('术语', r.terms, (t) => `<a class="entry" href="#/term/${encodeURIComponent(t.id)}">
-          <span><span class="e-t">${esc(t.term)}</span><span class="e-d">${esc(t.one || '')}</span></span>
-          <span class="e-m">看解释 →</span></a>`)}
+      ${termsBlock}
       ${group('文章', r.articles, (a) => `<a class="entry" href="#/${esc(a.section)}/${esc(a.id)}">
           <span><span class="e-t">${esc(a.title)}</span><span class="e-d">${esc(a.dek || '')}</span></span>
           <span class="e-m">读一篇 →</span></a>`)}

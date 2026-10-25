@@ -142,52 +142,140 @@
       </a>`).join('');
   }
 
-  /** 术语库索引：按分类分组 */
-  function renderIndex(view) {
+  /** 词典条目卡：词条名 + 完整四段式内容（一句话/名称由来/比喻/数字/坑），
+      整卡链到可分享的词条页——与首页「今日一词」同一个模式（.term-link）。
+      术语库与搜索页共用这一份渲染：同一个词条不能在两处长两个样。 */
+  function dictCard(id) {
+    const t = window.Content.glossary()[id];
+    if (!t) return '';
+    return `<a class="term-link" href="${esc(linkOf(id))}">
+      ${window.TermCard.render(Object.assign({ id: id }, t))}
+      <span class="term-link-more">这个词的词条页 →</span>
+    </a>`;
+  }
+
+  /** 词典过滤：按 term / alias / kw 匹配（词元 AND）。
+      词元切分与词边界判定直接用站内搜索（views/search.js）那一套，
+      不另写一份——「pe」不能命中「sharpe」，词典和搜索得是同一条规则。
+      返回 null 表示「没有过滤词」（显示全部），空 Set 表示「一个都没命中」。 */
+  function filterIds(g, q) {
+    const S = window.SearchView;
+    const toks = (S && S.tokenize)
+      ? S.tokenize(q)
+      : String(q || '').trim().toLowerCase().split(/\s+/).filter(Boolean);
+    if (!toks.length) return null;
+    const hitOne = (tok, text) => (S && S.tokenHit ? S.tokenHit(tok, text) : text.indexOf(tok) >= 0);
+    const out = new Set();
+    Object.keys(g).forEach((id) => {
+      const t = g[id] || {};
+      const text = [t.term || '', t.alias || '', (t.kw || []).join(' ')].join(' ').toLowerCase();
+      if (toks.every((tok) => hitOne(tok, text))) out.add(id);
+    });
+    return out;
+  }
+
+  /** 过滤词同步进地址栏（#/terms?q=…）。
+      用 replaceState 而不是改 location.hash：hash 一变就是一次路由，
+      会整页重渲染、把输入焦点打断。replaceState 不触发 hashchange，
+      但刷新、分享、后退拿到的是带过滤词的地址。 */
+  function syncFilterUrl(q) {
+    const t = String(q || '').trim();
+    const hash = t ? '#/terms?q=' + encodeURIComponent(t) : '#/terms';
+    try { history.replaceState(null, '', hash); } catch (e) { /* 个别环境拿不到 history 就算了，过滤本身不依赖它 */ }
+  }
+
+  /** 术语库索引：词典形态——顶部一个即时过滤框，词条默认展开完整四段，
+      扫一眼就能读，不用一条条点开。过滤纯在本地做，不发任何请求。 */
+  function renderIndex(view, query) {
     const g = window.Content.glossary();
     const ids = Object.keys(g);
     const hot = hotIds();
+    const initQ = String((query && query.q) || '');
+
     const byCat = {};
     ids.forEach((id) => {
       const c = (g[id].cat || 'basic');
       (byCat[c] = byCat[c] || []).push(id);
     });
 
-    const blocks = CATS.filter((c) => byCat[c.id] && byCat[c.id].length).map((c) => {
-      const rows = orderTerms(byCat[c.id], g, hot, c.id).map((id) => {
-        const t = g[id];
-        return `<a class="entry" href="${esc(linkOf(id))}">
-          <span>
-            <span class="e-t">${esc(t.term || id)}</span>
-            <span class="e-d">${window.TermCard.inline(t.one || '')}</span>
-          </span>
-          <span class="e-m">看解释 →</span>
-        </a>`;
+    /** 词条区：有过滤词时只画命中的分类块；没有时画全量（含入门三词与速查表出口） */
+    function bodyHtml(q) {
+      const keep = filterIds(g, q);
+      if (!keep) {
+        return CATS.filter((c) => byCat[c.id] && byCat[c.id].length).map((c) => {
+          const rows = orderTerms(byCat[c.id], g, hot, c.id);
+          const starters = starterCards(STARTERS[c.id] || [], g);
+          return `<div class="cat-block">
+            <div class="eyebrow" style="margin:var(--s-6) 0 var(--s-2)">${esc(c.label)} · ${rows.length}</div>
+            <div class="cat-desc">${esc(c.desc)}</div>
+            ${starters ? `<div class="starters">
+              <div class="st-label">入门三词</div>
+              <div class="st-list">${starters}</div>
+            </div>` : ''}
+            <div style="display:grid;gap:var(--s-3)">${rows.map(dictCard).join('')}</div>
+            <a class="btn ghost sm" style="margin-top:var(--s-3)" href="#/data?cat=${esc(c.id)}">这一类的速查表 →</a>
+          </div>`;
+        }).join('');
+      }
+      const hits = CATS.filter((c) => byCat[c.id] && byCat[c.id].length).map((c) => {
+        const inCat = orderTerms(byCat[c.id], g, hot, c.id).filter((id) => keep.has(id));
+        if (!inCat.length) return '';
+        return `<div class="cat-block">
+          <div class="eyebrow" style="margin:var(--s-6) 0 var(--s-2)">${esc(c.label)} · 命中 ${inCat.length}</div>
+          <div style="display:grid;gap:var(--s-3)">${inCat.map(dictCard).join('')}</div>
+        </div>`;
       }).join('');
-
-      // 入门三词：第一次读这一类，先读这三个
-      const starters = starterCards(STARTERS[c.id] || [], g);
-
-      return `<div class="cat-block">
-        <div class="eyebrow" style="margin:var(--s-6) 0 var(--s-2)">${esc(c.label)} · ${byCat[c.id].length}</div>
-        <div class="cat-desc">${esc(c.desc)}</div>
-        ${starters ? `<div class="starters">
-          <div class="st-label">入门三词</div>
-          <div class="st-list">${starters}</div>
-        </div>` : ''}
-        <div class="entries">${rows}</div>
-        <a class="btn ghost sm" style="margin-top:var(--s-3)" href="#/data?cat=${esc(c.id)}">这一类的速查表 →</a>
-      </div>`;
-    }).join('');
+      const cur = String(q || '').trim();
+      if (!hits) {
+        return `<div class="empty">
+          <div class="et">没有命中「${esc(cur)}」的词条</div>
+          <div class="ed">这个词可能写在文章里，而不是词条里。去
+            <a href="#/search?q=${encodeURIComponent(cur)}">全站搜索「${esc(cur)}」</a> 看看文章和标的；
+            或者 <a href="#/terms">清掉过滤</a>，浏览全部 ${ids.length} 个词。</div>
+        </div>`;
+      }
+      return hits;
+    }
 
     view.innerHTML = `
       <div class="art-head">
         <div class="eyebrow">术语库</div>
         <h1 style="font-size:var(--t-hero);letter-spacing:-.015em;margin-bottom:var(--s-3)">${ids.length} 个词，按你遇到的地方找</h1>
-        <p class="art-dek">每个词四段：一句话讲清是什么、一个好懂的比喻、一个真实数字、一个容易踩的坑。
-          不知道从哪看起，先去 <a href="#/data">速查表</a>（十类各一张，行行是「是什么 · 什么时候会骗人」）。</p>
+        <p class="art-dek">每个词四段：一句话讲清是什么、一个好懂的比喻、一个真实数字、一个容易踩的坑——
+          像查词典一样直接读。下面输入一个词，命中的立刻浮出来，不用翻文章。</p>
       </div>
-      ${blocks}`;
+
+      <input id="terms-q" type="search" value="${esc(initQ)}" autocomplete="off" spellcheck="false"
+        placeholder="查一个词，比如 PE、最大回撤、美联储……"
+        aria-label="在术语库里查一个词：输入即过滤，按词名、别名、关键词匹配"
+        style="display:block;width:100%;box-sizing:border-box;border:1px solid var(--rule);border-left:2px solid var(--teal);border-radius:var(--r-2);background:var(--sheet);color:var(--ink);font:inherit;font-size:16px;padding:11px var(--s-4);margin:0 0 var(--s-3)">
+
+      <div id="terms-count" class="cat-desc" aria-live="polite" style="margin:0 0 var(--s-4)"></div>
+      <div id="terms-body">${bodyHtml(initQ)}</div>`;
+
+    const input = view.querySelector('#terms-q');
+    const body = view.querySelector('#terms-body');
+    const count = view.querySelector('#terms-count');
+    const paintCount = (q) => {
+      if (!count) return;
+      const keep = filterIds(g, q);
+      count.textContent = keep ? `命中 ${keep.size} / ${ids.length} 个词` : `共 ${ids.length} 个词，分十类`;
+    };
+    paintCount(initQ);
+
+    if (input && body) {
+      // 输入即过滤：只重画词条区，输入框不动——焦点和输入法都留在原地
+      input.addEventListener('input', () => {
+        body.innerHTML = bodyHtml(input.value);
+        paintCount(input.value);
+        syncFilterUrl(input.value);
+      });
+      // 进页面自动聚焦：这一页的主动作就是「查一个词」。
+      // 放到下一拍再聚焦——app.js 换页后会把焦点交给 #main，同步 focus 会被它盖掉。
+      setTimeout(() => {
+        try { input.focus({ preventScroll: true }); } catch (e) { try { input.focus(); } catch (e2) { /* 焦点拿不到就算了 */ } }
+      }, 0);
+    }
   }
 
   /** aria-label 里要的是纯文本：词条里的 **加粗** 得把星号去掉，
@@ -337,5 +425,10 @@
 
   // hasArticle / hotIds 也导出去：搜索结果用的是同一套分层（有专文 > 终端会链到 > 有 sym），
   // 同一个词在术语库和搜索里不该排出两个顺序。
-  window.TermView = { render, renderIndex, renderDataSheet, linkOf, CATS, CAT_OF, SHEET_COLS, hasArticle, hotIds, plain };
+  // dictCard / filterIds 导出去：搜索页的「命中术语直接读完整词条卡」
+  // 用的就是这一份渲染，两处不各写一套。
+  window.TermView = {
+    render, renderIndex, renderDataSheet, linkOf, CATS, CAT_OF, SHEET_COLS,
+    hasArticle, hotIds, plain, dictCard, filterIds,
+  };
 })();

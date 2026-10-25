@@ -105,6 +105,7 @@
           <p class="art-dek">零后端、零密钥、零构建的金融科普站。每一句都能点开看真实数据，每一场危机都能拖动时间轴回放。</p>
           <div style="display:flex;gap:var(--s-2);flex-wrap:wrap;margin-top:var(--s-4)">
             <a class="btn" href="#/path">从零开始 · 8 课</a>
+            <a class="btn ghost" href="#/terms?q=PE">查一个词（试试 PE）</a>
             <a class="btn ghost" href="#/crisis">看一场危机复盘</a>
             <a class="btn ghost" href="#/concepts">查一个概念</a>
           </div>
