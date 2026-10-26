@@ -33,7 +33,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-10-21",
-      "dataAsOfActual": "2026-10-23",
+      "dataAsOfActual": "2026-10-26",
       "difficulty": 2,
       "updatedAt": "2026-10-21",
       "file": "assets/hk00700.md"
@@ -52,7 +52,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-10-21",
-      "dataAsOfActual": "2026-10-23",
+      "dataAsOfActual": "2026-10-26",
       "difficulty": 3,
       "updatedAt": "2026-10-21",
       "file": "assets/hk09988.md"
@@ -71,7 +71,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-10-21",
-      "dataAsOfActual": "2026-10-23",
+      "dataAsOfActual": "2026-10-26",
       "difficulty": 2,
       "updatedAt": "2026-10-21",
       "file": "assets/sh600519.md"
@@ -90,7 +90,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-10-21",
-      "dataAsOfActual": "2026-10-23",
+      "dataAsOfActual": "2026-10-26",
       "difficulty": 3,
       "updatedAt": "2026-10-21",
       "file": "assets/sz300750.md"
@@ -109,7 +109,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-10-21",
-      "dataAsOfActual": "2026-10-23",
+      "dataAsOfActual": "2026-10-26",
       "difficulty": 2,
       "updatedAt": "2026-10-21",
       "file": "assets/usAAPL.md"
@@ -128,7 +128,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-10-21",
-      "dataAsOfActual": "2026-10-23",
+      "dataAsOfActual": "2026-10-26",
       "difficulty": 2,
       "updatedAt": "2026-10-21",
       "file": "assets/usAMZN.md"
@@ -148,7 +148,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-10-21",
-      "dataAsOfActual": "2026-10-23",
+      "dataAsOfActual": "2026-10-26",
       "difficulty": 2,
       "updatedAt": "2026-10-21",
       "file": "assets/usGOOG.md"
@@ -168,7 +168,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-10-21",
-      "dataAsOfActual": "2026-10-23",
+      "dataAsOfActual": "2026-10-26",
       "difficulty": 2,
       "updatedAt": "2026-10-21",
       "file": "assets/usMETA.md"
@@ -188,7 +188,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-10-21",
-      "dataAsOfActual": "2026-10-23",
+      "dataAsOfActual": "2026-10-26",
       "difficulty": 2,
       "updatedAt": "2026-10-21",
       "file": "assets/usMSFT.md"
@@ -207,7 +207,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-10-21",
-      "dataAsOfActual": "2026-10-23",
+      "dataAsOfActual": "2026-10-26",
       "difficulty": 2,
       "updatedAt": "2026-10-21",
       "file": "assets/usNVDA.md"
@@ -226,7 +226,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-10-21",
-      "dataAsOfActual": "2026-10-23",
+      "dataAsOfActual": "2026-10-26",
       "difficulty": 3,
       "updatedAt": "2026-10-21",
       "file": "assets/usTSLA.md"
@@ -245,7 +245,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-10-21",
-      "dataAsOfActual": "2026-10-23",
+      "dataAsOfActual": "2026-10-26",
       "difficulty": 3,
       "updatedAt": "2026-10-21",
       "file": "assets/usTSM.md"

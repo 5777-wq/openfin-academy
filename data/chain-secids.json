@@ -610,5 +610,101 @@
  "sh603039": {
   "name": "泛微网络",
   "secid": "1.603039"
+ },
+ "usTSLA": {
+  "name": "特斯拉",
+  "secid": "105.TSLA"
+ },
+ "usNIO": {
+  "name": "蔚来",
+  "secid": "106.NIO"
+ },
+ "usLI": {
+  "name": "理想汽车",
+  "secid": "105.LI"
+ },
+ "usCHPT": {
+  "name": "ChargePoint",
+  "secid": "106.CHPT"
+ },
+ "usASML": {
+  "name": "阿斯麦",
+  "secid": "105.ASML"
+ },
+ "usAMAT": {
+  "name": "应用材料",
+  "secid": "105.AMAT"
+ },
+ "usNVDA": {
+  "name": "英伟达",
+  "secid": "105.NVDA"
+ },
+ "usAMD": {
+  "name": "超威半导体",
+  "secid": "105.AMD"
+ },
+ "usQCOM": {
+  "name": "高通",
+  "secid": "105.QCOM"
+ },
+ "usTSM": {
+  "name": "台积电",
+  "secid": "106.TSM"
+ },
+ "usINTC": {
+  "name": "英特尔",
+  "secid": "105.INTC"
+ },
+ "usAVGO": {
+  "name": "博通",
+  "secid": "105.AVGO"
+ },
+ "usMSFT": {
+  "name": "微软",
+  "secid": "105.MSFT"
+ },
+ "usMETA": {
+  "name": "Meta",
+  "secid": "105.META"
+ },
+ "usPLTR": {
+  "name": "Palantir",
+  "secid": "105.PLTR"
+ },
+ "usFSLR": {
+  "name": "第一太阳能",
+  "secid": "105.FSLR"
+ },
+ "usENPH": {
+  "name": "Enphase",
+  "secid": "105.ENPH"
+ },
+ "usSEDG": {
+  "name": "SolarEdge",
+  "secid": "105.SEDG"
+ },
+ "usAAPL": {
+  "name": "苹果",
+  "secid": "105.AAPL"
+ },
+ "usPFE": {
+  "name": "辉瑞",
+  "secid": "106.PFE"
+ },
+ "usJNJ": {
+  "name": "强生",
+  "secid": "106.JNJ"
+ },
+ "usLMT": {
+  "name": "洛克希德马丁",
+  "secid": "106.LMT"
+ },
+ "usNOC": {
+  "name": "诺斯罗普格鲁曼",
+  "secid": "106.NOC"
+ },
+ "usFLNC": {
+  "name": "Fluence",
+  "secid": "105.FLNC"
  }
 }
