@@ -11,6 +11,62 @@
   const esc = (s) => window.Fmt.esc(s);
   const F = () => window.Fmt;
 
+  /* —— 列表卡 hover 反馈（即时反馈类动效）——
+     六个视图文件（list/article/assets/chain/path/search）各带一份**逐字节相同**的
+     这段样式，共用同一个 id：谁先渲染谁注入，后来者按 id 跳过——不依赖加载顺序。
+     注：规则挂在 .entries .entry 上，全站的条目列表同一张脸。 */
+  const ENTRY_CSS_ID = 'entry-cards-css';
+  const ENTRY_CSS = ''
+    + '.entries .entry{position:relative;transition:background-color var(--dur-1,140ms) var(--ease-in-out,cubic-bezier(.65,0,.35,1));}'
+    + '.entries .entry::before{content:"";position:absolute;left:-9px;top:13px;bottom:13px;width:2px;border-radius:1px;'
+    + 'background:var(--gold);transform:scaleY(0);transform-origin:50% 50%;'
+    + 'transition:transform var(--dur-1,140ms) var(--ease-out,cubic-bezier(.16,1,.3,1));}'
+    + '.entries .entry .e-t{transition:color var(--dur-1,140ms) var(--ease-in-out,cubic-bezier(.65,0,.35,1));}'
+    + '.entries .entry .e-d{transition:color var(--dur-1,140ms) var(--ease-in-out,cubic-bezier(.65,0,.35,1));}'
+    + '.entries .entry .e-m{transition:color var(--dur-1,140ms) var(--ease-in-out,cubic-bezier(.65,0,.35,1)),'
+    + 'transform var(--dur-1,140ms) var(--ease-out,cubic-bezier(.16,1,.3,1));}'
+    + '.entries .entry:hover .e-d,.entries .entry:focus-visible .e-d{color:var(--ink-2);}'
+    + '.entries .entry:hover .e-m,.entries .entry:focus-visible .e-m{color:var(--ink-2);transform:translateX(2px);}'
+    + '.entries .entry:hover::before,.entries .entry:focus-visible::before{transform:scaleY(1);}'
+    + '@media (prefers-reduced-motion:reduce){'
+    + '.entries .entry,.entries .entry::before,.entries .entry .e-t,.entries .entry .e-d,.entries .entry .e-m{transition:none;}'
+    + '}';
+
+  /* —— 文章正文首次进场的淡入 ——
+     回答的是「这东西从哪来」，不是表演：
+      · 换页进场由 index.html 动效层的 .route-host（route-in）统一负责——app.js
+        每次换页都新建容器节点，那段动画天然一页只播一次。这里**不**重复做骨架阶段的进场。
+      · 这里只标记「正文到达」这一次：骨架与正文是同一容器里的两次 innerHTML，
+        正文到了、整块换上来的那一瞬，新到的块淡入一次（CSS animation 只播一轮，
+        滚动不触发、不重复、不回放）。标题与免责声明从骨架起就站在屏上
+        （结构相同、内容相同），跟着重闪一遍会像页面坏了，所以排除在外。
+      · 数字与图表本体永不动画；动的只是容器块的 opacity 与 6px 位移。 */
+  const PAGE_CSS_ID = 'article-view-css';
+  const PAGE_CSS = ''
+    + '.fx-page > *{animation:fx-page-in var(--dur-2,240ms) var(--ease-out,cubic-bezier(.16,1,.3,1)) both;}'
+    + '.fx-page.fx-body-in > .art-head,.fx-page.fx-body-in > .disclaimer{animation:none;}'
+    + '@keyframes fx-page-in{from{opacity:0;transform:translateY(6px);}}'
+    + '@media (prefers-reduced-motion:reduce){.fx-page > *{animation:none;}}';
+
+  function ensureCss() {
+    for (const [id, css] of [[ENTRY_CSS_ID, ENTRY_CSS], [PAGE_CSS_ID, PAGE_CSS]]) {
+      try {
+        if (document.getElementById(id)) continue;
+        const st = document.createElement('style');
+        st.id = id;
+        st.textContent = css;
+        (document.head || document.documentElement).appendChild(st);
+      } catch (e) { /* 注入不了就算了——动效是增强，不是功能 */ }
+    }
+  }
+
+  /** 进场只切类名，动画全在 CSS。bodyIn = 这次 innerHTML 是「正文到达」的那一次。 */
+  function fxEnter(view, bodyIn) {
+    view.classList.add('fx-page');
+    if (bodyIn) view.classList.add('fx-body-in');
+    else view.classList.remove('fx-body-in');
+  }
+
   const DISCLAIMER = (window.Site && window.Site.disclaimer)
     ? window.Site.disclaimer.ARTICLE
     : `<div class="disclaimer"><span>本文只讲机制和数据，不构成投资建议。</span></div>`;
@@ -22,22 +78,26 @@
   }
 
   function render(view, section, id) {
+    ensureCss();
     // 标题、简介、阅读时长都在 index.json 里，先摆出来：读者不用等正文才知道自己在读哪篇
     const m = window.Content.meta(id);
     // 只认最后一次渲染：慢网下旧请求回来得晚，不能盖掉新页面
     const seq = (view.__artSeq || 0) + 1;
     view.__artSeq = seq;
+    // 换页进场交给 layout.css 的 .route-host（整个容器一次淡入），骨架不另做动画
     view.innerHTML = skeleton(section, m, id);
     bindBookmark(view, id);
 
     return window.Content.ensureArticle(id).then((art) => {
       if (view.__artSeq !== seq) return;   // 已经切到别的页面了，这一篇别再画
       if (!art) {
+        fxEnter(view, false);
         view.innerHTML = `<div class="empty"><div class="et">没找到这篇文章</div>
           <div class="ed">它可能还没写，或者链接变了。</div>
           <a class="btn ghost sm" href="#/">回首页</a></div>`;
         return;
       }
+      fxEnter(view, true);         // 正文到达：只淡入新到的块，标题不再重播
       paint(view, section, art);
       bindBookmark(view, art.id || id);
     });

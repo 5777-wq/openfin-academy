@@ -41,20 +41,118 @@
     },
   ];
 
+  /* ------------------------------------------------------------------
+     动效样式（随组件注入一次，零构建站没有 per-component css 入口）。
+     规则：只动 transform / opacity；时长缓动一律引用设计令牌并带兜底值；
+     全部是一次性进场或 hover/选中的即时反馈，无循环、无脉冲；
+     prefers-reduced-motion 下显式关闭（layout.css 的全局关闭是兜底，
+     这里声明本表面自己的意图，避免 backwards 填充被 delay 拖住）。
+     ------------------------------------------------------------------ */
+  const MOTION_CSS = `
+/* ---- 进场（一次性，随换页重渲染触发）：节点沿轴依次显影 ---- */
+.era-node {
+  animation: era-node-in var(--dur-2, 240ms) var(--ease-out, cubic-bezier(.16,1,.3,1)) backwards;
+  animation-delay: calc(var(--dur-1, 140ms) * var(--en-i, 0) / 2);
+}
+@keyframes era-node-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(6px); }
+  to   { opacity: 1; transform: translateX(-50%); }
+}
+/* ---- 进场（一次性）：金线从左端滑到「现在」——transform 缩放，不动画宽度 ---- */
+.era-axis .axis-fill {
+  transform-origin: 0 50%;
+  animation: era-fill-in var(--dur-3, 420ms) var(--ease-out, cubic-bezier(.16,1,.3,1)) backwards;
+}
+@keyframes era-fill-in { from { transform: scaleX(0); } }
+/* ---- hover / 键盘选中：金色游标滑到所指节点（指示，不表演；不循环不脉冲） ---- */
+.era-axis .axis-cursor {
+  position: absolute; left: 0; top: 46px; width: 2px; height: 12px; margin-left: -1px;
+  background: var(--gold); opacity: 0; pointer-events: none;
+  transform: translateX(var(--era-cx, 0px));
+  transition: transform var(--dur-2, 240ms) var(--ease-out, cubic-bezier(.16,1,.3,1)),
+              opacity var(--dur-1, 140ms) var(--ease-in-out, cubic-bezier(.65,0,.35,1));
+}
+.era-axis .axis-cursor.on { opacity: 1; }
+/* 悬停/选中时连接线染金：颜色的双向过渡用 ease-in-out */
+.era-node .en-stem {
+  transition: background var(--dur-1, 140ms) var(--ease-in-out, cubic-bezier(.65,0,.35,1));
+}
+.era-node:hover .en-stem,
+.era-node:focus-visible .en-stem { background: var(--gold); }
+/* 键盘选中与悬停同一套反馈（焦点环由全局 :focus-visible 提供，这里只补齐体感） */
+.era-node:focus-visible { transform: translateX(-50%) translateY(-2px); }
+.era-node:focus-visible .en-dot { background: var(--gold); border-color: var(--gold); transform: scale(1.25); }
+.era-node:focus-visible .en-year { color: var(--gold-text); }
+.era-node:focus-visible .en-label { color: var(--ink); }
+.era-node:focus-visible .en-tip {
+  opacity: 1; transform: translateX(calc(-50% + var(--tip-shift))) translateY(0);
+}
+/* 窄屏没有横轴，游标随之消失（与 components.css 的 860px 断点对齐） */
+@media (max-width: 860px) {
+  .era-axis .axis-cursor { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .era-node, .era-axis .axis-fill { animation: none; }
+  .era-axis .axis-cursor { display: none; }
+}
+`;
+
+  function ensureMotionCss() {
+    if (document.getElementById('era-motion-css')) return;
+    const el = document.createElement('style');
+    el.id = 'era-motion-css';
+    el.textContent = MOTION_CSS;
+    (document.head || document.documentElement).appendChild(el);
+  }
+
+  function reducedMotion() {
+    try {
+      return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    } catch (e) { return false; }
+  }
+
+  /** 游标：JS 只报「指到哪了」（位置 + 开关），滑移本身交给 CSS transition。
+      节点带 translateX(-50%)，视觉中心恰好落在 offsetLeft 上。 */
+  function wireCursor(axis) {
+    const cursor = axis.querySelector('.axis-cursor');
+    if (!cursor) return;
+    const place = (node) => {
+      axis.style.setProperty('--era-cx', node.offsetLeft + 'px');
+      cursor.classList.add('on');
+    };
+    const hide = () => cursor.classList.remove('on');
+    axis.addEventListener('pointerover', (ev) => {
+      const node = ev.target && ev.target.closest ? ev.target.closest('.era-node') : null;
+      if (node) place(node);
+    });
+    axis.addEventListener('pointerout', (ev) => {
+      const to = ev.relatedTarget;
+      if (!(to && to.closest && to.closest('.era-node'))) hide();
+    });
+    axis.addEventListener('focusin', (ev) => {
+      const node = ev.target;
+      if (node && node.classList && node.classList.contains('era-node')
+        && node.matches && node.matches(':focus-visible')) place(node);
+    });
+    axis.addEventListener('focusout', hide);
+  }
+
   function renderBand(band, opts) {
     const list = band.eras;
     const y0 = Number(list[0].year);
     const y1 = Number(list[list.length - 1].year);
     const span = Math.max(1, y1 - y0);
 
+    let nowLeft = null;
     const nodes = list.map((e, i) => {
       const y = Number(String(e.year).slice(0, 4));
       const pos = ((y - y0) / span) * 100;
       // 端点稍微内缩，避免节点贴边被裁
       const left = 6 + pos * 0.88;
+      if (e.now) nowLeft = left;
       // 相邻年份（如 2020 / 2022）标签会相撞：奇偶交替下移一行
       const lane = i % 2 ? ' lane-1' : '';
-      return `<a class="era-node${lane}${e.now ? ' now' : ''}" href="${esc(e.href)}" style="left:${left.toFixed(2)}%">
+      return `<a class="era-node${lane}${e.now ? ' now' : ''}" href="${esc(e.href)}" style="left:${left.toFixed(2)}%;--en-i:${i}">
         <span class="en-tip"><b>${esc(e.year)} · ${esc(e.label)}</b><span>${esc(e.tip)}</span></span>
         <span class="en-year">${esc(e.year)}</span>
         <span class="en-dot"></span>
@@ -64,6 +162,9 @@
       </a>`;
     }).join('');
 
+    // 金线随"当前时代"填充：宽度直接写进标记（进场用 scaleX 动画滑过去）
+    const fillStyle = nowLeft === null ? '' : ` style="width:${nowLeft.toFixed(2)}%"`;
+
     return `<div class="era-band">
       <div class="era-band-head">
         <span class="era-band-label">${esc(band.label)}</span>
@@ -72,8 +173,9 @@
       </div>
       <div class="era-axis">
         <div class="axis-line"></div>
-        <div class="axis-fill" data-fill></div>
+        <div class="axis-fill" data-fill${fillStyle}></div>
         ${nodes}
+        <span class="axis-cursor" aria-hidden="true"></span>
       </div>
     </div>`;
   }
@@ -81,16 +183,15 @@
   function render(container, bands) {
     if (!container) return;
     const list = bands && bands.length ? bands : DEFAULT_BANDS;
+    ensureMotionCss();
     container.innerHTML = list.map((band, i) => renderBand(band, {
       hint: i === 0 ? '悬停看一句话，点进去看完整复盘' : '',
     })).join('');
 
-    // 金线随"当前时代"填充
-    container.querySelectorAll('.era-axis').forEach((axis) => {
-      const fill = axis.querySelector('[data-fill]');
-      const nowNode = axis.querySelector('.era-node.now');
-      if (fill && nowNode) fill.style.width = parseFloat(nowNode.style.left) + '%';
-    });
+    // 金线游标：reduced-motion 时不接线（CSS 里也已整体关闭）
+    if (!reducedMotion()) {
+      container.querySelectorAll('.era-axis').forEach(wireCursor);
+    }
   }
 
   window.EraTimeline = { render, DEFAULT_BANDS, DEFAULT_ERAS: DEFAULT_BANDS[0].eras };

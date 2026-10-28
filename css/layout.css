@@ -12,6 +12,14 @@ html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
   }
 }
 
+/* 动效默认缓动：transition-* 不继承，只能摊到通配上。
+   此后所有没显式写缓动的 transition 都落在 --ease-out，
+   不再各自退回浏览器内置的 ease。颜色类的双向过渡在各自规则里
+   显式写 --ease-in-out，会覆盖这里的默认。 */
+*, *::before, *::after {
+  transition-timing-function: var(--ease-out, cubic-bezier(.16, 1, .3, 1));
+}
+
 body {
   margin: 0;
   background: var(--paper);
@@ -72,12 +80,12 @@ main:focus, main:focus-visible { outline: none; }
 /* 跳到主内容：平时藏在屏幕外，Tab 到它才露出来。
    键盘用户不用每次都从报头的搜索按钮一路 Tab 到正文。 */
 .skip {
-  position: fixed; top: 8px; left: 8px; z-index: calc(var(--z-top) + 10);
+  position: fixed; top: var(--s-2); left: var(--s-2); z-index: calc(var(--z-top) + 10);
   transform: translateY(-250%);
   padding: 9px 16px; border-radius: var(--r-2);
   background: var(--ink); color: var(--paper);
   font-size: var(--t-small); text-decoration: none;
-  transition: transform var(--dur-1);
+  transition: transform var(--dur-1, 140ms) var(--ease-out, cubic-bezier(.16, 1, .3, 1));
 }
 .skip:focus { transform: translateY(0); text-decoration: none; }
 
@@ -111,14 +119,18 @@ main:focus, main:focus-visible { outline: none; }
 .masthead-meta .sep { color: var(--rule); }
 .masthead-meta #mh-sister {
   color: var(--ink-3); text-decoration: none;
-  border-bottom: 1px solid var(--rule); transition: color var(--dur-1), border-color var(--dur-1);
+  border-bottom: 1px solid var(--rule);
+  transition: color var(--dur-1, 140ms) var(--ease-in-out, cubic-bezier(.65, 0, .35, 1)),
+              border-color var(--dur-1, 140ms) var(--ease-in-out, cubic-bezier(.65, 0, .35, 1));
 }
 .masthead-meta #mh-sister:hover { color: var(--teal); border-bottom-color: var(--teal-line); }
 
 .mh-btn {
   display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px;
   border: 1px solid var(--rule); border-radius: var(--r-2); background: var(--sheet);
-  color: var(--ink-2); font-size: var(--t-small); transition: border-color var(--dur-1), color var(--dur-1);
+  color: var(--ink-2); font-size: var(--t-small);
+  transition: border-color var(--dur-1, 140ms) var(--ease-in-out, cubic-bezier(.65, 0, .35, 1)),
+              color var(--dur-1, 140ms) var(--ease-in-out, cubic-bezier(.65, 0, .35, 1));
   position: relative;
 }
 /* D-6：触控热区。
@@ -189,7 +201,8 @@ main:focus, main:focus-visible { outline: none; }
   display: flex; align-items: center; gap: var(--s-2);
   padding: 6px var(--s-3); border-radius: var(--r-2);
   color: var(--ink-2); font-size: var(--t-small); position: relative;
-  transition: background var(--dur-1), color var(--dur-1);
+  transition: background-color var(--dur-1, 140ms) var(--ease-in-out, cubic-bezier(.65, 0, .35, 1)),
+              color var(--dur-1, 140ms) var(--ease-in-out, cubic-bezier(.65, 0, .35, 1));
 }
 .rail-item .ri-n {
   font-family: var(--font-mono); font-size: 10px; color: var(--ink-4); width: 16px; flex: none;
@@ -216,10 +229,21 @@ main:focus, main:focus-visible { outline: none; }
 .main { min-width: 0; padding: var(--s-6) 0 var(--s-8); }
 .reading { max-width: var(--reading-w); }
 
-/* 阅读进度：贴在视口顶的金线 */
+/* 换页进场（route-in）定义在 index.html 的动效层，唯一一份：
+   容器只纯淡入，位移交给各视图自己的进场动画（fx-page-in /
+   terms-body-in 都是 6px），容器再挪一次就叠成 12px。
+   这里不写第二份——同特异性下后加载的内联层会静默盖掉本文件，
+   两处各改各的等于白改。 */
+
+/* 阅读进度：贴在视口顶的金线。
+   游标类指示——linear 是「不缓动、跟手」，刻意不进三档缓动；
+   时长仍走 --dur-1。
+   宽度常驻 100%，进度由 app.js 写 scaleX（0→1）：transform 过渡走
+   合成器；width 过渡在滚动里每帧追帧、每帧 layout，代价太高。 */
 .progress {
   position: fixed; top: 0; left: 0; height: 2px; z-index: calc(var(--z-top) + 1);
-  background: var(--gold); width: 0; transition: width .1s linear;
+  background: var(--gold); width: 100%; transform: scaleX(0); transform-origin: left;
+  transition: transform var(--dur-1, 140ms) linear;
 }
 
 /* ---------- 移动端底部标签栏 ---------- */
@@ -284,6 +308,7 @@ main:focus, main:focus-visible { outline: none; }
     flex: 1 1 0; display: flex; flex-direction: column; align-items: center; gap: 2px;
     border: 0; background: none; padding: 5px 2px; color: var(--ink-3); font-size: 10.5px;
     border-radius: var(--r-2); position: relative;
+    transition: color var(--dur-1, 140ms) var(--ease-in-out, cubic-bezier(.65, 0, .35, 1));
   }
   .tabbar button.on { color: var(--teal); }
   .tabbar button.on::before {

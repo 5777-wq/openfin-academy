@@ -13,6 +13,45 @@
 
   const LENS_BASE = 'https://5777-wq.github.io/openfinlens/';
 
+  /* ---- 动效样式（词典过滤结果的进场）----
+     每次键入后命中块整块淡入一次：回答「我刚刚碰了什么」。
+     只有一段、一个元素（#terms-body 整体），不做逐项 stagger——
+     逐项排队在每次键入时都会重演一遍，总纲明令禁止。
+     动画由 .terms-enter 类驱动，JS 只负责摘类名→强制回流→加回类名；
+     transform/opacity only；时长/缓动引用全局变量并带兜底；
+     prefers-reduced-motion 的关闭分支显式写在这里。 */
+  (function ensureMotionStyle() {
+    try {
+      if (document.getElementById('style-terms-motion')) return;
+      const s = document.createElement('style');
+      s.id = 'style-terms-motion';
+      s.textContent = `
+#terms-body.terms-enter {
+  animation: terms-body-in var(--dur-2, 240ms) var(--ease-out, cubic-bezier(.16,1,.3,1)) both;
+}
+@keyframes terms-body-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  #terms-body.terms-enter { animation: none; }
+}
+`;
+      (document.head || document.documentElement).appendChild(s);
+    } catch (e) { /* 注入不了就算了，过滤本身不依赖它 */ }
+  })();
+
+  /** 让过滤结果的进场动画从头播一遍。
+      同一个类名摘了再加，浏览器不会重播 CSS animation——
+      中间读一次 offsetWidth 强制回流一拍，把它当作「新的一段内容」。
+      reduced-motion 下动画在 CSS 里已被关掉，这里的类切换不产生任何视觉。 */
+  function replayEnter(node) {
+    if (!node || !node.classList) return;
+    node.classList.remove('terms-enter');
+    void node.offsetWidth;
+    node.classList.add('terms-enter');
+  }
+
   /* 十个分类：按"读者真会遇到的顺序"排，不是教科书目录 */
   const CATS = [
     { id: 'data', label: '研报数据', desc: '研报和行情软件里天天出现、却没人解释的数' },
@@ -267,6 +306,7 @@
       // 输入即过滤：只重画词条区，输入框不动——焦点和输入法都留在原地
       input.addEventListener('input', () => {
         body.innerHTML = bodyHtml(input.value);
+        replayEnter(body);   // 新的命中块整块进场一次（无逐项 stagger）
         paintCount(input.value);
         syncFilterUrl(input.value);
       });

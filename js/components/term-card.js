@@ -5,6 +5,42 @@
 
   const esc = (s) => window.Fmt.esc(s);
 
+  /* ---- 动效样式（本组件自带的这一小块）----
+     词条卡在词典/首页/搜索里都是以 .term-link 整卡可点的形态出现，
+     hover 时给一张「轻微抬起」——回答「我刚刚碰了什么」。
+     规则与全站总纲对齐：
+     · 只动 transform（合成器友好），不碰颜色、不加阴影动画；
+     · 时长/缓动引用全局变量并带兜底，不裸写毫秒、不造第四档；
+     · @media (hover:hover) 挡掉触屏的粘滞 hover；
+     · prefers-reduced-motion: reduce 的关闭分支在下面显式写了一份
+       （layout.css 里的全局关闭分支是第二道网）。
+     变换挂在 .term-link（外层 <a>）而不是内层 .term 上：
+     键盘 :focus-visible 的焦点环画在 <a> 上，卡和环必须一起抬，
+     否则卡片会从自己的焦点环里探出去。
+     注入失败（极老浏览器/测试桩）不影响任何功能——动效是增强，不是功能。 */
+  (function ensureMotionStyle() {
+    try {
+      if (document.getElementById('style-term-card-motion')) return;
+      const s = document.createElement('style');
+      s.id = 'style-term-card-motion';
+      s.textContent = `
+.term-link {
+  transition: transform var(--dur-1, 140ms) var(--ease-out, cubic-bezier(.16,1,.3,1));
+}
+@media (hover: hover) {
+  .term-link:hover,
+  .term-link:focus-visible { transform: translateY(-2px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .term-link { transition: none; }
+  .term-link:hover,
+  .term-link:focus-visible { transform: none; }
+}
+`;
+      (document.head || document.documentElement).appendChild(s);
+    } catch (e) { /* 注入不了就算了，功能不依赖它 */ }
+  })();
+
   /** 术语卡 HTML
    *  opts.noName：词名由外层承担（术语页的 h1），这里只留别名与编号，避免同页出现两次 */
   function render(term, opts) {

@@ -7,6 +7,58 @@
   const esc = (s) => window.Fmt.esc(s);
   const LENS = 'https://5777-wq.github.io/openfinlens/';
 
+  /* —— 列表卡 hover 反馈（即时反馈类动效）——
+     六个视图文件（list/article/assets/chain/path/search）各带一份**逐字节相同**的
+     这段样式，共用同一个 id：谁先渲染谁注入，后来者按 id 跳过——不依赖加载顺序。 */
+  const ENTRY_CSS_ID = 'entry-cards-css';
+  const ENTRY_CSS = ''
+    + '.entries .entry{position:relative;transition:background-color var(--dur-1,140ms) var(--ease-in-out,cubic-bezier(.65,0,.35,1));}'
+    + '.entries .entry::before{content:"";position:absolute;left:-9px;top:13px;bottom:13px;width:2px;border-radius:1px;'
+    + 'background:var(--gold);transform:scaleY(0);transform-origin:50% 50%;'
+    + 'transition:transform var(--dur-1,140ms) var(--ease-out,cubic-bezier(.16,1,.3,1));}'
+    + '.entries .entry .e-t{transition:color var(--dur-1,140ms) var(--ease-in-out,cubic-bezier(.65,0,.35,1));}'
+    + '.entries .entry .e-d{transition:color var(--dur-1,140ms) var(--ease-in-out,cubic-bezier(.65,0,.35,1));}'
+    + '.entries .entry .e-m{transition:color var(--dur-1,140ms) var(--ease-in-out,cubic-bezier(.65,0,.35,1)),'
+    + 'transform var(--dur-1,140ms) var(--ease-out,cubic-bezier(.16,1,.3,1));}'
+    + '.entries .entry:hover .e-d,.entries .entry:focus-visible .e-d{color:var(--ink-2);}'
+    + '.entries .entry:hover .e-m,.entries .entry:focus-visible .e-m{color:var(--ink-2);transform:translateX(2px);}'
+    + '.entries .entry:hover::before,.entries .entry:focus-visible::before{transform:scaleY(1);}'
+    + '@media (prefers-reduced-motion:reduce){'
+    + '.entries .entry,.entries .entry::before,.entries .entry .e-t,.entries .entry .e-d,.entries .entry .e-m{transition:none;}'
+    + '}';
+
+  /* —— 标的详情页的视觉层级（纯静态样式，无动效）——
+     两块面板各有各的身份，长一个样的话读者分不清哪块是数、哪块是话：
+      · 数据卡 = 展品：2px 墨线压顶（报刊图表的 exhibit 语法），表头下加一条淡界线，
+        「最新」一格铺金箔底——金色只做指示：这一格是"现在"，其余都是历史。
+      · 三段短注 = 解读：次级纸底（sheet-2，与文章页「本文要点」同一种纸），
+        三个小标用金色等宽字竖着排，「坑」的小标用警示色——颜色都在纸底 ≥4.5:1 的那套里。 */
+  const PAGE_CSS_ID = 'assets-view-css';
+  const PAGE_CSS = ''
+    + '.stats-card{border-top:2px solid var(--ink);}'
+    + '.stats-card > .eyebrow{padding-bottom:var(--s-3);border-bottom:1px solid var(--rule-2);}'
+    + '.stat.is-now{background:var(--gold-soft);}'
+    + '.an-panel{background:var(--sheet-2);}'
+    + '.an-panel .cat-desc{margin:0;padding:var(--s-3) 0;border-top:1px solid var(--rule-2);'
+    + 'font-size:var(--t-small);color:var(--ink-2);}'
+    + '.an-panel .cat-desc:first-of-type{border-top:0;padding-top:0;}'
+    + '.an-panel .cat-desc:last-of-type{padding-bottom:0;}'
+    + '.an-panel .cat-desc b{display:block;font-family:var(--font-mono);font-size:var(--t-eyebrow);'
+    + 'font-weight:600;letter-spacing:.14em;color:var(--gold-text);margin-bottom:5px;}'
+    + '.an-panel .cat-desc.an-trap b{color:var(--warn);}';
+
+  function ensureCss() {
+    for (const [id, css] of [[ENTRY_CSS_ID, ENTRY_CSS], [PAGE_CSS_ID, PAGE_CSS]]) {
+      try {
+        if (document.getElementById(id)) continue;
+        const st = document.createElement('style');
+        st.id = id;
+        st.textContent = css;
+        (document.head || document.documentElement).appendChild(st);
+      } catch (e) { /* 注入不了就算了——动效是增强，不是功能 */ }
+    }
+  }
+
   /* 终端的 symbol → 站内序列 id（大部分同名，指数/商品另有一套） */
   const SERIES_OF = {
     sh000001: 'SH000001', sz399001: 'SZ399001', sz399006: 'SZ399006', sh000688: 'SH000688',
@@ -81,6 +133,7 @@
 
   /** 标的百科索引：清单 + 覆盖区间，全部来自数据，不手写 */
   async function renderIndex(view) {
+    ensureCss();
     const reg = await window.History.registry();
     const map = new Map(((reg && reg.series) || []).map((s) => [s.id, s]));
     const uni = universe();
@@ -144,6 +197,7 @@
 
   /** 标的详情页：专文（如果有）+ 真实数据卡 */
   async function renderDetail(view, id) {
+    ensureCss();
     const sym = id;
     const sid = seriesIdOf(sym);
     const aid = articleIdOf(sym);
@@ -157,10 +211,10 @@
     const fromLens = q.from === 'lens';
 
     const dataCard = st ? `
-      <div class="panel" style="margin-bottom:var(--s-6)">
+      <div class="panel stats-card" style="margin-bottom:var(--s-6)">
         <div class="eyebrow" style="margin-bottom:var(--s-3)">真实历史读数 · 全部由月线序列算出</div>
         <div class="stat-grid">
-          <div class="stat"><span class="s-k">最新</span><span class="s-v num">${esc(fmtNum(st.last.v, series))}</span><span class="s-n">${esc(st.to)}${st.partial ? ' · 当月未收' : ''}</span></div>
+          <div class="stat is-now"><span class="s-k">最新</span><span class="s-v num">${esc(fmtNum(st.last.v, series))}</span><span class="s-n">${esc(st.to)}${st.partial ? ' · 当月未收' : ''}</span></div>
           <div class="stat"><span class="s-k">历史最高</span><span class="s-v num">${esc(fmtNum(st.peak.v, series))}</span><span class="s-n">${esc(st.peak.t)}</span></div>
           <div class="stat"><span class="s-k">历史最低</span><span class="s-v num">${esc(fmtNum(st.trough.v, series))}</span><span class="s-n">${esc(st.trough.t)}</span></div>
           ${st.isRate ? `
@@ -204,11 +258,11 @@
     const notesMap = (window.Content.assetNotes && window.Content.assetNotes()) || null;
     const note = (!art && notesMap && notesMap[sym]) || null;
     const noteHtml = note ? `
-      <div class="panel" style="margin-bottom:var(--s-6)">
-        <div class="eyebrow" style="margin-bottom:var(--s-3)">三段话读懂它</div>
-        <p class="cat-desc" style="margin:0 0 var(--s-3)"><b>这是什么：</b>${esc(note.what)}</p>
-        <p class="cat-desc" style="margin:0 0 var(--s-3)"><b>它跟着什么走：</b>${esc(note.moves)}</p>
-        <p class="cat-desc" style="margin:0"><b>最容易踩的坑：</b>${esc(note.trap)}</p>
+      <div class="panel an-panel" style="margin-bottom:var(--s-6)">
+        <div class="eyebrow" style="margin-bottom:var(--s-2)">三段话读懂它</div>
+        <p class="cat-desc an-what"><b>这是什么：</b>${esc(note.what)}</p>
+        <p class="cat-desc an-moves"><b>它跟着什么走：</b>${esc(note.moves)}</p>
+        <p class="cat-desc an-trap"><b>最容易踩的坑：</b>${esc(note.trap)}</p>
       </div>` : '';
 
     view.innerHTML = `

@@ -4,6 +4,36 @@
 
   const esc = (s) => window.Fmt.esc(s);
 
+  /* —— 列表卡 hover 反馈（即时反馈类动效）——
+     六个视图文件（list/article/assets/chain/path/search）各带一份**逐字节相同**的
+     这段样式，共用同一个 id：谁先渲染谁注入，后来者按 id 跳过——不依赖加载顺序。 */
+  const ENTRY_CSS_ID = 'entry-cards-css';
+  const ENTRY_CSS = ''
+    + '.entries .entry{position:relative;transition:background-color var(--dur-1,140ms) var(--ease-in-out,cubic-bezier(.65,0,.35,1));}'
+    + '.entries .entry::before{content:"";position:absolute;left:-9px;top:13px;bottom:13px;width:2px;border-radius:1px;'
+    + 'background:var(--gold);transform:scaleY(0);transform-origin:50% 50%;'
+    + 'transition:transform var(--dur-1,140ms) var(--ease-out,cubic-bezier(.16,1,.3,1));}'
+    + '.entries .entry .e-t{transition:color var(--dur-1,140ms) var(--ease-in-out,cubic-bezier(.65,0,.35,1));}'
+    + '.entries .entry .e-d{transition:color var(--dur-1,140ms) var(--ease-in-out,cubic-bezier(.65,0,.35,1));}'
+    + '.entries .entry .e-m{transition:color var(--dur-1,140ms) var(--ease-in-out,cubic-bezier(.65,0,.35,1)),'
+    + 'transform var(--dur-1,140ms) var(--ease-out,cubic-bezier(.16,1,.3,1));}'
+    + '.entries .entry:hover .e-d,.entries .entry:focus-visible .e-d{color:var(--ink-2);}'
+    + '.entries .entry:hover .e-m,.entries .entry:focus-visible .e-m{color:var(--ink-2);transform:translateX(2px);}'
+    + '.entries .entry:hover::before,.entries .entry:focus-visible::before{transform:scaleY(1);}'
+    + '@media (prefers-reduced-motion:reduce){'
+    + '.entries .entry,.entries .entry::before,.entries .entry .e-t,.entries .entry .e-d,.entries .entry .e-m{transition:none;}'
+    + '}';
+
+  function ensureEntryCss() {
+    try {
+      if (document.getElementById(ENTRY_CSS_ID)) return;
+      const st = document.createElement('style');
+      st.id = ENTRY_CSS_ID;
+      st.textContent = ENTRY_CSS;
+      (document.head || document.documentElement).appendChild(st);
+    } catch (e) { /* 注入不了就算了——动效是增强，不是功能 */ }
+  }
+
   /** 这课会把你带到哪儿：把 target 变成读者看得懂的几个字。
       点进去之前就知道会看到什么——路径里不做假入口。 */
   function targetLabel(target) {
@@ -22,6 +52,7 @@
   }
 
   function render(view) {
+    ensureEntryCss();
     const plan = window.Content.pathPlan();
     if (!plan || !plan.lessons || !plan.lessons.length) {
       view.innerHTML = `<div class="empty"><div class="et">路径正在编排</div>

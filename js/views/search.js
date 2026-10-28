@@ -4,6 +4,48 @@
 
   const esc = (s) => window.Fmt.esc(s);
 
+  /* —— 列表卡 hover 反馈（即时反馈类动效）——
+     六个视图文件（list/article/assets/chain/path/search）各带一份**逐字节相同**的
+     这段样式，共用同一个 id：谁先渲染谁注入，后来者按 id 跳过——不依赖加载顺序。 */
+  const ENTRY_CSS_ID = 'entry-cards-css';
+  const ENTRY_CSS = ''
+    + '.entries .entry{position:relative;transition:background-color var(--dur-1,140ms) var(--ease-in-out,cubic-bezier(.65,0,.35,1));}'
+    + '.entries .entry::before{content:"";position:absolute;left:-9px;top:13px;bottom:13px;width:2px;border-radius:1px;'
+    + 'background:var(--gold);transform:scaleY(0);transform-origin:50% 50%;'
+    + 'transition:transform var(--dur-1,140ms) var(--ease-out,cubic-bezier(.16,1,.3,1));}'
+    + '.entries .entry .e-t{transition:color var(--dur-1,140ms) var(--ease-in-out,cubic-bezier(.65,0,.35,1));}'
+    + '.entries .entry .e-d{transition:color var(--dur-1,140ms) var(--ease-in-out,cubic-bezier(.65,0,.35,1));}'
+    + '.entries .entry .e-m{transition:color var(--dur-1,140ms) var(--ease-in-out,cubic-bezier(.65,0,.35,1)),'
+    + 'transform var(--dur-1,140ms) var(--ease-out,cubic-bezier(.16,1,.3,1));}'
+    + '.entries .entry:hover .e-d,.entries .entry:focus-visible .e-d{color:var(--ink-2);}'
+    + '.entries .entry:hover .e-m,.entries .entry:focus-visible .e-m{color:var(--ink-2);transform:translateX(2px);}'
+    + '.entries .entry:hover::before,.entries .entry:focus-visible::before{transform:scaleY(1);}'
+    + '@media (prefers-reduced-motion:reduce){'
+    + '.entries .entry,.entries .entry::before,.entries .entry .e-t,.entries .entry .e-d,.entries .entry .e-m{transition:none;}'
+    + '}';
+
+  /* —— 搜索结果的分组层次（纯静态样式，无动效）——
+     报纸的分栏线语法：每组一条 2px 墨线压顶，组头比正文标签深一档，
+     组间距大于组内行距——三组结果扫一眼就知道边界在哪。 */
+  const PAGE_CSS_ID = 'search-view-css';
+  const PAGE_CSS = ''
+    + '.sr-group{border-top:2px solid var(--ink);padding-top:var(--s-2);margin-bottom:var(--s-6);}'
+    + '.sr-group .eyebrow{color:var(--ink-2);margin-bottom:var(--s-2);}'
+    + '.sr-cards{display:grid;gap:var(--s-3);}'
+    + '.sr-more{margin-top:var(--s-3);}';
+
+  function ensureCss() {
+    for (const [id, css] of [[ENTRY_CSS_ID, ENTRY_CSS], [PAGE_CSS_ID, PAGE_CSS]]) {
+      try {
+        if (document.getElementById(id)) continue;
+        const st = document.createElement('style');
+        st.id = id;
+        st.textContent = css;
+        (document.head || document.documentElement).appendChild(st);
+      } catch (e) { /* 注入不了就算了——动效是增强，不是功能 */ }
+    }
+  }
+
   /**
    * 搜索：术语 + 文章 + 标的
    *
@@ -316,13 +358,15 @@
   }
 
   function render(view, q) {
+    ensureCss();
     const r = search(q);
     const total = r.terms.length + r.articles.length + r.assets.length;
     const q1 = esc(q || '');
 
+    /* 分组容器 sr-group：2px 墨线压顶，组头/组距的层次都在 search-view-css 里 */
     const group = (title, items, renderItem) => items.length
-      ? `<div style="margin-bottom:var(--s-5)"><div class="eyebrow">${esc(title)} · ${items.length}</div>
-         <div class="entries">${items.map(renderItem).join('')}</div></div>`
+      ? `<section class="sr-group"><div class="eyebrow">${esc(title)} · ${items.length}</div>
+         <div class="entries">${items.map(renderItem).join('')}</div></section>`
       : '';
 
     /* 术语命中：直接把完整词条卡画出来（一句话/比喻/数字/坑），
@@ -336,15 +380,15 @@
         <span><span class="e-t">${esc(t.term)}</span><span class="e-d">${esc(t.one || '')}</span></span>
         <span class="e-m">看解释 →</span></a>`;
     const termsBlock = r.terms.length
-      ? `<div style="margin-bottom:var(--s-5)">
+      ? `<section class="sr-group sr-terms">
           <div class="eyebrow">术语 · ${r.terms.length}</div>
-          <div style="display:grid;gap:var(--s-3);margin-top:var(--s-3)">
+          <div class="sr-cards">
             ${r.terms.slice(0, CARD_CAP).map((t) => dictCardOf(t.id)).join('')}
           </div>
-          ${r.terms.length > CARD_CAP ? `<div class="entries" style="margin-top:var(--s-3)">
+          ${r.terms.length > CARD_CAP ? `<div class="entries sr-more">
             ${r.terms.slice(CARD_CAP).map(compactTerm).join('')}
           </div>` : ''}
-        </div>`
+        </section>`
       : '';
 
     view.innerHTML = `

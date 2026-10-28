@@ -243,15 +243,24 @@ function loadScripts(files) {
   /* document.getElementById 是在**整个文档**里找同名节点。
      视图渲染是异步的：旧页面 await 回来时，新页面已经有同名节点了，
      旧数据就会被写进新页面——URL 显示 A，图上画的却是 B。
-     所以这些文件里只许用容器作用域（view.querySelector / host.querySelector）。 */
+     所以这些文件里找渲染节点只许用容器作用域（view.querySelector / host.querySelector）。
+     唯一豁免：六视图共享的 <style id="entry-cards-css"> 单例的存在性检查
+     （if (document.getElementById(ENTRY_CSS_ID)) return;）——注入发生在任何
+     await 之前、样式内容是常量、命中即 return，旧数据写不进任何节点，
+     竞态不成立；list/path 两文件同款不受限。豁免凭证：ENTRY_CSS_ID 必须
+     逐字定义为 'entry-cards-css'，且只放行这一种语句形态，其余照旧命中。 */
   const scoped = ['js/views/crisis.js', 'js/views/chain.js', 'js/components/replay-player.js'];
   for (const f of scoped) {
     const src = readFileSync(path.join(ROOT, f), 'utf8')
       .replace(/\/\*[\s\S]*?\*\//g, '')   // 注释里写的反例不算
       .replace(/^\s*\/\/.*$/gm, '');
+    const cssIdOk = /const\s+ENTRY_CSS_ID\s*=\s*['"]entry-cards-css['"]\s*;/.test(src);
+    const body = cssIdOk
+      ? src.replace(/if\s*\(\s*document\.getElementById\s*\(\s*ENTRY_CSS_ID\s*\)\s*\)\s*return\s*;/g, '')
+      : src;
     ok(f + '：不许用 document.getElementById 找自己的节点',
-      !/document\.getElementById\s*\(/.test(src),
-      '命中：' + (src.match(/document\.getElementById\s*\([^)]*\)/g) || []).join(' '));
+      !/document\.getElementById\s*\(/.test(body),
+      '命中：' + (body.match(/document\.getElementById\s*\([^)]*\)/g) || []).join(' '));
   }
 }
 

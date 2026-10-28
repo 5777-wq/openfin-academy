@@ -16,7 +16,39 @@
   // 背景上的顶层容器：抽屉打开时它们整体 inert，Tab 与点击都进不去
   const BG = ['.masthead', '.ticker', '.shell', '.tabbar'];
 
+  /* ---- 动效样式（抽屉自带的一小块）----
+     抽屉本体的滑入/滑出在 components.css 里（transform + visibility，随 .on 类切换），
+     这里只补「内容的一次性进场」：抽屉滑进来的同时，词条做一小段同向淡入——
+     回答「这东西从哪来」，而不是给面板装发动机。
+     绑在 .drawer.on .drawer-body 上是有讲究的：
+     · 开一次播一次（摘 .on 动画即取消，再开重播）；
+     · 开着的时候重画内容（设置面板切开关会重走 show()）**不会重播**——
+       .drawer-body 元素没换，动画状态还在，读者看到的是内容就地更新。
+     只动 transform/opacity；时长/缓动引用全局变量并带兜底；
+     prefers-reduced-motion 的关闭分支显式写在这里。 */
+  function ensureMotionStyle() {
+    try {
+      if (document.getElementById('style-drawer-motion')) return;
+      const s = document.createElement('style');
+      s.id = 'style-drawer-motion';
+      s.textContent = `
+.drawer.on .drawer-body {
+  animation: drawer-body-in var(--dur-2, 240ms) var(--ease-out, cubic-bezier(.16,1,.3,1)) both;
+}
+@keyframes drawer-body-in {
+  from { opacity: 0; transform: translateX(10px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .drawer.on .drawer-body { animation: none; }
+}
+`;
+      (document.head || document.documentElement).appendChild(s);
+    } catch (e) { /* 注入不了就算了，抽屉照常工作 */ }
+  }
+
   function init(opts) {
+    ensureMotionStyle();
     el = document.getElementById('drawer');
     scrim = document.getElementById('scrim');
     titleEl = document.getElementById('drawer-title');

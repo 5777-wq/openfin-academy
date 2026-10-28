@@ -4,6 +4,43 @@
 
   const esc = (s) => window.Fmt.esc(s);
 
+  /* —— 列表卡 hover 反馈（即时反馈类动效）——
+     六个视图文件（list/article/assets/chain/path/search）各带一份**逐字节相同**的
+     这段样式，共用同一个 id：谁先渲染谁注入，后来者按 id 跳过——不依赖加载顺序。
+     只做三件事：墨色平滑过渡（原本是硬切）、右侧行动文字轻推 2px、
+     左缘金线 scaleY 指示（金色只做指示不做表演）。全程 transform + 颜色过渡，
+     时长与缓动只引用全局变量并带兜底；reduced-motion 下显式关掉过渡
+     （layout.css 顶部的全局关闭分支是第二道保险）。
+     注：规则挂在 .entries .entry 上，home/crisis/term 等页的条目同样受益——
+     全站一张脸，不为某页单独长样。 */
+  const ENTRY_CSS_ID = 'entry-cards-css';
+  const ENTRY_CSS = ''
+    + '.entries .entry{position:relative;transition:background-color var(--dur-1,140ms) var(--ease-in-out,cubic-bezier(.65,0,.35,1));}'
+    + '.entries .entry::before{content:"";position:absolute;left:-9px;top:13px;bottom:13px;width:2px;border-radius:1px;'
+    + 'background:var(--gold);transform:scaleY(0);transform-origin:50% 50%;'
+    + 'transition:transform var(--dur-1,140ms) var(--ease-out,cubic-bezier(.16,1,.3,1));}'
+    + '.entries .entry .e-t{transition:color var(--dur-1,140ms) var(--ease-in-out,cubic-bezier(.65,0,.35,1));}'
+    + '.entries .entry .e-d{transition:color var(--dur-1,140ms) var(--ease-in-out,cubic-bezier(.65,0,.35,1));}'
+    + '.entries .entry .e-m{transition:color var(--dur-1,140ms) var(--ease-in-out,cubic-bezier(.65,0,.35,1)),'
+    + 'transform var(--dur-1,140ms) var(--ease-out,cubic-bezier(.16,1,.3,1));}'
+    + '.entries .entry:hover .e-d,.entries .entry:focus-visible .e-d{color:var(--ink-2);}'
+    + '.entries .entry:hover .e-m,.entries .entry:focus-visible .e-m{color:var(--ink-2);transform:translateX(2px);}'
+    + '.entries .entry:hover::before,.entries .entry:focus-visible::before{transform:scaleY(1);}'
+    + '@media (prefers-reduced-motion:reduce){'
+    + '.entries .entry,.entries .entry::before,.entries .entry .e-t,.entries .entry .e-d,.entries .entry .e-m{transition:none;}'
+    + '}';
+
+  /** 一次性注入 <style>（测试桩里 getElementById 恒真值，自然跳过，零副作用） */
+  function ensureEntryCss() {
+    try {
+      if (document.getElementById(ENTRY_CSS_ID)) return;
+      const st = document.createElement('style');
+      st.id = ENTRY_CSS_ID;
+      st.textContent = ENTRY_CSS;
+      (document.head || document.documentElement).appendChild(st);
+    } catch (e) { /* 注入不了就算了——动效是增强，不是功能 */ }
+  }
+
   const INTRO = {
     concepts: {
       eyebrow: '栏目 01 · 货币与利率',
@@ -38,6 +75,7 @@
   };
 
   function render(view, section) {
+    ensureEntryCss();
     const intro = INTRO[section] || { eyebrow: '', title: '', dek: '' };
     const items = window.Content.bySection(section);
     const cards = items.map((c) => `

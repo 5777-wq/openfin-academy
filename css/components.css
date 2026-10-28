@@ -11,6 +11,12 @@
 .panel.flush { padding: 0; overflow: hidden; }
 /* 首页 hero 用的时代横轴：提示卡会探出面板，所以这一处不裁 */
 .panel.flush.open { overflow: visible; }
+/* 面板一族的统一过渡：只有边框换色（hover 指示、选中态）走
+   --dur-1 + --ease-in-out 的颜色双向过渡；其余时刻面板是静止的——
+   纸感来自「页面是印出来的」，面板不做进场、不做缩放。 */
+.panel, .dpanel, .term, .chain, .replay, .tbl-wrap {
+  transition: border-color var(--dur-1, 140ms) var(--ease-in-out, cubic-bezier(.65, 0, .35, 1));
+}
 .panel-title {
   display: flex; align-items: baseline; gap: var(--s-3);
   padding-bottom: var(--s-3); margin-bottom: var(--s-4);
@@ -28,7 +34,10 @@
   display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 14px;
   border: 1px solid var(--ink); background: var(--ink); color: var(--paper);
   border-radius: var(--r-2); font-size: var(--t-small); font-weight: 500;
-  transition: opacity var(--dur-1), transform var(--dur-1);
+  transition: opacity var(--dur-1, 140ms) var(--ease-out, cubic-bezier(.16, 1, .3, 1)),
+              transform var(--dur-1, 140ms) var(--ease-out, cubic-bezier(.16, 1, .3, 1)),
+              color var(--dur-1, 140ms) var(--ease-in-out, cubic-bezier(.65, 0, .35, 1)),
+              border-color var(--dur-1, 140ms) var(--ease-in-out, cubic-bezier(.65, 0, .35, 1));
 }
 .btn:hover { opacity: .88; text-decoration: none; }
 .btn:active { transform: translateY(1px); }
@@ -87,12 +96,16 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
 }
 .era-node .en-year {
   font-family: var(--font-mono); font-size: 12px; color: var(--ink-3);
-  letter-spacing: .04em; margin-bottom: 9px; transition: color var(--dur-1);
+  letter-spacing: .04em; margin-bottom: 9px;
+  transition: color var(--dur-1, 140ms) var(--ease-in-out, cubic-bezier(.65, 0, .35, 1));
 }
 .era-node .en-dot {
   width: 9px; height: 9px; border-radius: 50%; background: var(--paper);
   border: 1.5px solid var(--ink-4); position: relative; z-index: 2;
-  transition: all var(--dur-2) var(--ease-out);
+  /* 不写 all：只列真正会变的三个属性，别让未来的样式改动意外变成动画 */
+  transition: background-color var(--dur-2, 240ms) var(--ease-in-out, cubic-bezier(.65, 0, .35, 1)),
+              border-color var(--dur-2, 240ms) var(--ease-in-out, cubic-bezier(.65, 0, .35, 1)),
+              transform var(--dur-2, 240ms) var(--ease-out, cubic-bezier(.16, 1, .3, 1));
 }
 .era-node .en-stem { width: 1px; height: 14px; background: var(--rule); }
 /* 相邻年份（如 2020 / 2022）标签会相撞：奇偶节点把标签整块下移一行。
@@ -101,7 +114,7 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
 .era-node.lane-1 .en-label { margin-top: 10px; }
 .era-node .en-label {
   font-size: 13px; color: var(--ink-2); margin-top: 8px; line-height: 1.4;
-  transition: color var(--dur-1);
+  transition: color var(--dur-1, 140ms) var(--ease-in-out, cubic-bezier(.65, 0, .35, 1));
 }
 .era-node .en-stat {
   font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-4); margin-top: 3px;
@@ -176,7 +189,9 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
    TermCard 输出的是块级盒子，包进 <a> 后 <a> 自己也要撑开，
    否则行内元素会把版式挤塌。 */
 .term-link { display: block; text-decoration: none; color: inherit; }
-.term-link .term { transition: border-color var(--dur-1); }
+.term-link .term {
+  transition: border-color var(--dur-1, 140ms) var(--ease-in-out, cubic-bezier(.65, 0, .35, 1));
+}
 .term-link:hover .term { border-color: var(--teal-line); }
 .term-link:hover .term-head .tt { color: var(--teal); }
 .term-link .term-link-more {
@@ -188,7 +203,7 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
 .t-ref {
   border-bottom: 1px dashed var(--gold-line); color: var(--ink); cursor: help;
   background: linear-gradient(transparent 62%, var(--gold-soft) 62%);
-  transition: background var(--dur-1);
+  transition: background-color var(--dur-1, 140ms) var(--ease-in-out, cubic-bezier(.65, 0, .35, 1));
 }
 .t-ref:hover { background: linear-gradient(transparent 40%, var(--gold-soft) 40%); }
 
@@ -208,7 +223,11 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
   /* 关着的抽屉必须真正移出可聚焦序列：只 translate 出去的话，
      里面的「关闭」按钮和上次的词条链接还能被 Tab 到，焦点圈会跑到视口外。 */
   visibility: hidden;
-  transition: transform var(--dur-3) var(--ease-out), visibility var(--dur-3);
+  /* 缓动用 --ease-spring——全站两处可用清单之一（另一处是 .switch::after
+     的拨杆）。开合是状态切换的一瞬，允许这一点点收尾的「落定」感；
+     关出方向越过 100% 的部分都在视口外，看不见。 */
+  transition: transform var(--dur-3, 420ms) var(--ease-spring, cubic-bezier(.34, 1.56, .64, 1)),
+              visibility var(--dur-3, 420ms);
   display: flex; flex-direction: column; box-shadow: var(--sh-3);
 }
 .drawer.on { transform: translateX(0); visibility: visible; }
@@ -261,8 +280,8 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
 .gauges { display: grid; grid-template-columns: repeat(auto-fit, minmax(158px, 1fr)); gap: var(--s-3); }
 
 /* ---------- 迷你柱：分位/强度 ---------- */
-.meter { height: 4px; background: var(--rule-2); border-radius: 2px; overflow: hidden; margin-top: 9px; position: relative; }
-.meter i { position: absolute; inset: 0 auto 0 0; background: var(--teal); border-radius: 2px; }
+.meter { height: 4px; background: var(--rule-2); border-radius: var(--r-1); overflow: hidden; margin-top: 9px; position: relative; }
+.meter i { position: absolute; inset: 0 auto 0 0; background: var(--teal); border-radius: var(--r-1); }
 .meter.gold i { background: var(--gold); }
 .meter .m-mark { position: absolute; top: -2px; bottom: -2px; width: 1px; background: var(--ink-4); }
 
@@ -325,7 +344,7 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
 .entry {
   display: grid; grid-template-columns: 1fr auto; gap: var(--s-3) var(--s-4);
   align-items: baseline; padding: var(--s-4) 0; border-bottom: 1px solid var(--rule-2);
-  transition: background var(--dur-1);
+  transition: background-color var(--dur-1, 140ms) var(--ease-in-out, cubic-bezier(.65, 0, .35, 1));
 }
 .entry:hover { background: var(--sheet); }
 .entry .e-t { font-size: 16.5px; color: var(--ink); font-weight: 600; line-height: 1.5; }
@@ -500,11 +519,11 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
    这只是陈述事实，不是买卖信号——文案里不出现「该买 / 该卖」。 */
 .pbar {
   position: relative; display: block; height: 4px; margin: 4px 0 2px;
-  background: var(--rule-2); border-radius: 2px;
+  background: var(--rule-2); border-radius: var(--r-1);
 }
 .pbar i {
   position: absolute; top: -3px; width: 3px; height: 10px; margin-left: -1.5px;
-  background: var(--gold); border-radius: 2px;
+  background: var(--gold); border-radius: var(--r-1);
 }
 
 /* ============================================================
@@ -523,7 +542,9 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
   display: inline-flex; align-items: baseline; gap: 6px;
   padding: 5px 11px; border: 1px solid var(--rule); border-radius: 999px;
   font-size: var(--t-small); color: var(--ink-2); text-decoration: none;
-  transition: border-color .15s, color .15s, background .15s;
+  transition: border-color var(--dur-1, 140ms) var(--ease-in-out, cubic-bezier(.65, 0, .35, 1)),
+              color var(--dur-1, 140ms) var(--ease-in-out, cubic-bezier(.65, 0, .35, 1)),
+              background-color var(--dur-1, 140ms) var(--ease-in-out, cubic-bezier(.65, 0, .35, 1));
 }
 .ds-tab:hover { color: var(--ink); border-color: var(--ink-4); }
 .ds-tab.active { color: var(--teal); border-color: var(--teal); background: var(--teal-soft); }
@@ -542,8 +563,10 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
 .st-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-2); }
 .starter {
   display: block; padding: var(--s-3);
-  border: 1px solid var(--rule-2); border-radius: var(--r-2, 6px);
-  text-decoration: none; transition: border-color .15s, transform .15s;
+  border: 1px solid var(--rule-2); border-radius: var(--r-2, 3px);
+  text-decoration: none;
+  transition: border-color var(--dur-1, 140ms) var(--ease-in-out, cubic-bezier(.65, 0, .35, 1)),
+              transform var(--dur-1, 140ms) var(--ease-out, cubic-bezier(.16, 1, .3, 1));
 }
 .starter:hover { border-color: var(--ink-4); transform: translateY(-1px); }
 .st-t { display: block; font-size: var(--t-small); font-weight: 500; color: var(--ink); margin-bottom: 3px; }
@@ -601,14 +624,20 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
 .set-note { margin: var(--s-4) 0 0; font-size: var(--t-micro); color: var(--ink-4); line-height: 1.75; }
 .switch {
   flex: none; width: 40px; height: 22px; padding: 0; position: relative;
-  border: 1px solid var(--rule); border-radius: 2px; background: var(--sheet-2);
-  cursor: pointer; transition: background var(--dur-1), border-color var(--dur-1);
+  border: 1px solid var(--rule); border-radius: var(--r-1); background: var(--sheet-2);
+  cursor: pointer;
+  transition: background-color var(--dur-1, 140ms) var(--ease-in-out, cubic-bezier(.65, 0, .35, 1)),
+              border-color var(--dur-1, 140ms) var(--ease-in-out, cubic-bezier(.65, 0, .35, 1));
 }
 /* 命中区：视觉高 22px 不够手指点，用一层透明的伪元素把可点区域撑到 26px */
 .switch::before { content: ''; position: absolute; left: 0; right: 0; top: -2px; bottom: -2px; }
 .switch::after {
   content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px;
-  background: var(--ink-3); transition: transform var(--dur-1) var(--ease-out), background var(--dur-1);
+  background: var(--ink-3);
+  /* 拨杆是 --ease-spring 两处清单之一（另一处是 .drawer 开合）：
+     拨动是状态切换的一瞬，一点落定感；换色仍走颜色双向的 --ease-in-out。 */
+  transition: transform var(--dur-2, 240ms) var(--ease-spring, cubic-bezier(.34, 1.56, .64, 1)),
+              background-color var(--dur-1, 140ms) var(--ease-in-out, cubic-bezier(.65, 0, .35, 1));
 }
 .switch.on { background: var(--gold-soft); border-color: var(--gold-line); }
 .switch.on::after { transform: translateX(18px); background: var(--gold); }
@@ -641,8 +670,8 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
   padding: 7px var(--s-4); border-bottom: 1px solid var(--rule-3); }
 .chain-seg:last-child { border-bottom: 0; }
 .chain-seg .cs-n { font-size: var(--t-small); color: var(--ink-2); }
-.chain-seg .cs-bar { height: 15px; background: var(--rule-2); border-radius: 2px; overflow: hidden; position: relative; }
-.chain-seg .cs-bar i { position: absolute; top: 0; bottom: 0; border-radius: 2px; }
+.chain-seg .cs-bar { height: 15px; background: var(--rule-2); border-radius: var(--r-1); overflow: hidden; position: relative; }
+.chain-seg .cs-bar i { position: absolute; top: 0; bottom: 0; border-radius: var(--r-1); }
 .chain-seg .cs-v { font-family: var(--font-mono); font-size: 11.5px; text-align: right; }
 
 /* ============================================================
@@ -662,8 +691,8 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
 /* ---------- 对比条 ---------- */
 .bench { display: grid; grid-template-columns: 150px 1fr 62px; gap: var(--s-3); align-items: center; padding: 5px 0; }
 .bench-label { font-size: var(--t-small); color: var(--ink-2); }
-.bench-track { height: 15px; background: var(--rule-2); border-radius: 2px; overflow: hidden; }
-.bench-fill { height: 100%; background: var(--teal); border-radius: 2px; }
+.bench-track { height: 15px; background: var(--rule-2); border-radius: var(--r-1); overflow: hidden; }
+.bench-fill { height: 100%; background: var(--teal); border-radius: var(--r-1); }
 .bench-val { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: var(--t-small); text-align: right; color: var(--ink); }
 .bench.gold .bench-fill { background: var(--gold); }
 

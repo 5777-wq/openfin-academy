@@ -23,6 +23,108 @@
 <link rel="stylesheet" href="css/tokens.css?v=20261031">
 <link rel="stylesheet" href="css/layout.css?v=20261031">
 <link rel="stylesheet" href="css/components.css?v=20261031">
+<style>
+/* ============================================================
+   导航与命令面板 · 动效层（叠在三份 css 之后）
+   约定：动效只回答「这东西从哪来」与「我刚刚碰了什么」；
+   只动 transform / opacity；时长与缓动一律引用变量并带兜底；
+   JS 只切类名，过渡与关键帧全部在这里。reduced-motion 的
+   全局关闭分支在 layout.css 顶部，本层末尾再显式关一次。
+   ============================================================ */
+
+/* ---------- 1. 当前项指示：左栏（报头区导航）与底栏的金线 ----------
+   金线只在选中状态切换的一瞬展开/收起（scaleY/scaleX 0→1），
+   不脉冲、不循环。基础态常驻（scale 为 0），类名切换不打断过渡。 */
+.rail-item::before {
+  content: ""; position: absolute; left: -1px; top: 6px; bottom: 6px; width: 2px;
+  background: var(--gold);
+  transform: scaleY(0); transform-origin: top;
+  transition: transform var(--dur-2, 240ms) var(--ease-out, cubic-bezier(.16,1,.3,1));
+}
+.rail-item.on::before { transform: scaleY(1); }
+
+@media (max-width: 860px) {
+  /* 底栏：金线从中点展开。文字与图标的选中换色过渡在 layout.css
+     （颜色双向过渡用 --ease-in-out），这里不写第二份。 */
+  .tabbar button::before {
+    content: ""; position: absolute; top: 0; left: 50%; width: 16px; height: 2px;
+    background: var(--gold);
+    transform: translateX(-50%) scaleX(0);
+    transition: transform var(--dur-2, 240ms) var(--ease-out, cubic-bezier(.16,1,.3,1));
+  }
+  .tabbar button.on::before { transform: translateX(-50%) scaleX(1); }
+}
+
+/* ---------- 2. 命令面板：开合 ----------
+   wrap 常驻布局（覆盖 components.css 的 display:none），
+   开合交给 visibility + 面板自身的 opacity/transform；
+   关闭方向 visibility 延到淡出结束再翻，点击则由 pointer-events 即时挡住。 */
+.palette-wrap {
+  display: block;
+  visibility: hidden;
+  pointer-events: none;
+  transition: visibility 0s linear var(--dur-2, 240ms);
+}
+.palette-wrap.on {
+  visibility: visible;
+  pointer-events: auto;
+  transition: visibility 0s;
+}
+.palette {
+  opacity: 0;
+  transform: translateX(-50%) translateY(10px);
+  transition:
+    opacity var(--dur-2, 240ms) var(--ease-out, cubic-bezier(.16,1,.3,1)),
+    transform var(--dur-2, 240ms) var(--ease-out, cubic-bezier(.16,1,.3,1));
+}
+.palette-wrap.on .palette {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ---------- 3. 换页淡入 ----------
+   route() 每次换页新建一个 .route-host 节点，进场动画随节点
+   插入播放一次：滚动不触发、不重复、不回放。只淡容器，数据不动——
+   位移交给各视图自己的进场动画（fx-page-in 等）。
+   这是唯一一份定义，layout.css 里不再另写（同特异性会互相覆盖）。 */
+@keyframes route-in { from { opacity: 0; } }
+.route-host {
+  animation: route-in var(--dur-2, 240ms) var(--ease-out, cubic-bezier(.16,1,.3,1));
+}
+
+/* ---------- 4. 切肤颜色过渡（T 键） ----------
+   类名由 JS 短暂挂在 body 上（transitionend 即摘，见 app.js），
+   颜色双向过渡用 --ease-in-out、大表面用 --dur-3；
+   !important 只为在挂类期间盖过各组件自己的 transition 声明。 */
+body.theme-anim,
+body.theme-anim *,
+body.theme-anim *::before,
+body.theme-anim *::after {
+  transition:
+    background-color var(--dur-3, 420ms) var(--ease-in-out, cubic-bezier(.65,0,.35,1)),
+    border-color var(--dur-3, 420ms) var(--ease-in-out, cubic-bezier(.65,0,.35,1)),
+    color var(--dur-3, 420ms) var(--ease-in-out, cubic-bezier(.65,0,.35,1)),
+    fill var(--dur-3, 420ms) var(--ease-in-out, cubic-bezier(.65,0,.35,1)),
+    stroke var(--dur-3, 420ms) var(--ease-in-out, cubic-bezier(.65,0,.35,1)),
+    box-shadow var(--dur-3, 420ms) var(--ease-in-out, cubic-bezier(.65,0,.35,1)) !important;
+}
+
+/* ---------- reduced-motion：本层动效全部关闭 ----------
+   layout.css 顶部的全局兜底不覆盖 transition-delay，也不与
+   带 !important 的声明比大小，所以这里按本层再显式关一次。 */
+@media (prefers-reduced-motion: reduce) {
+  .rail-item::before,
+  .tabbar button::before,
+  .palette,
+  .route-host { transition: none; animation: none; }
+  .palette-wrap,
+  .palette-wrap.on { transition: none; }
+  body.theme-anim,
+  body.theme-anim *,
+  body.theme-anim *::before,
+  body.theme-anim *::after { transition: none !important; }
+}
+</style>
 <script>
 /* 启动期错误可见化：把异常写进标题与页脚，方便定位（不吞错误，只让它可见） */
 window.__ofaErrors = [];

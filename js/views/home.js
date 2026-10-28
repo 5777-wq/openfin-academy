@@ -5,14 +5,52 @@
   const esc = (s) => window.Fmt.esc(s);
   const F = () => window.Fmt;
 
-  /** 仪表卡片：实时读数 + 一句"这是什么" */
+  /* ------------------------------------------------------------------
+     动效样式（随视图注入一次）：
+     1) 区块进场次序（stagger）：换页/首次渲染时各区块按 --h-sec-i 依次
+        显影——「这东西从哪来」只回答这一次，滚动不触发、不回放；
+     2) 仪表读数到达：只有「占位 → 真数据」这一次状态切换给淡入，
+        数字本体永不动画（不滚动、不闪烁），30 秒轮询换数时屏幕静止。
+     规则：只动 transform / opacity；时长缓动一律引用设计令牌并带兜底值；
+     prefers-reduced-motion 下显式关闭（layout.css 的全局关闭是兜底，
+     这里声明本表面自己的意图，避免 backwards 填充被 delay 拖住）。
+     ------------------------------------------------------------------ */
+  const MOTION_CSS = `
+.h-sec {
+  animation: h-sec-in var(--dur-2, 240ms) var(--ease-out, cubic-bezier(.16,1,.3,1)) backwards;
+  animation-delay: calc(var(--dur-1, 140ms) * var(--h-sec-i, 0));
+}
+@keyframes h-sec-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+.dpanel.dp-arrive {
+  animation: dp-arrive-in var(--dur-2, 240ms) var(--ease-out, cubic-bezier(.16,1,.3,1)) backwards;
+}
+@keyframes dp-arrive-in { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .h-sec, .dpanel.dp-arrive { animation: none; }
+}
+`;
+
+  function ensureMotionCss() {
+    if (document.getElementById('home-motion-css')) return;
+    const el = document.createElement('style');
+    el.id = 'home-motion-css';
+    el.textContent = MOTION_CSS;
+    (document.head || document.documentElement).appendChild(el);
+  }
+
+  /** 仪表卡片：实时读数 + 一句"这是什么"。
+      dp-wait = 数据未到的占位卡（只作标记，供下一次 paintGauges 识别
+      「占位 → 真数据」这一次状态切换）；dp-arrive = 刚拿到数的克制淡入。 */
   function gaugeCard(cfg) {
     const q = cfg.fetch();
     if (!q) {
       /* 加载失败之后这里一直写「数据加载中」——读者以为页面卡住了。
          行情源已经试过一轮还拿不到数，就直说连不上，别让人干等。 */
       const tried = !!(window.Quotes.state && window.Quotes.state.source);
-      return `<div class="dpanel">
+      return `<div class="dpanel dp-wait" data-key="${esc(cfg.key)}">
         <div class="dp-k">${esc(cfg.name)}</div>
         <div class="dp-v">--</div>
         <div class="dp-d muted">${tried ? '行情暂时连不上' : '数据加载中'}</div>
@@ -20,7 +58,7 @@
     }
     const d = F().dir(q.pct);
     const pctTxt = q.pct === null ? '--' : F().pct(q.pct);
-    return `<div class="dpanel${cfg.hot ? ' hot' : ''}">
+    return `<div class="dpanel${cfg.hot ? ' hot' : ''}${cfg.arrive ? ' dp-arrive' : ''}" data-key="${esc(cfg.key)}">
       <div class="dp-k">${esc(cfg.name)}${cfg.unit ? ` <span class="muted">${esc(cfg.unit)}</span>` : ''}</div>
       <div class="dp-v">${F().num(q.price, q.digits)}</div>
       <div class="dp-d ${d}">${pctTxt} <span class="muted">当日</span></div>
@@ -37,13 +75,23 @@
     { name: '上证指数', unit: '', key: 'sh000001', digits: 2, href: '#/term/sse-index', link: '大A 的「大盘」指什么' },
   ];
 
-  /** 只重绘仪表区：行情到达时补上，不动整页 */
+  /** 只重绘仪表区：行情到达时补上，不动整页。
+      只有上一轮还是占位卡（dp-wait）的槽位，这次拿到数才淡入一次；
+      之后轮询换数字是静默替换——数字本体永不动画。 */
   function paintGauges() {
     const box = document.getElementById('home-gauges');
     if (!box) return;
     const G = window.Quotes;
+    const wasWaiting = new Set();
+    if (typeof box.querySelectorAll === 'function') {
+      box.querySelectorAll('.dpanel.dp-wait[data-key]').forEach((el) => {
+        const k = el.getAttribute && el.getAttribute('data-key');
+        if (k) wasWaiting.add(k);
+      });
+    }
     box.innerHTML = GAUGES.map((g) => gaugeCard({
       name: g.name, unit: g.unit, digits: g.digits, hot: g.hot, href: g.href, link: g.link,
+      key: g.key, arrive: wasWaiting.has(g.key),
       fetch: () => G.get(g.key),
     })).join('');
   }
@@ -74,6 +122,12 @@
   function render(view) {
     const G = window.Quotes;
 
+    ensureMotionCss();
+
+    // 区块进场序号：同一次渲染内递增，条件区块不出现就不占号
+    let secI = 0;
+    const si = () => `--h-sec-i:${secI++};`;
+
     const glossary = window.Content.glossary();
     const termIds = Object.keys(glossary);
     const pick = pickTodayTerm(termIds);
@@ -96,7 +150,7 @@
     const reports = window.Content.list().filter((a) => a.section === 'reports');
 
     view.innerHTML = `
-      <section class="panel flush open" style="border:0;background:transparent;padding:0">
+      <section class="panel flush open h-sec" style="${si()}border:0;background:transparent;padding:0">
         <div class="art-head" style="margin-bottom:var(--s-5)">
           <div class="eyebrow">${esc(F().cnDateWithWeek(F().today()))} · 第 ${dayOfYear()} 天</div>
           <h1 style="font-size:var(--t-hero);line-height:1.32;letter-spacing:-.015em;margin-bottom:var(--s-3)">
@@ -115,17 +169,17 @@
 
       ${(window.Site && window.Site.disclaimer) ? window.Site.disclaimer.GENERIC : ''}
 
-      <section style="margin-top:var(--s-7)">
+      <section class="h-sec" style="${si()}margin-top:var(--s-7)">
         <div class="eyebrow">实时仪表 <span class="muted" id="gauge-src" style="margin-left:auto;text-transform:none;letter-spacing:0"></span></div>
         <div class="gauges" id="home-gauges"></div>
       </section>
 
-      <section style="margin-top:var(--s-7)">
+      <section class="h-sec" style="${si()}margin-top:var(--s-7)">
         <div class="eyebrow">今日一词</div>
         ${termHtml || '<div class="empty"><div class="et">术语库正在补充</div></div>'}
       </section>
 
-      ${family.length ? `<section style="margin-top:var(--s-7)">
+      ${family.length ? `<section class="h-sec" style="${si()}margin-top:var(--s-7)">
         <div class="eyebrow">给家里人的那份说明书</div>
         <div class="entries">
           ${family.map((f) => `<a class="entry" href="#/family/${esc(f.id)}">
@@ -138,7 +192,7 @@
         </div>
       </section>` : ''}
 
-      ${reports.length ? `<section style="margin-top:var(--s-7)">
+      ${reports.length ? `<section class="h-sec" style="${si()}margin-top:var(--s-7)">
         <div class="eyebrow">读懂财报</div>
         <div class="entries">
           ${reports.map((f) => `<a class="entry" href="#/reports/${esc(f.id)}">
@@ -151,21 +205,21 @@
         </div>
       </section>` : ''}
 
-      <section style="margin-top:var(--s-7)">
+      <section class="h-sec" style="${si()}margin-top:var(--s-7)">
         <div class="eyebrow">先把基础打完</div>
         <div class="entries">
           ${latestConcept.map((c) => entryRow(c)).join('')}
         </div>
       </section>
 
-      <section style="margin-top:var(--s-7)">
+      <section class="h-sec" style="${si()}margin-top:var(--s-7)">
         <div class="eyebrow">以史为鉴</div>
         <div class="entries">
           ${latestCrisis.map((c) => entryRow(c)).join('')}
         </div>
       </section>
 
-      <section class="lens-only" style="margin-top:var(--s-7)">
+      <section class="lens-only h-sec" style="${si()}margin-top:var(--s-7)">
         <div class="panel" style="display:flex;gap:var(--s-4);align-items:center;flex-wrap:wrap">
           <div style="flex:1 1 260px">
             <div class="eyebrow">实时行情终端</div>

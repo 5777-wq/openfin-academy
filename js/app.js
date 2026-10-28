@@ -665,9 +665,43 @@
     const meta = document.querySelector('meta[name=theme-color]');
     if (meta) meta.setAttribute('content', t === 'night' ? '#14191C' : '#F2EAE6');
   }
+
+  function prefersReducedMotion() {
+    try {
+      return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    } catch (e) { return false; }
+  }
+
+  /* T 键切肤时的颜色过渡：过渡全在 CSS（body.theme-anim，写在 index.html 动效层），
+     JS 只挂类/摘类。摘类靠 transitionend 事件——那个兜底计时器只在事件
+     迟迟不来时收尾清类（此时过渡已按 CSS 时长结束，摘类不产生任何视觉变化，
+     不是在驱动动画）；prefers-reduced-motion 时干脆不挂类，颜色瞬切。 */
+  let themeFadeOff = null;
+  function fadeThemeColors() {
+    if (prefersReducedMotion()) return;
+    const body = document.body;
+    if (!body || !body.classList) return;
+    if (themeFadeOff) themeFadeOff();   // 上一次还没收尾就又切：先归位再重来
+    body.classList.add('theme-anim');
+    const off = () => {
+      body.classList.remove('theme-anim');
+      body.removeEventListener('transitionend', onEnd);
+      if (tid) clearTimeout(tid);
+      themeFadeOff = null;
+    };
+    const onEnd = (e) => {
+      // 只认颜色类属性的结束；width 之类（如滚动进度条）不许提前收场
+      if (e && e.propertyName && /color|fill|stroke|shadow/i.test(e.propertyName)) off();
+    };
+    let tid = setTimeout(off, 500);
+    body.addEventListener('transitionend', onEnd);
+    themeFadeOff = off;
+  }
+
   function toggleTheme() {
     const t = window.Store.get('theme') === 'night' ? 'day' : 'night';
     window.Store.set('theme', t);
+    fadeThemeColors();
     applyTheme();
   }
 
@@ -677,7 +711,7 @@
     const max = doc.scrollHeight - doc.clientHeight;
     const p = max > 0 ? (doc.scrollTop / max) * 100 : 0;
     const bar = document.getElementById('progress');
-    if (bar) bar.style.width = p.toFixed(2) + '%';
+    if (bar) bar.style.transform = 'scaleX(' + (p / 100).toFixed(4) + ')';
     const top = document.getElementById('to-top');
     if (top) {
       const show = doc.scrollTop > 500;

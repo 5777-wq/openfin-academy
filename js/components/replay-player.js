@@ -23,6 +23,50 @@
   let pinned = null;   // 用户点选的事件：它的说明优先显示（游标离开 ±20 天后自动失效）
   let geoms = [];     // 每条序列的对齐值 + 画图几何（render 时算一次，setIdx 直接复用）
   let ro = null;      // 刻度标签避让用的观察器：离开页面必须断开，否则一直挂着
+  let dragHost = null; // 拖动态挂在哪个容器上：换包/离开页面时要把 rp-dragging 类摘干净
+
+  /* 动效约章（全站原则在本组件的落地；随组件注入，选择器都被 .replay / 状态类限定住）：
+     —— 指针拖动期间零过渡：.rp-dragging 把游标一族（金竖线 / 回撤线 / 现值点）的
+        transition 一刀切断，每一帧都跟手；
+     —— 松手之后的「状态切换一瞬」（点事件跳转、方向键步进、跨进/跨出回撤区间）
+        才允许过渡：金竖线按 --dur-2 滑到新位置，回撤金线淡入淡出（绘制动效）；
+     —— 自动播放期间同样禁过渡（.rp-playing）：数据每格 420ms 跳一次，
+        过渡只会让金线永远慢半拍、和现值点脱节；
+     —— 数据轨道（曲线、面积、基准线）永不动画；播放键只做双图标交叠淡切；
+     —— 颜色双向过渡用 --ease-in-out，位移/透明度用 --ease-out；
+        时长/缓动一律引用设计系统变量并带兜底值。
+     prefers-reduced-motion 下 layout.css:7-13 的全局关闭分支已兜底，这里再显式关一次。 */
+  const MOTION_CSS = [
+    '.replay .rt-cur{transition:transform var(--dur-2,240ms) var(--ease-out,cubic-bezier(.16,1,.3,1)),opacity var(--dur-2,240ms) var(--ease-out,cubic-bezier(.16,1,.3,1))}',
+    '.replay .rt-dd{transition:opacity var(--dur-2,240ms) var(--ease-out,cubic-bezier(.16,1,.3,1))}',
+    '.replay .rp-btn .rp-ic{grid-area:1/1;transition:opacity var(--dur-1,140ms) var(--ease-out,cubic-bezier(.16,1,.3,1)),transform var(--dur-1,140ms) var(--ease-out,cubic-bezier(.16,1,.3,1))}',
+    '.replay .rp-btn .rp-ic-pause{opacity:0;transform:scale(.55)}',
+    '.replay .rp-btn.playing .rp-ic-pause{opacity:1;transform:none}',
+    '.replay .rp-btn.playing .rp-ic-play{opacity:0;transform:scale(.55)}',
+    '.replay .rp-event .re-d,.replay .rp-event .re-t{transition:color var(--dur-1,140ms) var(--ease-in-out,cubic-bezier(.65,0,.35,1))}',
+    '.rp-dragging .rt-cur,.rp-dragging .rt-dd,.rp-dragging .rt-now{transition:none!important}',
+    '.rp-playing .rt-cur{transition:none!important}',
+    '@media (prefers-reduced-motion: reduce){.replay .rt-cur,.replay .rt-dd,.replay .rt-now,.replay .rp-btn .rp-ic,.replay .rp-event .re-d,.replay .rp-event .re-t{transition:none}}',
+  ].join('');
+
+  /** 拖动态收尾：摘类 + 撤 window 监听。幂等，随便调。 */
+  function endDrag() {
+    if (dragHost) { dragHost.classList.remove('rp-dragging'); dragHost = null; }
+    if (typeof window.removeEventListener === 'function') {
+      window.removeEventListener('pointerup', endDrag);
+      window.removeEventListener('pointercancel', endDrag);
+    }
+  }
+
+  /** 指针按下滑块：游标一族进入「零过渡、逐帧跟手」状态，直到松手/取消 */
+  function beginDrag(box) {
+    dragHost = box;
+    box.classList.add('rp-dragging');
+    if (typeof window.addEventListener === 'function') {
+      window.addEventListener('pointerup', endDrag);
+      window.addEventListener('pointercancel', endDrag);
+    }
+  }
 
   /** 收益率类序列：单位是 %，变化用「百分点」而不是「百分比」 */
   const YIELD_RE = /^(US2Y|US3M|US5Y|US7Y|US10Y|US20Y|US30Y)$/;
@@ -117,9 +161,11 @@
 
     container.innerHTML = `
       <div class="replay">
+        <style>${MOTION_CSS}</style>
         <div class="replay-head">
           <button class="rp-btn" id="rp-play" aria-label="播放">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            <svg class="rp-ic rp-ic-play" width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+            <svg class="rp-ic rp-ic-pause" width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
           </button>
           <span class="rp-title">${esc(data.title || '危机回放')}</span>
           <span class="tag">${esc(data.freq === 'D' ? '日频' : '月频')}</span>
@@ -150,7 +196,14 @@
     setIdx(0);
 
     const range = q('rp-range');
-    if (range) range.addEventListener('input', (e) => { pause(); setIdx(Number(e.target.value)); });
+    if (range) {
+      range.addEventListener('input', (e) => { pause(); setIdx(Number(e.target.value)); });
+      // 跟手性：指针一按下去，游标一族立刻进入零过渡状态，逐帧贴着手指走；
+      // 过渡只在松手之后的状态切换（点事件、方向键、跨回撤分水岭）里出现。
+      range.addEventListener('pointerdown', () => beginDrag(container));
+      // 键盘改值 / 指针拖动提交都会走 change：幂等收尾，保证 rp-dragging 不会挂着过夜
+      range.addEventListener('change', endDrag);
+    }
 
     const play = q('rp-play');
     if (play) play.addEventListener('click', () => { playing ? pause() : start(); });
@@ -376,8 +429,10 @@
       const y = g.Y(v);
 
       if (cur) {
-        cur.setAttribute('x1', x.toFixed(3));
-        cur.setAttribute('x2', x.toFixed(3));
+        // 游标横移走 CSS transform（SVG 里的 px 即用户坐标单位）：
+        // 拖动中被 .rp-dragging 切断过渡、逐帧跟手；非拖动的跳转
+        // （点事件 / 方向键）按 --dur-2 滑过去——状态切换的一瞬才有过渡。
+        cur.style.transform = 'translateX(' + x.toFixed(3) + 'px)';
         cur.setAttribute('opacity', '1');
       }
       if (now) {
@@ -443,10 +498,20 @@
     }
   }
 
+  /** 播放键的状态表达：JS 只切类名与标签，图标交叠淡切交给上面的 MOTION_CSS。
+      自动播放期间给宿主挂 .rp-playing：游标不做逐格过渡，数据跳一格就是一格。 */
+  function setPlayingUI(on) {
+    const btn = q('rp-play');
+    if (btn) {
+      btn.classList.toggle('playing', on);
+      btn.setAttribute('aria-label', on ? '暂停' : '播放');
+    }
+    if (host) host.classList.toggle('rp-playing', on);
+  }
+
   function start() {
     pause();
-    const btn = q('rp-play');
-    if (btn) btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
+    setPlayingUI(true);
     playing = setInterval(() => {
       // 页面已经换走了（宿主脱离文档）：别再空转，把定时器拆掉
       if (!mounted()) { stop(); return; }
@@ -460,15 +525,15 @@
   /** 只停自动播放：包还在，滑块还能拖 */
   function pause() {
     if (playing) { clearInterval(playing); playing = null; }
-    const btn = q('rp-play');
-    if (btn) btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+    setPlayingUI(false);
   }
 
-  /** 彻底停掉：定时器、观察器、宿主引用全清。
+  /** 彻底停掉：定时器、观察器、拖动态、宿主引用全清。
       离开危机页必须调用——不然 pkg/host 一直挂着，
       全局方向键会在别的页面继续 preventDefault，把默认行为吞掉。 */
   function stop() {
     pause();
+    endDrag();
     if (ro) { try { ro.disconnect(); } catch (e) { /* 忽略 */ } ro = null; }
     pkg = null; dates = []; idx = 0; host = null; geoms = []; pinned = null;
   }
