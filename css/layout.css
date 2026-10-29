@@ -428,3 +428,31 @@ body[data-theme="night"] {
 @media (max-width: 860px) {
   .hero-br { display: none; }
 }
+
+/* ============================================================
+   左栏滑动选中块（Telegram 式）
+   —— 只有一个胶囊在移动，不是每一项各自闪底色。
+   ============================================================ */
+.rail { position: sticky; isolation: isolate; }
+.rail-pill {
+  position: absolute; left: 0; right: 4px; top: 0; height: 36px;
+  border-radius: 12px; background: var(--teal);
+  box-shadow: 0 8px 18px -10px color-mix(in srgb, var(--teal) 80%, transparent);
+  opacity: 0; pointer-events: none; z-index: 0;
+  transform: translateY(0);
+  will-change: transform, height;
+}
+.rail-pill.ready {
+  transition:
+    transform 260ms var(--ease-out, cubic-bezier(.16,1,.3,1)),
+    height 260ms var(--ease-out, cubic-bezier(.16,1,.3,1)),
+    opacity 120ms linear;
+}
+.rail-group, .rail-sister { position: relative; z-index: 1; }
+.rail-item { position: relative; z-index: 1; background: transparent; }
+.rail-item.on {
+  background: transparent; box-shadow: none; color: #fff;
+}
+.rail-item.on:hover { background: transparent; }
+.rail-item.on .ri-n, .rail-item.on .ri-c { color: rgba(255,255,255,.72); }
+.rail-item { transition: color 160ms var(--ease-in-out, cubic-bezier(.65,0,.35,1)), background-color 160ms var(--ease-in-out, cubic-bezier(.65,0,.35,1)); }

@@ -86,7 +86,7 @@
       label: g.label,
       items: g.ids.map((id) => NAV.find((x) => x.id === id)).filter(Boolean),
     }));
-    rail.innerHTML = groups.map((g) => `
+    rail.innerHTML = '<span class="rail-pill" id="rail-pill" aria-hidden="true"></span>' + groups.map((g) => `
       <div class="rail-group">
         <div class="rail-label">${esc(g.label)}</div>
         ${g.items.map((it) => {
@@ -159,14 +159,51 @@
   }
 
   function markActive(path) {
+    /* 数据台账/序列也在「查词」里选「速查表」：否则进 #/status 时整条左栏
+       一个选中项都没有，读者会以为导航丢了。 */
+    const navPath = (path.indexOf('/status') === 0 || path.indexOf('/series/') === 0) ? '/data' : path;
+    let activeEl = null;
     document.querySelectorAll('.rail-item').forEach((a) => {
       const p = a.dataset.path;
-      const on = p === '/' ? path === '/' : path.indexOf(p) === 0;
+      const on = p === '/' ? navPath === '/' : navPath.indexOf(p) === 0;
       a.classList.toggle('on', on);
+      if (on) activeEl = a;
       // 读屏用户要知道自己在哪一栏：当前这一项要标出来
       if (on) a.setAttribute('aria-current', 'page');
       else a.removeAttribute('aria-current');
     });
+
+    /* Telegram 式滑动选中块：一个胶囊在左栏里平滑移动，而不是每一项
+       各自闪一下底色。位置用 transform，不触发布局。 */
+    const rail = document.getElementById('rail');
+    const pill = document.getElementById('rail-pill');
+    if (rail && pill) {
+      let pillY = null;
+      let pillH = 0;
+      if (activeEl && rail.getBoundingClientRect && activeEl.getBoundingClientRect) {
+        const rr = rail.getBoundingClientRect();
+        const ar = activeEl.getBoundingClientRect();
+        if (ar.height) {
+          pillY = ar.top - rr.top + rail.scrollTop;
+          pillH = ar.height;
+        }
+      } else if (activeEl && typeof activeEl.offsetTop === 'number' && activeEl.offsetHeight) {
+        pillY = activeEl.offsetTop;
+        pillH = activeEl.offsetHeight;
+      }
+      if (pillY !== null) {
+        pill.style.height = pillH + 'px';
+        pill.style.transform = 'translateY(' + pillY + 'px)';
+        pill.style.opacity = '1';
+        if (!pill.classList.contains('ready') && typeof requestAnimationFrame === 'function') {
+          requestAnimationFrame(() => pill.classList.add('ready'));
+        } else {
+          pill.classList.add('ready');
+        }
+      } else {
+        pill.style.opacity = '0';
+      }
+    }
     document.querySelectorAll('#tabbar button').forEach((b) => {
       const p = b.dataset.path;
       const on = p === '/' ? path === '/' : path.indexOf(p) === 0;
@@ -1058,6 +1095,9 @@
 
     document.addEventListener('keydown', onKey);
     window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', () => {
+      try { markActive(window.Router.parse(location.hash).path); } catch (e) { /* 忽略 */ }
+    });
     onScroll();
 
     /* 动效收敛：不再做点按涟漪/位移动画；反馈交给颜色与阴影。 */
