@@ -177,9 +177,9 @@
             <span><i class="lg lg-base"></i>区间起点基准线</span>
             <span><i class="lg lg-peak"></i>峰值</span>
             <span><i class="lg lg-dd"></i>峰值到此刻的回撤</span>
-            <span class="rp-legend-hint">右栏：现价 · 较起点 · 距峰值</span>
+            <span class="rp-legend-hint">右栏：现价 · 较起点 · 距此前最高</span>
           </div>
-          <p class="rp-hint">纵轴按每条序列自己的最高、最低铺满整行——行与行之间可以直接比跌幅。金圈是本区间内的最高点；「距峰值」＝现在离那个最高点还差多少。</p>
+          <p class="rp-hint">纵轴按每条序列自己的最高、最低铺满整行——行与行之间可以直接比跌幅。金圈是本区间内的最高点；「距此前最高」＝现在离游标之前出现过的最高点还差多少；全区间峰值用金圈标出。</p>
           <div id="rp-rows"></div>
           <div class="rp-scrub">
             <input type="range" id="rp-range" min="0" max="${dates.length - 1}" value="0" step="1" aria-label="时间轴">
@@ -193,7 +193,10 @@
     drawRows();
     drawMarks();
     drawEvents();
-    setIdx(0);
+    // 起点对齐：各市场交易日不同，第一根日期上有些序列还没有值。
+    // 从「最后一条序列也开始有数据」的那天起步，右栏不会一上来就是一片 --。
+    const startIdx = geoms.reduce((m, g) => Math.max(m, g && g.first ? g.first.i : 0), 0);
+    setIdx(startIdx);
 
     const range = q('rp-range');
     if (range) {
@@ -394,9 +397,17 @@
       const start = g.first.v;
 
       let chg = null, dd = null;
+      /* 「距峰值」只能跟**游标之前**的最高点比。全区间峰值可能在游标之后，
+         拿它来算会提前泄露未来，还会出现「刚开盘就距峰值 -18%」这种读数。 */
+      let runPeak = null, runPeakIdx = -1;
+      for (let k = 0; k <= idx; k++) {
+        const kv = g.vals[k];
+        if (kv === null || kv === undefined) continue;
+        if (!runPeak || kv > runPeak.v) { runPeak = { v: kv, i: k }; runPeakIdx = k; }
+      }
       if (v !== null && v !== undefined) {
         chg = yld ? (v - start) : ((v / start - 1) * 100);
-        dd = yld ? (v - g.peak.v) : ((v / g.peak.v - 1) * 100);
+        dd = (runPeak && runPeak.v) ? (yld ? (v - runPeak.v) : ((v / runPeak.v - 1) * 100)) : null;
       }
 
       const el = q('val-' + s.key);
@@ -407,9 +418,9 @@
           : (yld ? (dd > 0 ? '+' : '') + dd.toFixed(2) + 'pp' : f.pct(dd));
         el.innerHTML = `<b>${f.num(v, s.digits)}</b>`
           + `<span class="d ${f.dir(chg)}">较起点 ${chgTxt}</span>`
-          + `<span class="dd ${f.dir(dd)}">距峰值 ${ddTxt}</span>`;
+          + `<span class="dd ${f.dir(dd)}">距此前最高 ${ddTxt}</span>`;
         if (v !== null && v !== undefined) {
-          spoken.push(`${s.name} ${f.num(v, s.digits)}，距峰值 ${ddTxt}`);
+          spoken.push(`${s.name} ${f.num(v, s.digits)}，距此前最高 ${ddTxt}`);
         }
       }
 
@@ -442,8 +453,9 @@
       }
       // 回撤段：峰值 → 游标。那根斜线就是"跌了多少"。
       if (ddEl) {
-        if (g.peak.i <= idx && v < g.peak.v) {
-          ddEl.setAttribute('d', 'M' + g.peakX.toFixed(2) + ' ' + g.peakY.toFixed(2)
+        if (runPeakIdx >= 0 && runPeakIdx < idx && v < runPeak.v) {
+          const px = g.X(runPeakIdx), py = g.Y(runPeak.v);
+          ddEl.setAttribute('d', 'M' + px.toFixed(2) + ' ' + py.toFixed(2)
             + 'L' + x.toFixed(2) + ' ' + y.toFixed(2));
           ddEl.setAttribute('opacity', '1');
         } else {

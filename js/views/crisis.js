@@ -6,7 +6,7 @@
   const F = () => window.Fmt;
 
   /** 已知的危机包 id（与 _scripts/collect-history.mjs 的 CRISIS_DEFS 对应） */
-  const PKG_IDS = ['1987', '1990', '1994', '1998', '2008'];
+  const PKG_IDS = ['1987', '1990', '1994', '1998', '2008', '2020', '2022'];
 
   /** 轻量索引：列表页只读这个，不加载几百 KB 的完整包 */
   async function loadIndex() {

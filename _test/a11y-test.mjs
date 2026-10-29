@@ -220,6 +220,8 @@ const SCRIPTS = [
   'vendor/core/industry-chains.js',
   'vendor/core/academy-gloss.js',
   'js/site/format.js',
+  'js/site/jsonld.js',
+  'js/site/pwa.js',
   'js/site/net.js',
   'js/site/cross.js',
   'js/site/disclaimer.js',
@@ -228,11 +230,11 @@ const SCRIPTS = [
   'js/engine/series.js',
   'js/engine/percentile.js',
   'js/engine/drawdown.js',
-  'js/engine/spread.js',
-  'js/engine/similarity.js',
-  'js/engine/analogy.js',
   'js/engine/crisis.js',
   'js/engine/instrument.js',
+  'js/engine/spread.js',
+  'js/engine/analogy.js',
+  'js/engine/compare.js',
   'js/sources/quotes.js',
   'js/sources/history.js',
   'js/site/content.js',
@@ -241,6 +243,7 @@ const SCRIPTS = [
   'js/components/era-timeline.js',
   'js/components/replay-player.js',
   'js/components/chain-heat.js',
+  'js/components/series-chart.js',
   'js/views/home.js',
   'js/views/list.js',
   'js/views/assets.js',
@@ -250,6 +253,14 @@ const SCRIPTS = [
   'js/views/path.js',
   'js/views/term.js',
   'js/views/search.js',
+  'js/views/compare.js',
+  'js/views/curve.js',
+  'js/views/analogy.js',
+  'js/views/calc.js',
+  'js/views/saved.js',
+  'js/views/tag.js',
+  'js/views/quiz.js',
+  'js/views/series.js',
   'js/app.js',
 ];
 
@@ -532,7 +543,7 @@ async function main() {
      5. 正文按需加载：23 篇逐一取回，正文一个字都不能少
      ============================================================ */
   const items = sandbox.Content.list();
-  ok('内容索引有 23 篇', items.length === 23, '实际 ' + items.length);
+  ok('内容索引至少 23 篇（随内容增长）', items.length >= 23, '实际 ' + items.length);
   let missing = 0, noBody = 0;
   for (const it of items) {
     const art = await sandbox.Content.ensureArticle(it.id);
@@ -540,7 +551,7 @@ async function main() {
     const got = sandbox.Content.article(it.id);
     if (!got || !got.body || !got.body.length) noBody++;
   }
-  ok('23 篇正文都取得到', missing === 0, missing + ' 篇取不到');
+  ok('每篇正文都取得到', missing === 0, missing + ' 篇取不到');
   ok('取回来之后 Content.article() 拿得到完整正文', noBody === 0, noBody + ' 篇正文是空的');
   const one = sandbox.Content.article(items[0].id);
   ok('正文里确实有内容', !!(one && one.body && one.body.length > 200),
@@ -579,7 +590,7 @@ async function main() {
         (rows.match(/aria-label="[^"]*"/) || [])[0] || '(没有 aria-label)');
       sandbox.ReplayPlayer.jumpTo('2008-09-15');
       ok('播报区说了日期', /2008-09-15/.test(live.textContent || ''), live.textContent || '(空)');
-      ok('播报区说了距峰值多少', /距峰值/.test(live.textContent || ''), live.textContent || '(空)');
+      ok('播报区说了距此前最高多少', /距此前最高/.test(live.textContent || ''), live.textContent || '(空)');
       ok('滑块的值念得出来', getElementById('rp-range').getAttribute('aria-valuetext') === '2008-09-15',
         'aria-valuetext=' + getElementById('rp-range').getAttribute('aria-valuetext'));
       sandbox.ReplayPlayer.stop();

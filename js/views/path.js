@@ -77,6 +77,10 @@
           <span class="small muted" style="margin-left:auto">${pct}%</span>
         </div>
         <div class="meter gold"><i style="width:${pct}%"></i></div>
+        <div style="display:flex;flex-wrap:wrap;gap:var(--s-2);margin-top:var(--s-3)">
+          <a class="btn ghost sm" href="#/quiz">自测 5 题 →</a>
+          <a class="btn ghost sm" href="#/saved">收藏与阅读记录 →</a>
+        </div>
       </div>
 
       <div class="entries">

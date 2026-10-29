@@ -5,6 +5,7 @@
   const KEY = 'ofa_';
   const defaults = {
     theme: 'day',            // day | night
+    themeAuto: true,         // 首次访问跟随系统，用户手动切换后关闭
     updown: 'red',           // red（红涨绿跌，中式） | green
     lens: true,              // 是否显示「去行情终端」的跨站链接
     pathDone: {},            // 新手路径：lessonId → true
@@ -48,6 +49,15 @@
     set('recent', r.slice(0, 12));
   }
 
+  /** 记一次阅读：最近列表 + 读过的时间。收藏页用它显示「今天 / 昨天 / N 天前」。 */
+  function touchRead(id) {
+    if (!id) return;
+    const at = Object.assign({}, read().readAt || {});
+    at[id] = Date.now();
+    set('readAt', at);
+    pushRecent(id);
+  }
+
   function isDone(id) { return !!(read().pathDone || {})[id]; }
 
   function setDone(id, done) {
@@ -70,5 +80,5 @@
     return i < 0;
   }
 
-  window.Store = { get, set, toggle, pushRecent, isDone, setDone, doneCount, isBookmarked, toggleBookmark, defaults };
+  window.Store = { get, set, toggle, pushRecent, touchRead, isDone, setDone, doneCount, isBookmarked, toggleBookmark, defaults };
 })();

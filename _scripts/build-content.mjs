@@ -28,7 +28,9 @@ async function resolvePlaceholders(raw) {
     const j = seriesCache.get(sid);
     const pt = (j.points || []).find((x) => String(x.t).startsWith(month));
     if (!pt) throw new Error(`占位符解析失败：${sid} 在 ${month} 没有月末点`);
-    return Number(pt.v).toFixed(2);
+    // 输出 markdown 链接：数字本身不变，但读者能点开看这条序列的来源、图表与原始 JSON。
+    // 站内路由 #/series/<id> 就是 data/history/<id>.json 的展示页。
+    return '[' + Number(pt.v).toFixed(2) + '](#/series/' + sid + ')';
   });
 }
 

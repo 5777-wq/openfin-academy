@@ -191,7 +191,7 @@
       <div class="prose">${html}</div>
 
       ${(m.tags && m.tags.length) ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:var(--s-6)">
-        ${m.tags.map((t) => `<span class="tag">${esc(t)}</span>`).join('')}</div>` : ''}
+        ${m.tags.map((t) => `<a class="tag" href="#/tag/${encodeURIComponent(t)}">${esc(t)}</a>`).join('')}</div>` : ''}
 
       ${related.length ? `
         <section style="margin-top:var(--s-7)">
@@ -213,7 +213,8 @@
         </div>
       </section>`;
 
-    window.Store.pushRecent(m.id);
+    if (window.Store.touchRead) window.Store.touchRead(m.id);
+    else window.Store.pushRecent(m.id);
   }
 
   function bindBookmark(view, id) {

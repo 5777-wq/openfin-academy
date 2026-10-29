@@ -46,6 +46,18 @@
     + '.an-panel .cat-desc b{display:block;font-family:var(--font-mono);font-size:var(--t-eyebrow);'
     + 'font-weight:600;letter-spacing:.14em;color:var(--gold-text);margin-bottom:5px;}'
     + '.an-panel .cat-desc.an-trap b{color:var(--warn);}';
+    // 走势与回撤两块图：纸底、细界线、等宽数字，图表不自己造一套配色。
+    + '.chart-panel{margin-bottom:var(--s-6);}'
+    + '.chart-panel .panel-title{margin-bottom:var(--s-3);}'
+    + '.chart-panel .chart-host{min-height:120px;overflow:hidden;}'
+    + '.chart-panel .chart-host svg{display:block;width:100%;height:auto;}'
+    + '.chart-caveat{color:var(--ink-3);}'
+    + '.compare-row{display:flex;align-items:center;gap:var(--s-3);flex-wrap:wrap;margin:0 0 var(--s-3);}'
+    + '.compare-row label{font-family:var(--font-mono);font-size:var(--t-micro);color:var(--ink-3);}'
+    + '.compare-row select{font:inherit;font-size:var(--t-small);padding:6px 9px;border:1px solid var(--rule);'
+    + 'border-radius:var(--r-2);background:var(--sheet);color:var(--ink);}'
+    + '.compare-row select:focus-visible{outline:2px solid var(--gold);outline-offset:2px;}'
+    + '.chart-loading{margin:0;padding:var(--s-4) 0;color:var(--ink-3);font-size:var(--t-small);}'
 
   function ensureCss() {
     for (const [id, css] of [[ENTRY_CSS_ID, ENTRY_CSS], [PAGE_CSS_ID, PAGE_CSS]]) {
@@ -198,6 +210,8 @@
   /** 标的详情页：专文（如果有）+ 真实数据卡 */
   async function renderDetail(view, id) {
     ensureCss();
+    // 同一个容器可能连续渲染两只标的：只让最后一次的异步图表写回。
+    view.__assetPageSeq = (view.__assetPageSeq || 0) + 1;
     const sym = id;
     const sid = seriesIdOf(sym);
     const aid = articleIdOf(sym);
@@ -274,6 +288,7 @@
       </article>
 
       ${dataCard}
+      ${chartBlocks(series)}
       ${(window.Site && window.Site.disclaimer) ? window.Site.disclaimer.GENERIC : ''}
       ${cross}
 
@@ -289,6 +304,173 @@
         </div>`)}
 
       ${(art || noteHtml) ? `<p style="margin-top:var(--s-6)"><a class="btn ghost sm" href="#/assets">看全部标的 →</a></p>` : ''}`;
+
+    // 图在容器挂载之后才填：真正写进 DOM 的只能是本视图里的那两个容器
+    // （作用域查询，与回放器同一条规矩——绝不越界去别的页面找同名节点）。
+    paintCharts(view, series);
+    paintCompare(view, series, sid);
+  }
+
+    /* —— 标的页的图：月线走势 / 回撤 / 同区间对比 ——
+     口径不在这里另算：回撤与峰值先后顺序交给 Engine.drawdown；
+     读屏句子交给 SeriesChart.describe；页面只把结果放进对的容器。 */
+  const REF_OPTIONS = [
+    { id: 'SPX', label: '标普500' },
+    { id: 'GC00Y', label: 'COMEX黄金' },
+    { id: 'US10Y', label: '美债10年期收益率' },
+  ];
+
+  function rateSeries(series) { return String(series && series.unit || '') === '%'; }
+
+  function isUnadjusted(series) {
+    const k = String(series && series.kind || '');
+    const src = String(series && series.source || '');
+    return /未复权/.test(k) || /未复权/.test(src);
+  }
+
+  function chartBlocks(series) {
+    if (!series || !Array.isArray(series.points) || series.points.length < 2) return '';
+    if (!window.SeriesChart || !window.SeriesChart.describe) {
+      return `<div class="panel chart-panel">
+        <div class="panel-title"><h3>月线走势与回撤</h3><span class="sub">图表组件未载入</span></div>
+        <p class="insight-note">这一页的数据卡仍然可用；图表组件没有加载成功，所以先不画。</p>
+      </div>`;
+    }
+    const desc = window.SeriesChart.describe(series);
+    const kind = esc(series.kind || '月收盘价');
+    const source = series.source ? ' · ' + esc(series.source) : '';
+    const kindNote = '口径：' + kind + source + '。' +
+      (isUnadjusted(series)
+        ? '未复权价不含分红，所以这里的涨幅是价格涨幅，不是总回报。'
+        : '复权方式以数据源标注为准。') +
+      (rateSeries(series) ? '这是收益率序列，变化用「个百分点」说，不用百分比。' : '');
+
+    return `
+      <div class="panel chart-panel">
+        <div class="panel-title"><h3>月线走势</h3><span class="sub">对数纵轴 · ${esc(series.unit || '')}</span></div>
+        <div id="asset-chart" class="chart-host" role="img" aria-label="${esc(desc)}"></div>
+        <p class="insight-note">${kindNote}纵轴取对数：价格跨数量级时，早期走势不会被压成一条平线。</p>
+        <p class="insight-note chart-caveat">过去不代表未来。这条线只呈现已经发生的月末读数，不预测下一步。</p>
+      </div>
+
+      <div class="panel chart-panel">
+        <div class="panel-title"><h3>回撤</h3><span class="sub">从上一个高点算起</span></div>
+        <div id="asset-dd" class="chart-host" role="img" aria-label="${esc(desc)}"></div>
+        <p class="insight-note">${kindNote}每个点都跟「它之前出现过的最高点」比；谷底一定在峰值之后，金线标出最深的那一段。</p>
+        <p class="insight-note chart-caveat">过去不代表未来。回撤记录的是历史里跌得最深的一次，不说明下一次会跌多少。</p>
+      </div>
+
+      <div class="panel chart-panel">
+        <div class="panel-title"><h3>同区间对比</h3><span class="sub">归一化到 100</span></div>
+        <div class="compare-row">
+          <label for="asset-compare-ref">参照序列</label>
+          <select id="asset-compare-ref" aria-label="选择同区间对比的参照序列">
+            ${REF_OPTIONS.map((o) => `<option value="${esc(o.id)}"${o.id === 'SPX' ? ' selected' : ''}>${esc(o.label)}</option>`).join('')}
+          </select>
+          <span class="muted small">只取两条序列都有数据的月份；起点 = 100。</span>
+        </div>
+        <div id="asset-compare" class="chart-host" role="img" aria-label="同区间对比：正在读取参照序列"></div>
+        <p class="insight-note chart-caveat">过去不代表未来。归一化只方便比较同区间的相对涨跌，不代表两者风险相同，也不构成投资建议。</p>
+      </div>`;
+  }
+
+  /** 把两块主图填进**本视图**的容器。容器在页面 HTML 里先摆好，
+      这样即使 SVG 生成失败也只是容器里留一句兜底，不会白屏。 */
+  function paintCharts(view, series) {
+    if (!view || !view.querySelector || !series) return;
+    if (!window.SeriesChart || !window.SeriesChart.render) return;
+    const desc = window.SeriesChart.describe(series);
+    const lineHost = view.querySelector('#asset-chart');
+    const ddHost = view.querySelector('#asset-dd');
+    const line = heroChart(series, { mode: 'line', width: 1000, height: 260, years: 5 });
+    const dd = heroChart(series, { mode: 'drawdown', width: 1000, height: 260, years: 5 });
+    fillChart(lineHost, line, desc, '这条序列的月线走势暂时画不出来；上面的数据卡仍然可用。');
+    fillChart(ddHost, dd, desc + ' 纵轴是距此前高点的回落。', '这条序列的回撤暂时画不出来；上面的数据卡仍然可用。');
+  }
+
+  function heroChart(series, opts) {
+    try { return window.SeriesChart.render(series, opts) || ''; } catch (e) { return ''; }
+  }
+
+  function fillChart(host, svg, label, fallback) {
+    if (!host) return;
+    if (svg) {
+      host.innerHTML = svg;
+      host.setAttribute('role', 'img');
+      host.setAttribute('aria-label', label);
+    } else {
+      host.innerHTML = `<p class="chart-loading">${esc(fallback)}</p>`;
+      host.setAttribute('role', 'note');
+      host.setAttribute('aria-label', fallback);
+    }
+  }
+
+  /** 同区间对比：默认 SPX；切下拉只重画对比那一块，焦点留在 select 上。 */
+  function paintCompare(view, series, mainId) {
+    if (!view || !view.querySelector || !series) return;
+    if (!window.History || !window.History.series || !window.SeriesChart) return;
+    const host = view.querySelector('#asset-compare');
+    const sel = view.querySelector('#asset-compare-ref');
+    if (!host || !sel) return;
+
+    // 同一视图里连续切下拉：只认最后一次，慢请求回来不许盖掉新选择。
+    let refSeq = 0;
+    // 换页竞态：先记下这是第几次渲染这个容器；await 回来时若已换页就不写。
+    const pageSeq = view.__assetPageSeq || 0;
+
+    const load = (ref) => {
+      const mine = ++refSeq;
+      host.innerHTML = '<p class="chart-loading">正在读取参照序列…</p>';
+      host.setAttribute('role', 'status');
+      host.setAttribute('aria-label', '正在读取参照序列');
+      window.History.series(ref).then((refSeries) => {
+        if (mine !== refSeq) return;
+        if (!view.isConnected || (view.__assetPageSeq || 0) !== pageSeq) return;
+        const box = view.querySelector('#asset-compare');
+        if (!box) return;
+        if (ref === mainId) {
+          box.innerHTML = '<p class="chart-loading">这只标的本身就是参照序列；换一条参照再看对比。</p>';
+          box.setAttribute('role', 'note');
+          box.setAttribute('aria-label', '这只标的本身就是参照序列，请换一条参照');
+          return;
+        }
+        if (!refSeries || !Array.isArray(refSeries.points) || refSeries.points.length < 2) {
+          box.innerHTML = '<p class="chart-loading">这条参照序列暂时取不到；上面的走势与回撤仍然可用。</p>';
+          box.setAttribute('role', 'note');
+          box.setAttribute('aria-label', '参照序列取不到');
+          return;
+        }
+        let svg = '';
+        try {
+          svg = window.SeriesChart.render(series, {
+            mode: 'line', width: 1000, height: 280, years: 5,
+            compare: [refSeries],
+          }) || '';
+        } catch (e) { svg = ''; }
+        if (!svg) {
+          box.innerHTML = '<p class="chart-loading">这两条序列没有足够的共同月份；暂时画不出对比。</p>';
+          box.setAttribute('role', 'note');
+          box.setAttribute('aria-label', '两条序列没有足够的共同月份');
+          return;
+        }
+        const refLabel = (REF_OPTIONS.filter((o) => o.id === ref)[0] || {}).label || ref;
+        const label = window.SeriesChart.describe(series) + ' 对比参照：' + refLabel + '，两条都归一化到起点 100。';
+        box.innerHTML = svg;
+        box.setAttribute('role', 'img');
+        box.setAttribute('aria-label', label);
+      }).catch(() => {
+        if (mine !== refSeq) return;
+        if (!view.isConnected || (view.__assetPageSeq || 0) !== pageSeq) return;
+        const box = view.querySelector('#asset-compare');
+        if (!box) return;
+        box.innerHTML = '<p class="chart-loading">这条参照序列暂时取不到；上面的走势与回撤仍然可用。</p>';
+        box.setAttribute('role', 'note');
+        box.setAttribute('aria-label', '参照序列取不到');
+      });
+    };
+
+    sel.addEventListener('change', () => load(sel.value || 'SPX'));
+    load(sel.value || 'SPX');
   }
 
   function fmtNum(v, series) {

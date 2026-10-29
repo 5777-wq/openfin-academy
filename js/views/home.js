@@ -154,7 +154,7 @@
         <div class="art-head" style="margin-bottom:var(--s-5)">
           <div class="eyebrow">${esc(F().cnDateWithWeek(F().today()))} · 第 ${dayOfYear()} 天</div>
           <h1 style="font-size:var(--t-hero);line-height:1.32;letter-spacing:-.015em;margin-bottom:var(--s-3)">
-            把美债收益率、黄金、纳指、原油、A股<br>讲成你听得懂的话。
+            把美债收益率、黄金、纳指、原油、A股<br class="hero-br">讲成你听得懂的话。
           </h1>
           <p class="art-dek">零后端、零密钥、零构建的金融科普站。每一句都能点开看真实数据，每一场危机都能拖动时间轴回放。</p>
           <div style="display:flex;gap:var(--s-2);flex-wrap:wrap;margin-top:var(--s-4)">
@@ -177,6 +177,36 @@
       <section class="h-sec" style="${si()}margin-top:var(--s-7)">
         <div class="eyebrow">今日一词</div>
         ${termHtml || '<div class="empty"><div class="et">术语库正在补充</div></div>'}
+      </section>
+
+      <section class="h-sec" style="${si()}margin-top:var(--s-7)">
+        <div class="eyebrow">工具箱 · 动手看，不只看</div>
+        <div class="tool-grid">
+          <a class="tool-card" href="#/compare">
+            <span class="tc-ic" aria-hidden="true">⇄</span>
+            <span><b>资产对比</b><small>两条线放同一张图上，比相对涨跌与回撤</small></span>
+          </a>
+          <a class="tool-card" href="#/curve">
+            <span class="tc-ic" aria-hidden="true">⌁</span>
+            <span><b>收益率曲线</b><small>拖动年份，看曲线形状与倒挂</small></span>
+          </a>
+          <a class="tool-card" href="#/analogy">
+            <span class="tc-ic" aria-hidden="true">≋</span>
+            <span><b>周期对照</b><small>2000 与本届 AI 的六维打分</small></span>
+          </a>
+          <a class="tool-card" href="#/calc">
+            <span class="tc-ic" aria-hidden="true">±</span>
+            <span><b>理财计算器</b><small>通胀、定投、房贷、回本</small></span>
+          </a>
+          <a class="tool-card" href="#/quiz">
+            <span class="tc-ic" aria-hidden="true">?</span>
+            <span><b>术语自测</b><small>5 题检验记住没有，答错给解析</small></span>
+          </a>
+          <a class="tool-card" href="#/saved">
+            <span class="tc-ic" aria-hidden="true">★</span>
+            <span><b>收藏与记录</b><small>收藏、最近阅读与路径进度</small></span>
+          </a>
+        </div>
       </section>
 
       ${family.length ? `<section class="h-sec" style="${si()}margin-top:var(--s-7)">

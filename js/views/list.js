@@ -78,15 +78,18 @@
     ensureEntryCss();
     const intro = INTRO[section] || { eyebrow: '', title: '', dek: '' };
     const items = window.Content.bySection(section);
+    /* 标签不能塞进卡片锚点里：<a> 里套 <a> 是不合法 HTML，浏览器会在嵌套处
+       提前关闭外层链接，标签和右侧阅读时长会掉出卡片。所以标签渲染成
+       卡片**后面的兄弟节点**，仍然可点。 */
     const cards = items.map((c) => `
       <a class="entry" href="#/${section}/${c.id}">
         <span>
           <span class="e-t">${esc(c.title)}</span>
           <span class="e-d">${esc(c.dek || '')}</span>
-          ${c.tags && c.tags.length ? `<span class="e-tags">${c.tags.slice(0, 3).map((t) => `<span class="tag">${esc(t)}</span>`).join('')}</span>` : ''}
         </span>
         <span class="e-m">${c.readMinutes ? c.readMinutes + ' min' : ''}</span>
-      </a>`).join('');
+      </a>
+      ${c.tags && c.tags.length ? `<div class="entry-tagrow">${c.tags.slice(0, 3).map((t) => `<a class="tag" href="#/tag/${encodeURIComponent(t)}">${esc(t)}</a>`).join('')}</div>` : ''}`).join('');
 
     view.innerHTML = `
       <div class="art-head">

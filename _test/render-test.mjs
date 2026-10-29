@@ -178,15 +178,21 @@ const SCRIPTS = [
   'vendor/core/industry-chains.js',
   'vendor/core/academy-gloss.js',
   'js/site/format.js',
+  'js/site/jsonld.js',
+  'js/site/pwa.js',
   'js/site/net.js',
   'js/site/cross.js',
   'js/site/disclaimer.js',
   'js/store.js',
   'js/router.js',
+  'js/engine/series.js',
   'js/engine/percentile.js',
   'js/engine/drawdown.js',
   'js/engine/crisis.js',
   'js/engine/instrument.js',
+  'js/engine/spread.js',
+  'js/engine/analogy.js',
+  'js/engine/compare.js',
   'js/sources/quotes.js',
   'js/sources/history.js',
   'js/site/content.js',
@@ -195,6 +201,7 @@ const SCRIPTS = [
   'js/components/era-timeline.js',
   'js/components/replay-player.js',
   'js/components/chain-heat.js',
+  'js/components/series-chart.js',
   'js/views/home.js',
   'js/views/list.js',
   'js/views/assets.js',
@@ -204,6 +211,14 @@ const SCRIPTS = [
   'js/views/path.js',
   'js/views/term.js',
   'js/views/search.js',
+  'js/views/compare.js',
+  'js/views/curve.js',
+  'js/views/analogy.js',
+  'js/views/calc.js',
+  'js/views/saved.js',
+  'js/views/tag.js',
+  'js/views/quiz.js',
+  'js/views/series.js',
   'js/app.js',
 ];
 
@@ -440,11 +455,11 @@ async function main() {
     has('回放：雷曼当天标普 1,192.70', getElementById('val-SPX').innerHTML, '1,192.70');
     has('回放：雷曼当天黄金 787', getElementById('val-GC00Y').innerHTML, '787');
 
-    // 三行读数：现价 / 相对起点 / 距峰值——"距峰值"就是"跌了多少"
-    has('回放：标普距峰值 -23.80%', getElementById('val-SPX').innerHTML, '距峰值 -23.80%');
+    // 三行读数：现价 / 相对起点 / 距此前最高——"距此前最高"就是"跌了多少"
+    has('回放：标普距此前最高 -23.80%', getElementById('val-SPX').innerHTML, '距此前最高 -23.80%');
     has('回放：标普较起点 -6.00%', getElementById('val-SPX').innerHTML, '较起点 -6.00%');
     has('回放：收益率用百分点', getElementById('val-US10Y').innerHTML, 'pp');
-    has('回放：美债距峰值 -1.79pp', getElementById('val-US10Y').innerHTML, '距峰值 -1.79pp');
+    has('回放：美债距此前最高 -1.79pp', getElementById('val-US10Y').innerHTML, '距此前最高 -1.79pp');
     ok('回放：回撤段已画出', (getElementById('dd-SPX').attrs.d || '').startsWith('M'),
       getElementById('dd-SPX').attrs.d || '(空)');
     ok('回放：现值点跟随游标', /%$/.test(String(getElementById('now-SPX').style.left || '')),
@@ -467,7 +482,7 @@ async function main() {
     sandbox.ReplayPlayer.jumpTo('1992-02-21');
     const n225 = getElementById('val-N225').innerHTML;
     has('回放：日经现价 21,291.81', n225, '21,291.81');
-    has('回放：日经距峰值 -45.29%', n225, '距峰值 -45.29%');
+    has('回放：日经距此前最高 -45.29%', n225, '距此前最高 -45.29%');
     has('回放：日经较起点 -10.86%', n225, '较起点 -10.86%');
     ok('回放：日经回撤段已画出', (getElementById('dd-N225').attrs.d || '').length > 10,
       getElementById('dd-N225').attrs.d || '(空)');
@@ -897,14 +912,14 @@ async function main() {
   for (const s of SCRIPTS) {
     ok('index.html 加载了 ' + s, html.includes(s));
   }
-  /* D-7：首屏瘦身。
-     series / spread / similarity / analogy 这四个引擎模块全站零引用
-     （只有测试在用），却跟着首屏一起下载。它们留在仓库里给测试用，
-     但不许再进 index.html。 */
-  for (const dead of ['js/engine/series.js', 'js/engine/spread.js',
-    'js/engine/similarity.js', 'js/engine/analogy.js']) {
-    ok('首屏不再加载零引用的 ' + dead, !html.includes(dead));
+  /* 引擎接线：对比器用到 series + compare，曲线用到 spread，对照仪用到 analogy。
+     这四个曾经是「测试在用、页面零引用」的死代码；现在有真实视图引用，必须加载。
+     similarity 仍然没有视图引用，继续不进首屏（要用的时候再接）。 */
+  for (const used of ['js/engine/series.js', 'js/engine/spread.js',
+    'js/engine/analogy.js', 'js/engine/compare.js']) {
+    ok('首屏加载被视图引用的 ' + used, html.includes(used));
   }
+  ok('仍然没有视图引用的 similarity 留在首屏外', !html.includes('js/engine/similarity.js'));
 
   /* ---- 9. 站内链接不许有死链 ----
      首页时代横轴曾经有 4 个节点指向不存在的文章（#/crisis/2013、#/cycles/ai-cycle 等），

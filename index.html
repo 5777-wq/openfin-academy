@@ -6,6 +6,7 @@
 <title>白话金融 · OpenFin Academy</title>
 <meta name="description" content="把美债收益率、黄金、纳指、原油、A股和 AI 产业链讲成金融小白听得懂的话。零后端、零密钥、零构建的金融科普站。">
 <meta name="theme-color" content="#F2EAE6">
+<link rel="manifest" href="manifest.webmanifest">
 <!-- 分享卡片：静态兜底写死站点级信息，js/app.js 每次换页再改写成这一页的内容。
      微信/微博/Twitter 的爬虫不执行 JS，只能拿到这份壳——所以壳也得站得住。 -->
 <meta property="og:site_name" content="白话金融 OpenFin Academy">
@@ -72,14 +73,14 @@
 }
 .palette {
   opacity: 0;
-  transform: translateX(-50%) translateY(10px);
+  transform: translateX(-50%) translateY(8px) scale(.98);
   transition:
     opacity var(--dur-2, 240ms) var(--ease-out, cubic-bezier(.16,1,.3,1)),
     transform var(--dur-2, 240ms) var(--ease-out, cubic-bezier(.16,1,.3,1));
 }
 .palette-wrap.on .palette {
   opacity: 1;
-  transform: translateX(-50%) translateY(0);
+  transform: translateX(-50%) translateY(0) scale(1);
 }
 
 /* ---------- 3. 换页淡入 ----------
@@ -87,7 +88,7 @@
    插入播放一次：滚动不触发、不重复、不回放。只淡容器，数据不动——
    位移交给各视图自己的进场动画（fx-page-in 等）。
    这是唯一一份定义，layout.css 里不再另写（同特异性会互相覆盖）。 */
-@keyframes route-in { from { opacity: 0; } }
+@keyframes route-in { from { opacity: 0; transform: translateY(10px) scale(.995); } }
 .route-host {
   animation: route-in var(--dur-2, 240ms) var(--ease-out, cubic-bezier(.16,1,.3,1));
 }
@@ -112,6 +113,11 @@ body.theme-anim *::after {
 /* ---------- reduced-motion：本层动效全部关闭 ----------
    layout.css 顶部的全局兜底不覆盖 transition-delay，也不与
    带 !important 的声明比大小，所以这里按本层再显式关一次。 */
+@media (max-width: 860px) {
+  /* UI v2：底栏用胶囊选中态，不再画顶部金线 */
+  .tabbar button::before { display: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .rail-item::before,
   .tabbar button::before,
@@ -213,7 +219,7 @@ window.addEventListener('unhandledrejection', function (e) {
       <section style="padding:var(--s-6) 0 0">
         <div class="eyebrow">白话金融 · 金融科普</div>
         <h1 style="font-size:var(--t-hero);line-height:1.32;letter-spacing:-.015em;margin-bottom:var(--s-3)">
-          把美债收益率、黄金、纳指、原油、A股<br>讲成你听得懂的话。
+          把美债收益率、黄金、纳指、原油、A股<br class="hero-br">讲成你听得懂的话。
         </h1>
         <p class="art-dek">零后端、零密钥、零构建的金融科普站。每一句都能点开看真实数据，每一场危机都能拖动时间轴回放。</p>
         <div style="display:flex;gap:var(--s-2);flex-wrap:wrap;margin-top:var(--s-4)">
@@ -240,6 +246,15 @@ window.addEventListener('unhandledrejection', function (e) {
     <div class="footer-text">
       <p>白话金融 · OpenFin Academy —— 只做金融知识科普，<b>不构成投资建议，不推荐任何具体产品，不预测市场走势</b>。</p>
       <p>数据来自第三方公开接口，有延迟、会出错；历史不代表未来。据此决策，风险自负。</p>
+      <p class="footer-links">
+        <a href="#/compare">资产对比</a><span>·</span>
+        <a href="#/curve">收益率曲线</a><span>·</span>
+        <a href="#/analogy">周期对照</a><span>·</span>
+        <a href="#/calc">理财计算器</a><span>·</span>
+        <a href="#/quiz">术语自测</a><span>·</span>
+        <a href="#/saved">收藏与记录</a><span>·</span>
+        <a href="#/status">数据台账</a>
+      </p>
     </div>
   </div>
 </footer>
@@ -292,15 +307,21 @@ window.addEventListener('unhandledrejection', function (e) {
 
 <!-- 本站 -->
 <script src="js/site/format.js?v=20261031"></script>
+<script src="js/site/jsonld.js?v=20261031"></script>
+<script src="js/site/pwa.js?v=20261031"></script>
 <script src="js/site/net.js?v=20261031"></script>
 <script src="js/site/cross.js?v=20261031"></script>
 <script src="js/site/disclaimer.js?v=20261031"></script>
 <script src="js/store.js?v=20261031"></script>
 <script src="js/router.js?v=20261031"></script>
+<script src="js/engine/series.js?v=20261031"></script>
 <script src="js/engine/percentile.js?v=20261031"></script>
 <script src="js/engine/drawdown.js?v=20261031"></script>
 <script src="js/engine/crisis.js?v=20261031"></script>
 <script src="js/engine/instrument.js?v=20261031"></script>
+<script src="js/engine/spread.js?v=20261031"></script>
+<script src="js/engine/analogy.js?v=20261031"></script>
+<script src="js/engine/compare.js?v=20261031"></script>
 <script src="js/sources/quotes.js?v=20261031"></script>
 <script src="js/sources/history.js?v=20261031"></script>
 <script src="js/site/content.js?v=20261031"></script>
@@ -309,6 +330,7 @@ window.addEventListener('unhandledrejection', function (e) {
 <script src="js/components/era-timeline.js?v=20261031"></script>
 <script src="js/components/replay-player.js?v=20261031"></script>
 <script src="js/components/chain-heat.js?v=20261031"></script>
+<script src="js/components/series-chart.js?v=20261031"></script>
 <script src="js/views/home.js?v=20261031"></script>
 <script src="js/views/list.js?v=20261031"></script>
 <script src="js/views/assets.js?v=20261031"></script>
@@ -318,6 +340,14 @@ window.addEventListener('unhandledrejection', function (e) {
 <script src="js/views/path.js?v=20261031"></script>
 <script src="js/views/term.js?v=20261031"></script>
 <script src="js/views/search.js?v=20261031"></script>
+<script src="js/views/compare.js?v=20261031"></script>
+<script src="js/views/curve.js?v=20261031"></script>
+<script src="js/views/analogy.js?v=20261031"></script>
+<script src="js/views/calc.js?v=20261031"></script>
+<script src="js/views/saved.js?v=20261031"></script>
+<script src="js/views/tag.js?v=20261031"></script>
+<script src="js/views/quiz.js?v=20261031"></script>
+<script src="js/views/series.js?v=20261031"></script>
 <script src="js/app.js?v=20261031"></script>
 </body>
 </html>

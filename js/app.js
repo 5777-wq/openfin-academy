@@ -17,6 +17,21 @@
     { id: 'terms',    path: '/terms',         label: '术语库',     n: '08' },
     { id: 'data',     path: '/data',          label: '速查表',     n: '09' },
     { id: 'path',     path: '/path',          label: '新手路径',   n: '★' },
+    { id: 'compare',  path: '/compare',       label: '资产对比',   n: '10' },
+    { id: 'curve',    path: '/curve',         label: '收益率曲线', n: '11' },
+    { id: 'analogy',  path: '/analogy',       label: '周期对照',   n: '12' },
+    { id: 'calc',     path: '/calc',          label: '理财计算器', n: '13' },
+    { id: 'saved',    path: '/saved',         label: '收藏与记录', n: '☆' },
+    { id: 'quiz',     path: '/quiz',          label: '术语自测',   n: '?' },
+  ];
+
+  /* 左栏分组显式写出来，不再用 NAV.slice 猜下标——
+     之前加栏目时 slice 没跟着改，「查词」组里混进了「读懂财报」。 */
+  const NAV_GROUPS = [
+    { label: '栏目', ids: ['home', 'concepts', 'crisis', 'assets', 'chains', 'cycles', 'family', 'reports'] },
+    { label: '查词', ids: ['terms', 'data'] },
+    { label: '工具', ids: ['compare', 'curve', 'analogy', 'calc'] },
+    { label: '开始', ids: ['path', 'saved', 'quiz'] },
   ];
 
   const TABS = [
@@ -67,11 +82,10 @@
     // 三组：栏目（六大栏目）· 查词（术语库与速查表）· 开始（新手路径）
     // 「查词」这一组是后加的——术语库 189 条、速查表十张表是站内最大的两块内容，
     // 之前只挂在正文链接里，左栏没有入口，等于把一半内容藏起来了。
-    const groups = [
-      { label: '栏目', items: NAV.slice(0, 7) },
-      { label: '查词', items: NAV.slice(7, 9) },
-      { label: '开始', items: [NAV[9]] },
-    ];
+    const groups = NAV_GROUPS.map((g) => ({
+      label: g.label,
+      items: g.ids.map((id) => NAV.find((x) => x.id === id)).filter(Boolean),
+    }));
     rail.innerHTML = groups.map((g) => `
       <div class="rail-group">
         <div class="rail-label">${esc(g.label)}</div>
@@ -234,6 +248,15 @@
       const q = String((query && query.q) || '').trim();
       return q ? '搜索「' + q + '」· ' + SITE : '搜索 · ' + SITE;
     }
+    if (r.id === 'tag') return '标签「' + String(params.tag || '') + '」· ' + SITE;
+    if (r.id === 'compare') return '资产对比 · ' + SITE;
+    if (r.id === 'curve') return '收益率曲线 · ' + SITE;
+    if (r.id === 'analogy') return '周期对照 · ' + SITE;
+    if (r.id === 'calc') return '理财计算器 · ' + SITE;
+    if (r.id === 'saved') return '收藏与阅读记录 · ' + SITE;
+    if (r.id === 'quiz') return '术语自测 · ' + SITE;
+    if (r.id === 'series') return '序列 ' + String(params.id || '') + ' · 数据台账 · ' + SITE;
+    if (r.id === 'status') return '数据台账 · ' + SITE;
     if (r.id === 'concept' || r.id === 'cycle' || r.id === 'family-one' || r.id === 'crisis-one') {
       const sec = SECTION_NAME[{ concept: 'concepts', cycle: 'cycles', 'family-one': 'family', 'crisis-one': 'crisis' }[r.id]];
       const meta = window.Content.meta(params.id);
@@ -259,6 +282,15 @@
       const q = String((query && query.q) || '').trim();
       return q ? '站内搜索「' + q + '」的结果。' : DEFAULT_DESC;
     }
+    if (r.id === 'tag') return '标签「' + String(params.tag || '') + '」下的文章与术语。';
+    if (r.id === 'compare') return '任选 2–4 条序列，归一化到同一起点，对比历史涨跌、波动与回撤。';
+    if (r.id === 'curve') return '美债与中债的收益率曲线：形状、倒挂与利差历史。';
+    if (r.id === 'analogy') return '2000 年互联网泡沫与本轮 AI 周期的六维对照。分数是编辑判断，不是预测。';
+    if (r.id === 'calc') return '通胀、定投、房贷、回本四个纯算术小工具。';
+    if (r.id === 'saved') return '你收藏的文章与最近读过的页面，只存在本机。';
+    if (r.id === 'quiz') return '从术语库生成的自测题，答错给解析。';
+    if (r.id === 'series') return '这条长历史序列的来源、覆盖区间、图表与原始 JSON。';
+    if (r.id === 'status') return '站内全部长历史序列的来源、覆盖与采集时间。';
     const id = r.id === 'asset' ? assetArticleId(params.id) : params.id;
     const meta = window.Content.meta(id);
     return (meta && meta.dek) || DEFAULT_DESC;
@@ -363,6 +395,15 @@
         case 'asset': return window.AssetsView.renderDetail(host, params.id);
         case 'chain': return window.ChainView.renderDetail(host, params.id);
         case 'cycle': return window.ArticleView.render(host, 'cycles', params.id);
+        case 'compare': return window.CompareView.render(host, query);
+        case 'curve': return window.CurveView.render(host, query);
+        case 'analogy': return window.AnalogyView.render(host, query);
+        case 'calc': return window.CalcView.render(host, query);
+        case 'saved': return window.SavedView.render(host, query);
+        case 'quiz': return window.QuizView.render(host, query);
+        case 'tag': return window.TagView.render(host, params.tag);
+        case 'series': return window.SeriesView.render(host, params.id);
+        case 'status': return window.StatusView.render(host, query);
         default:
           return window.ListView.render(host, 'concepts');
       }
@@ -419,11 +460,35 @@
     if (r.id !== 'search' && key !== prevKey) window.scrollTo(0, 0);
   }
 
+  /** 每页一个 JSON-LD：WebSite / Article / DefinedTerm。爬虫不执行 JS 时至少还有静态兜底。 */
+  function syncJsonLd(r, params) {
+    if (!window.JsonLd) return;
+    try {
+      let data = {};
+      if (r.id === 'term') data = { term: window.Content.term(params.id) };
+      else if (r.id === 'asset') data = { article: window.Content.meta(assetArticleId(params.id)) || { title: params.id } };
+      else if (r.id === 'concept' || r.id === 'crisis-one' || r.id === 'cycle' || r.id === 'family-one' || r.id === 'report') {
+        data = { article: window.Content.meta(params.id) };
+      }
+      const obj = window.JsonLd.build(r.id, params, data);
+      if (!obj) return;
+      let el = document.getElementById('page-jsonld');
+      if (!el) {
+        el = document.createElement('script');
+        el.type = 'application/ld+json';
+        el.id = 'page-jsonld';
+        document.head.appendChild(el);
+      }
+      el.textContent = window.JsonLd.serialize(obj);
+    } catch (e) { /* 结构化数据失败不影响页面 */ }
+  }
+
   /** 页面标题 + 分享卡片 + 换页提示：一次性做完 */
   function applyPageMeta(r, params, query, host, say) {
     const title = pageTitle(r, params, query, host);
     document.title = title;
     syncShare(title, pageDescription(r, params, query));
+    syncJsonLd(r, params);
     if (say !== false) announcePage(title);
   }
 
@@ -546,6 +611,11 @@
     { t: '无风险利率', s: '全站定价的尺子', path: '/term/risk-free-rate' },
     { t: '新手路径', s: '8 课入门', path: '/path' },
     { t: '危机复盘', s: '拖时间轴看崩盘', path: '/crisis' },
+    { t: '资产对比', s: '两条线放同一张图上', path: '/compare' },
+    { t: '收益率曲线', s: '看倒挂的形状', path: '/curve' },
+    { t: '理财计算器', s: '通胀、定投、房贷、回本', path: '/calc' },
+    { t: '术语自测', s: '5 题检验记住没有', path: '/quiz' },
+    { t: '数据台账', s: '每个数字回到它的文件', path: '/status' },
   ];
 
   function paintPalette(q) {
@@ -631,6 +701,20 @@
       </div>
       <div class="set-row">
         <div>
+          <div class="set-k">涨跌配色</div>
+          <div class="set-h">中式「红涨绿跌」或西式「绿涨红跌」。只改变颜色，不改变数字。</div>
+        </div>
+        <button class="switch ${window.Store.get('updown') === 'green' ? 'on' : ''}" id="swUpdown" role="switch" aria-checked="${window.Store.get('updown') === 'green'}" aria-label="绿涨红跌"></button>
+      </div>
+      <div class="set-row">
+        <div>
+          <div class="set-k">跟随系统深浅色</div>
+          <div class="set-h">打开后不再使用手动选择的皮肤；关掉时用当前这一套。</div>
+        </div>
+        <button class="switch ${window.Store.get('themeAuto') ? 'on' : ''}" id="swThemeAuto" role="switch" aria-checked="${!!window.Store.get('themeAuto')}" aria-label="跟随系统深浅色"></button>
+      </div>
+      <div class="set-row">
+        <div>
           <div class="set-k">去行情终端的链接</div>
           <div class="set-h">关掉后，术语页与标的页不再出现「去看历史数据」和「回到 OpenFinLens」，报头的入口也一起消失</div>
         </div>
@@ -641,6 +725,20 @@
     });
 
     document.getElementById('swTheme').addEventListener('click', () => { toggleTheme(); showSettings(); });
+    const swUp = document.getElementById('swUpdown');
+    if (swUp) swUp.addEventListener('click', () => {
+      window.Store.set('updown', window.Store.get('updown') === 'green' ? 'red' : 'green');
+      applyTheme();
+      showSettings();
+    });
+    const swAuto = document.getElementById('swThemeAuto');
+    if (swAuto) swAuto.addEventListener('click', () => {
+      const next = !window.Store.get('themeAuto');
+      window.Store.set('themeAuto', next);
+      if (!next) window.Store.set('theme', resolvedTheme());
+      applyTheme();
+      showSettings();
+    });
     document.getElementById('swLens').addEventListener('click', () => {
       const next = !(window.Cross ? window.Cross.enabled() : true);
       window.Store.set('lens', next);
@@ -659,9 +757,21 @@
   }
 
   /* ---------------- 主题 ---------------- */
+  function systemPrefersDark() {
+    try { return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches); }
+    catch (e) { return false; }
+  }
+
+  /** 解析当前主题：用户没手动选过就跟随系统。 */
+  function resolvedTheme() {
+    if (window.Store.get('themeAuto')) return systemPrefersDark() ? 'night' : 'day';
+    return window.Store.get('theme') || 'day';
+  }
+
   function applyTheme() {
-    const t = window.Store.get('theme') || 'day';
+    const t = resolvedTheme();
     document.body.setAttribute('data-theme', t);
+    document.body.setAttribute('data-updown', window.Store.get('updown') === 'green' ? 'green' : 'red');
     const meta = document.querySelector('meta[name=theme-color]');
     if (meta) meta.setAttribute('content', t === 'night' ? '#14191C' : '#F2EAE6');
   }
@@ -699,7 +809,9 @@
   }
 
   function toggleTheme() {
-    const t = window.Store.get('theme') === 'night' ? 'day' : 'night';
+    const current = resolvedTheme();
+    const t = current === 'night' ? 'day' : 'night';
+    window.Store.set('themeAuto', false);
     window.Store.set('theme', t);
     fadeThemeColors();
     applyTheme();
@@ -828,6 +940,8 @@
     }
 
     bindInteractions();          // 先让站点活过来
+    /* PWA 注册是增强：失败只 warn，不阻塞任何页面。 */
+    if (window.PWA && window.PWA.register) window.PWA.register();
     step('boot:shell painted + interactions bound');
 
     // 内容与行情并行加载；内容最多等 8 秒，超时也先把页面渲染出来
@@ -945,6 +1059,24 @@
     document.addEventListener('keydown', onKey);
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
+
+    /* 点按涟漪：Telegram 式的一点点触感反馈。
+       只在 .btn / .mh-btn 上出现；reduced-motion 下直接不生成节点。 */
+    document.addEventListener('pointerdown', (e) => {
+      if (prefersReducedMotion()) return;
+      const target = e.target && e.target.closest ? e.target.closest('.btn, .mh-btn') : null;
+      if (!target || !target.getBoundingClientRect) return;
+      const r = target.getBoundingClientRect();
+      const size = Math.max(r.width, r.height);
+      const span = document.createElement('span');
+      span.className = 'ripple';
+      span.style.width = size + 'px';
+      span.style.height = size + 'px';
+      span.style.left = (e.clientX - r.left - size / 2) + 'px';
+      span.style.top = (e.clientY - r.top - size / 2) + 'px';
+      target.appendChild(span);
+      setTimeout(() => { if (span.parentNode) span.parentNode.removeChild(span); }, 480);
+    }, { passive: true });
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

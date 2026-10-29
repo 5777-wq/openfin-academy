@@ -23,6 +23,15 @@
     { id: 'data',     path: '/data',             title: '速查表' },
     { id: 'term',     path: '/term/:id',         title: '术语' },
     { id: 'search',   path: '/search',           title: '搜索' },
+    { id: 'compare',  path: '/compare',          title: '资产对比' },
+    { id: 'curve',    path: '/curve',            title: '收益率曲线' },
+    { id: 'analogy',  path: '/analogy',          title: '周期对照' },
+    { id: 'calc',     path: '/calc',             title: '理财计算器' },
+    { id: 'saved',    path: '/saved',            title: '收藏与阅读记录' },
+    { id: 'quiz',     path: '/quiz',             title: '术语自测' },
+    { id: 'tag',      path: '/tag/:tag',         title: '标签' },
+    { id: 'series',   path: '/series/:id',       title: '序列' },
+    { id: 'status',   path: '/status',           title: '数据台账' },
   ];
 
   const scrollMemo = new Map();
