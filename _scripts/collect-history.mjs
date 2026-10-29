@@ -25,6 +25,12 @@ const want = (name) => !ONLY.length || ONLY.includes(name);
 const SERIES = (process.argv.find((a) => a.startsWith('--series=')) || '').slice(9).split(',').filter(Boolean);
 const wantedSeries = (id) => !SERIES.length || SERIES.includes(id);
 
+/** --crisis=2020,2022 —— 只重建指定危机包。
+   没有它时，--only=crisis 会把全部历史包重采一遍：上游一旦换备源，
+   已有的对账锚点也会被一起重写，失去「只加新内容」的边界。 */
+const CRISIS_ONLY = (process.argv.find((a) => a.startsWith('--crisis=')) || '').slice(9).split(',').filter(Boolean);
+const wantedCrisis = (id) => !CRISIS_ONLY.length || CRISIS_ONLY.includes(id);
+
 async function getText(url, timeout = 25000) {
   // 重试：CDN 偶发失败是常态。采集脚本是每日流水线，不能因为一次抖动就断。
   // 但重试次数要给够：连着跑两轮时上游会限流，一串「fetch failed」能把
@@ -297,6 +303,37 @@ async function yahooSplits(symbol) {
   }
 }
 
+/* ---------------- Yahoo 日频（东财不可达时的备源） ----------------
+   危机回放包要的是**某一段历史里的真实日收盘**，不是实时行情。
+   东财 push2his 在某些网络下会整条 TCP 被掐（本机实测 fetch failed），
+   但 Yahoo chart 接口同区间可取，且 ^TNX 与财政部官方 10Y 同日数值一致
+   （2022-10-14 两边都是 4.00）。所以这里只作为**备源**，不改主源。
+   注意：Yahoo 的指数时间戳在不同交易所时区，这里统一取 UTC 日期；
+   期货 GC=F / CL=F 的日收盘与东财连续合约可能存在换月口径差异，
+   页面与产物里都会写明来源，不混着当同一条线。 */
+async function yahooDaily(ySymbol, from, to) {
+  const p1 = Math.floor(new Date(from + 'T00:00:00Z').getTime() / 1000);
+  // period2 是开区间：多给一天，避免把 to 当天丢掉
+  const p2 = Math.floor(new Date(to + 'T00:00:00Z').getTime() / 1000) + 86400;
+  const u = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(ySymbol)
+    + '?period1=' + p1 + '&period2=' + p2 + '&interval=1d';
+  const txt = await getText(u);
+  const j = JSON.parse(txt);
+  const r = j && j.chart && j.chart.result && j.chart.result[0];
+  if (!r || !r.timestamp || !r.indicators || !r.indicators.quote) return [];
+  const ts = r.timestamp;
+  const cl = r.indicators.quote[0].close || [];
+  const out = [];
+  for (let i = 0; i < ts.length; i++) {
+    const v = Number(cl[i]);
+    if (!Number.isFinite(v)) continue;
+    const t = new Date(ts[i] * 1000).toISOString().slice(0, 10);
+    if (t < from || t > to) continue;
+    out.push({ t, v });
+  }
+  return out;
+}
+
 /* ---------------- CBOE VIX 日线 → 月末 ---------------- */
 async function cboeVix() {
   const txt = await getText('https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX_History.csv');
@@ -475,6 +512,41 @@ const CRISIS_DEFS = [
     ],
   },
   {
+    id: '2022', title: '2022 年暴力加息：股债为什么一起跌',
+    headlineKey: 'US10Y',
+    from: '2021-12-01', to: '2023-06-30',
+    series: ['SPX', 'IXIC', 'GC00Y', 'CL00Y', 'US10Y', 'US2Y', 'VIX'],
+    events: [
+      { t: '2021-12-15', title: '美联储承认通胀不是暂时的', note: '政策口径转向，市场开始给加息定价。' },
+      { t: '2022-03-16', title: '本轮第一次加息', note: '联邦基金利率上调 25 个基点，零利率时代结束。' },
+      { t: '2022-05-04', title: '加息 50 个基点', note: '单次幅度加大，缩表也排上日程。' },
+      { t: '2022-06-15', title: '加息 75 个基点', note: '1994 年以来首次这么大的单次幅度。' },
+      { t: '2022-06-16', title: '纳指与美债同时承压', note: '股票跌估值、债券跌价格：利率上行不是只打一类资产。' },
+      { t: '2022-09-21', title: '连续第三次加息 75 个基点', note: '短端收益率抬得更快，曲线倒挂加深。' },
+      { t: '2022-10-24', title: '10Y 到 4.25%', note: '财政部官方日频 10 年期收益率，2021 年末还在 1.5% 附近。' },
+      { t: '2022-12-14', title: '加息幅度降到 50 个基点', note: '速度放缓不等于利率回到低位。' },
+    ],
+    note: '日频口径。SPX / IXIC / 黄金 / 原油 / VIX 与美债曲线分属不同来源；收益率变化用个百分点，价格用百分比。',
+  },
+  {
+    id: '2020', title: '2020 年疫情熔断：流动性先崩，政策后救',
+    headlineKey: 'SPX',
+    from: '2020-01-02', to: '2021-03-31',
+    series: ['SPX', 'IXIC', 'N225', 'HSI', 'GC00Y', 'CL00Y', 'US10Y', 'VIX'],
+    events: [
+      { t: '2020-01-23', title: '武汉封城', note: '疫情从地区事件变成全球供应链问题。' },
+      { t: '2020-02-19', title: '标普创当时历史新高', note: '暴跌前的顶点，之后一个月跌去约三分之一。' },
+      { t: '2020-03-09', title: '美股第一次熔断', note: '油价战与疫情叠加，盘中触发一级熔断。' },
+      { t: '2020-03-12', title: '第二次熔断', note: '恐慌扩散到全球资产，黄金也开始被卖。' },
+      { t: '2020-03-16', title: '第三次熔断', note: '美联储已降息到零，市场仍先处理流动性。' },
+      { t: '2020-03-18', title: '第四次熔断', note: '十个交易日四次熔断，历史罕见。' },
+      { t: '2020-03-23', title: '标普见底', note: '无限量 QE 与财政救助随后把流动性托住。' },
+      { t: '2020-04-20', title: 'WTI 近月期货跌入负值', note: '交割与库存问题把期货价格打成负数，不等于所有原油都免费。' },
+      { t: '2020-08-18', title: '标普收复前高', note: '指数回本比多数人的感受快，结构分化仍然很大。' },
+    ],
+    note: '日频口径。不同市场的交易日不完全重合，回放器按当日或之前最近值对齐；收益率用个百分点，价格用百分比。',
+  },
+  {
     id: '1987', title: '1987 黑色星期一',
     headlineKey: 'SPX',
     from: '1987-06-01', to: '1988-12-31',
@@ -504,14 +576,15 @@ async function eastDaily(secid, from, to) {
 
 /** 危机包里的序列：从哪来（日频） */
 const CRISIS_SOURCES = {
-  SPX: { kind: 'east', secid: '100.SPX' },
-  DJIA: { kind: 'east', secid: '100.DJIA' },
-  N225: { kind: 'east', secid: '100.N225' },
-  HSI: { kind: 'east', secid: '100.HSI' },
-  GC00Y: { kind: 'east', secid: '101.GC00Y' },
-  SI00Y: { kind: 'east', secid: '101.SI00Y' },
-  CL00Y: { kind: 'east', secid: '102.CL00Y' },
-  UDI: { kind: 'east', secid: '100.UDI' },
+  SPX: { kind: 'east', secid: '100.SPX', yahoo: '^GSPC' },
+  DJIA: { kind: 'east', secid: '100.DJIA', yahoo: '^DJI' },
+  N225: { kind: 'east', secid: '100.N225', yahoo: '^N225' },
+  HSI: { kind: 'east', secid: '100.HSI', yahoo: '^HSI' },
+  GC00Y: { kind: 'east', secid: '101.GC00Y', yahoo: 'GC=F' },
+  SI00Y: { kind: 'east', secid: '101.SI00Y', yahoo: 'SI=F' },
+  CL00Y: { kind: 'east', secid: '102.CL00Y', yahoo: 'CL=F' },
+  UDI: { kind: 'east', secid: '100.UDI', yahoo: 'DX-Y.NYB' },
+  IXIC: { kind: 'yahoo', symbol: '^IXIC' },
   VIX: { kind: 'cboe' },
   US10Y: { kind: 'treasury', col: '10 Yr' },
   US2Y: { kind: 'treasury', col: '2 Yr' },
@@ -543,10 +616,15 @@ async function cboeDaily() {  if (dailyCache.has('VIX')) return dailyCache.get('
 
 /** 美国财政部收益率曲线原始日频（按年增量抓，内存缓存） */
 const treasuryRaw = new Map();
-async function treasuryDaily(col) {
-  if (treasuryRaw.has(col)) return treasuryRaw.get(col);
+async function treasuryDaily(col, from, to) {
+  // 全量缓存仍按列保留，但只抓覆盖目标区间的年份：
+  // 新包要看 2013 / 2022 时，没必要把 1989–2026 每年 CSV 都打一遍。
+  const y0 = from ? Number(String(from).slice(0, 4)) : 1989;
+  const y1 = to ? Number(String(to).slice(0, 4)) : new Date().getUTCFullYear();
+  const key = col + ':' + y0 + '-' + y1;
+  if (treasuryRaw.has(key)) return treasuryRaw.get(key);
   const all = [];
-  for (let y = 1989; y <= 2026; y++) {
+  for (let y = y0; y <= y1; y++) {
     const txt = await treasuryCsv(y);
     if (!txt) continue;
     const lines = txt.trim().split(/\r?\n/);
@@ -567,7 +645,7 @@ async function treasuryDaily(col) {
     await sleep(80);
   }
   all.sort((a, b) => a.t.localeCompare(b.t));
-  treasuryRaw.set(col, all);
+  treasuryRaw.set(key, all);
   return all;
 }
 
@@ -590,9 +668,22 @@ async function buildCrisis(def) {
     if (!src) { console.warn(`  [skip] ${def.id}/${k}：未知来源`); missing.push(k); continue; }
     let pts = [];
     try {
-      if (src.kind === 'east') pts = await eastDaily(src.secid, def.from, def.to);
+      if (src.kind === 'east') {
+        try {
+          pts = await eastDaily(src.secid, def.from, def.to);
+        } catch (e) {
+          // 主源被掐不等于这段历史不存在：有 Yahoo 备源就换过去，别直接判缺。
+          if (src.yahoo) {
+            console.warn(`  [fallback] ${def.id}/${k}：东财不可达（${e.message}），改用 Yahoo ${src.yahoo}`);
+            pts = await yahooDaily(src.yahoo, def.from, def.to);
+          } else throw e;
+        }
+        // 主源「通了但这一段没数据」也允许备源补一次（空数组不抛错）。
+        if (!pts.length && src.yahoo) pts = await yahooDaily(src.yahoo, def.from, def.to);
+      }
+      else if (src.kind === 'yahoo') pts = await yahooDaily(src.symbol, def.from, def.to);
       else if (src.kind === 'cboe') pts = (await cboeDaily()).filter((p) => p.t >= def.from && p.t <= def.to);
-      else if (src.kind === 'treasury') pts = (await treasuryDaily(src.col)).filter((p) => p.t >= def.from && p.t <= def.to);
+      else if (src.kind === 'treasury') pts = (await treasuryDaily(src.col, def.from, def.to)).filter((p) => p.t >= def.from && p.t <= def.to);
     } catch (e) { console.warn(`  [skip] ${def.id}/${k}：${e.message}`); missing.push(k); continue; }
     if (!pts.length) { console.warn(`  [skip] ${def.id}/${k}：区间内无数据`); missing.push(k); continue; }
     const meta = await seriesMeta(k);
@@ -950,7 +1041,7 @@ async function main() {
 
   console.log('[collect] 组合危机回放包');
   if (want('crisis')) {
-    for (const def of CRISIS_DEFS) await buildCrisis(def);
+    for (const def of CRISIS_DEFS) if (wantedCrisis(def.id)) await buildCrisis(def);
     await buildCrisisIndex();
   }
 
