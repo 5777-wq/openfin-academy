@@ -21,13 +21,15 @@
 │   ├── percentile.js  历史分位
 │   ├── drawdown.js    回撤
 │   ├── spread.js      曲线形态 / 利差 / 金油比 / 实际利率
-│   ├── similarity.js  历史对照仪（z 分数 + 欧氏距离 Top-K）
-│   └── analogy.js     六维度类比打分
+│   ├── similarity.js  历史对照仪（z 分数 + 欧氏距离 Top-K，暂未接视图）
+│   ├── analogy.js     六维度类比打分（#/analogy）
+│   └── compare.js     多序列对齐 / 年化 / 相关性（#/compare）
 ├── js/components/     签名交互（无业务判断）
 │   ├── era-timeline.js 时代横轴
 │   ├── term-card.js    四段式术语卡
 │   ├── term-drawer.js  术语抽屉
 │   ├── replay-player.js 危机回放器
+│   ├── series-chart.js 标的页走势 / 回撤 SVG
 │   └── chain-heat.js   产业链环节强弱
 ├── js/views/          栏目视图（编排视图组件 + 引擎）
 ├── js/site/           本站自研：格式化、内容加载
@@ -76,6 +78,15 @@
 #/family              家庭理财
 #/path                新手路径
 #/search?q=...        搜索结果
+#/compare?ids=...     资产对比器（2–4 条序列 + 区间）
+#/curve?market=us     收益率曲线实验室
+#/analogy             六维周期对照仪
+#/calc                家庭理财计算器
+#/saved               收藏与最近阅读
+#/quiz                术语自测
+#/tag/:tag            标签聚合页
+#/series/:id          单条序列（来源 / 图表 / 原始 JSON）
+#/status              数据台账（全部序列）
 ```
 
 浏览器前进后退可用；每页滚动位置会被记住并在返回时恢复。
@@ -86,7 +97,7 @@
 - `/` 与 `⌘K` 打开命令面板，`?` 打开快捷键面板，`←/→` 控制回放器
 - `prefers-reduced-motion: reduce` 时全部动效关闭
 - 移动端：左栏收成底部标签栏，回放器保留全部资产但轨道收窄（76px → 52px），数值改用 9.5px 等宽字
-- 打印样式：`css/` 内保留打印友好规则，家庭理财模板可直接打印
+- 打印样式：`css/components.css` 的 `@media print` 会去掉导航/报价条/按钮，正文黑字白底；家庭理财与财报两栏可直接打印
 
 ## 7. 性能
 
@@ -108,3 +119,5 @@
 | 危机包 | 必须含 SPX / 黄金 / 原油 / 美债10Y / VIX 五条序列，事件日期必须落在时间轴内 |
 | 内容契约 | 索引与正文产物一致；正文里 `[[术语id]]` 引用的术语必须在术语库中 |
 | vendor | `vendor/HEAD` 必须记录上游 commit；关键 vendor 文件必须存在 |
+| 新工具页 | 对比 / 曲线 / 对照 / 计算器 / 收藏 / 标签 / 自测 的无浏览器冒烟测试 |
+| SEO/PWA | sitemap、manifest、service worker、JSON-LD 的契约测试 |

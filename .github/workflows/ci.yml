@@ -23,6 +23,15 @@ jobs:
       - name: 无障碍测试（焦点 / 对比度 / 首屏请求 / 分享标签）
         run: node _test/a11y-test.mjs
 
+      - name: 新工具页冒烟测试（对比 / 曲线 / 对照 / 计算器 / 收藏 / 标签 / 自测）
+        run: node _test/features-test.mjs
+
+      - name: SEO / PWA 基础设施测试
+        run: node _test/infra-test.mjs
+
+      - name: sitemap 与 stats 产物一致
+        run: node _scripts/gen-seo.mjs --check
+
       - name: 内容编译一致性（产物必须与源同步）
         run: |
           node _scripts/build-content.mjs
