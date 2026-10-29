@@ -1060,23 +1060,7 @@
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
 
-    /* 点按涟漪：Telegram 式的一点点触感反馈。
-       只在 .btn / .mh-btn 上出现；reduced-motion 下直接不生成节点。 */
-    document.addEventListener('pointerdown', (e) => {
-      if (prefersReducedMotion()) return;
-      const target = e.target && e.target.closest ? e.target.closest('.btn, .mh-btn') : null;
-      if (!target || !target.getBoundingClientRect) return;
-      const r = target.getBoundingClientRect();
-      const size = Math.max(r.width, r.height);
-      const span = document.createElement('span');
-      span.className = 'ripple';
-      span.style.width = size + 'px';
-      span.style.height = size + 'px';
-      span.style.left = (e.clientX - r.left - size / 2) + 'px';
-      span.style.top = (e.clientY - r.top - size / 2) + 'px';
-      target.appendChild(span);
-      setTimeout(() => { if (span.parentNode) span.parentNode.removeChild(span); }, 480);
-    }, { passive: true });
+    /* 动效收敛：不再做点按涟漪/位移动画；反馈交给颜色与阴影。 */
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

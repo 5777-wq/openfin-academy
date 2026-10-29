@@ -137,7 +137,8 @@ async function main() {
     has('对照仪：标题', v.innerHTML, '本轮 AI 周期');
     has('对照仪：免责声明', v.innerHTML, '这是算术，不是预测');
     has('对照仪：相似度', v.innerHTML, '相似度');
-    has('对照仪：滑块', v.innerHTML, 'type="range"');
+    has('对照仪：两列条形', v.innerHTML, 'ana-bar base');
+    ok('对照仪：不再提供可拖动滑块', !v.innerHTML.includes('type="range"'));
   }
   {
     const v = view();

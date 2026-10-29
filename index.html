@@ -38,11 +38,8 @@
    不脉冲、不循环。基础态常驻（scale 为 0），类名切换不打断过渡。 */
 .rail-item::before {
   content: ""; position: absolute; left: -1px; top: 6px; bottom: 6px; width: 2px;
-  background: var(--gold);
-  transform: scaleY(0); transform-origin: top;
-  transition: transform var(--dur-2, 240ms) var(--ease-out, cubic-bezier(.16,1,.3,1));
+  display: none;   /* 选中态已经有胶囊底色，不再叠一条金线 */
 }
-.rail-item.on::before { transform: scaleY(1); }
 
 @media (max-width: 860px) {
   /* 底栏：金线从中点展开。文字与图标的选中换色过渡在 layout.css
@@ -50,10 +47,8 @@
   .tabbar button::before {
     content: ""; position: absolute; top: 0; left: 50%; width: 16px; height: 2px;
     background: var(--gold);
-    transform: translateX(-50%) scaleX(0);
-    transition: transform var(--dur-2, 240ms) var(--ease-out, cubic-bezier(.16,1,.3,1));
+    display: none;   /* 底栏用底色表达选中，不画顶部金线 */
   }
-  .tabbar button.on::before { transform: translateX(-50%) scaleX(1); }
 }
 
 /* ---------- 2. 命令面板：开合 ----------
@@ -73,14 +68,14 @@
 }
 .palette {
   opacity: 0;
-  transform: translateX(-50%) translateY(8px) scale(.98);
+  transform: translateX(-50%) translateY(4px);
   transition:
-    opacity var(--dur-2, 240ms) var(--ease-out, cubic-bezier(.16,1,.3,1)),
-    transform var(--dur-2, 240ms) var(--ease-out, cubic-bezier(.16,1,.3,1));
+    opacity 160ms var(--ease-out, cubic-bezier(.16,1,.3,1)),
+    transform 160ms var(--ease-out, cubic-bezier(.16,1,.3,1));
 }
 .palette-wrap.on .palette {
   opacity: 1;
-  transform: translateX(-50%) translateY(0) scale(1);
+  transform: translateX(-50%) translateY(0);
 }
 
 /* ---------- 3. 换页淡入 ----------
@@ -88,9 +83,9 @@
    插入播放一次：滚动不触发、不重复、不回放。只淡容器，数据不动——
    位移交给各视图自己的进场动画（fx-page-in 等）。
    这是唯一一份定义，layout.css 里不再另写（同特异性会互相覆盖）。 */
-@keyframes route-in { from { opacity: 0; transform: translateY(10px) scale(.995); } }
+@keyframes route-in { from { opacity: 0; } }
 .route-host {
-  animation: route-in var(--dur-2, 240ms) var(--ease-out, cubic-bezier(.16,1,.3,1));
+  animation: route-in var(--dur-1, 140ms) var(--ease-out, cubic-bezier(.16,1,.3,1));
 }
 
 /* ---------- 4. 切肤颜色过渡（T 键） ----------
@@ -102,12 +97,12 @@ body.theme-anim *,
 body.theme-anim *::before,
 body.theme-anim *::after {
   transition:
-    background-color var(--dur-3, 420ms) var(--ease-in-out, cubic-bezier(.65,0,.35,1)),
-    border-color var(--dur-3, 420ms) var(--ease-in-out, cubic-bezier(.65,0,.35,1)),
-    color var(--dur-3, 420ms) var(--ease-in-out, cubic-bezier(.65,0,.35,1)),
-    fill var(--dur-3, 420ms) var(--ease-in-out, cubic-bezier(.65,0,.35,1)),
-    stroke var(--dur-3, 420ms) var(--ease-in-out, cubic-bezier(.65,0,.35,1)),
-    box-shadow var(--dur-3, 420ms) var(--ease-in-out, cubic-bezier(.65,0,.35,1)) !important;
+    background-color 180ms var(--ease-in-out, cubic-bezier(.65,0,.35,1)),
+    border-color 180ms var(--ease-in-out, cubic-bezier(.65,0,.35,1)),
+    color 180ms var(--ease-in-out, cubic-bezier(.65,0,.35,1)),
+    fill 180ms var(--ease-in-out, cubic-bezier(.65,0,.35,1)),
+    stroke 180ms var(--ease-in-out, cubic-bezier(.65,0,.35,1)),
+    box-shadow 180ms var(--ease-in-out, cubic-bezier(.65,0,.35,1)) !important;
 }
 
 /* ---------- reduced-motion：本层动效全部关闭 ----------

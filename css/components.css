@@ -942,3 +942,42 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
 
 /* 报头图标按钮也要能承载涟漪 */
 .mh-btn { position: relative; overflow: hidden; }
+
+/* ============================================================
+   动效收敛 v3：按 Telegram 的节奏来
+   —— 列表 hover 只换底色，不位移；按钮不缩放；
+      换页只淡入 140ms；区块不做错峰进场；
+      大表面（抽屉）220ms 平滑落定，不用回弹。
+   ============================================================ */
+.route-host { animation: route-in 140ms var(--ease-out, cubic-bezier(.16,1,.3,1)); }
+.h-sec { animation: none; }
+
+.btn:hover, .btn:active { transform: none; }
+.btn:hover { box-shadow: var(--sh-2); }
+.btn > .ripple { display: none; }
+
+.entry:hover, .entry:focus-visible { transform: none; }
+.tk:hover { transform: none; }
+.rail-item:hover { transform: none; }
+.tool-card:hover, .starter:hover { transform: none; }
+.era-node:hover { transform: translateX(-50%); }
+
+.rail-item::before, .tabbar button::before { display: none; }
+
+.drawer {
+  transition: transform 220ms var(--ease-out, cubic-bezier(.16,1,.3,1)),
+              visibility 220ms;
+}
+.switch::after { transition: transform 180ms var(--ease-out, cubic-bezier(.16,1,.3,1)); }
+
+/* 骨架只做呼吸，不做流光 */
+.skel {
+  background: var(--rule-2);
+  animation: ui-pulse 1.8s ease-in-out infinite;
+}
+@keyframes ui-pulse { 50% { opacity: .55; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .skel { animation: none; }
+  .route-host { animation: none; }
+}
