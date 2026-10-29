@@ -783,3 +783,162 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
   border: 1px solid var(--rule); border-bottom-width: 2px; border-radius: var(--r-1);
   padding: 1px 6px; background: var(--sheet-2);
 }
+
+/* ---------- 列表卡外的标签行 ----------
+   标签不能嵌在卡片锚点里（<a> 套 <a> 会提前关闭外层链接）。
+   它作为卡片的兄弟节点出现，视觉上仍贴着这张卡。 */
+.entry-tagrow {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin: -6px 0 10px; padding: 0 0 2px;
+}
+.entry-tagrow .tag { height: 21px; }
+.entry-tagrow .tag:hover { color: var(--teal); border-color: var(--teal-line); background: var(--teal-soft); text-decoration: none; }
+
+/* ---------- 打印：把网页还原成一张纸 ----------
+   读者真正会打印的是家庭理财与财报两栏。导航、报价条、抽屉、按钮全部去掉，
+   正文黑字白底，链接后面补 URL（纸上点不了）。 */
+@media print {
+  .masthead, .ticker, .rail, .tabbar, .footer, .drawer, .scrim,
+  .palette-wrap, #to-top, #progress, .btn, .rail-sister, .term-cross,
+  .skip, .lens-only, .to-top { display: none !important; }
+  body { background: #fff !important; color: #000 !important; }
+  .shell { display: block !important; }
+  .main { padding: 0 !important; max-width: none !important; }
+  .reading { max-width: none !important; }
+  a { color: #000 !important; text-decoration: none !important; }
+  .prose a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 10px; color: #555; }
+  .panel, .term, .dpanel { background: #fff !important; border-color: #bbb !important; break-inside: avoid; }
+  .art-head, .prose h2, .prose h3 { break-after: avoid; }
+  .prose p, .prose li { orphans: 3; widows: 3; }
+  .disclaimer { border: 1px solid #bbb; background: #fff; color: #333; }
+}
+
+/* ============================================================
+   UI v2：组件表面与动效
+   —— 圆角更大、阴影更软；hover 只做轻微位移，不做缩放表演。
+   ============================================================ */
+.panel, .dpanel, .term, .chain, .replay, .tbl-wrap {
+  border-radius: 16px;
+  border-color: var(--rule-2);
+  background: var(--sheet);
+  box-shadow: var(--sh-1);
+}
+.panel { padding: var(--s-5); }
+.panel:hover, .dpanel:hover { border-color: var(--rule); }
+.panel-title { border-bottom-color: var(--rule-2); }
+
+.btn {
+  border-radius: 999px; height: 36px; padding: 0 16px; font-weight: 600;
+  box-shadow: var(--sh-1); position: relative; overflow: hidden;
+  transition: transform var(--dur-1,140ms) var(--ease-out,cubic-bezier(.16,1,.3,1)),
+              box-shadow var(--dur-1,140ms) var(--ease-out,cubic-bezier(.16,1,.3,1)),
+              opacity var(--dur-1,140ms), background-color var(--dur-1,140ms),
+              color var(--dur-1,140ms), border-color var(--dur-1,140ms);
+}
+.btn:hover { opacity: 1; transform: translateY(-1px); box-shadow: var(--sh-2); }
+.btn:active { transform: scale(.97); }
+.btn.ghost { background: var(--sheet); border-color: var(--rule); }
+.btn.ghost:hover { border-color: var(--teal-line); color: var(--teal); background: var(--teal-soft); }
+.btn.teal { background: var(--teal); border-color: var(--teal); }
+.btn.gold { background: var(--gold-text); border-color: var(--gold-text); }
+
+/* 点按涟漪：JS 只插一个 span，动画全在 CSS */
+.btn > .ripple {
+  position: absolute; border-radius: 50%; pointer-events: none;
+  background: currentColor; opacity: .18; transform: scale(0);
+  animation: ui-ripple var(--dur-3,420ms) var(--ease-out,cubic-bezier(.16,1,.3,1)) forwards;
+}
+@keyframes ui-ripple { to { transform: scale(2.6); opacity: 0; } }
+
+.tag {
+  height: 22px; padding: 0 9px; border-radius: 999px;
+  background: var(--sheet-2); border-color: var(--rule-2);
+}
+.tag:hover { color: var(--teal); border-color: var(--teal-line); background: var(--teal-soft); }
+.tag.teal { background: var(--teal-soft); }
+
+.entries { border-top: 0; }
+.entry {
+  border-bottom: 1px solid var(--rule-2);
+  border-radius: 14px; padding: 14px;
+  transition: background-color var(--dur-1,140ms) var(--ease-in-out,cubic-bezier(.65,0,.35,1)),
+              transform var(--dur-1,140ms) var(--ease-out,cubic-bezier(.16,1,.3,1)),
+              box-shadow var(--dur-1,140ms) var(--ease-out,cubic-bezier(.16,1,.3,1)),
+              border-color var(--dur-1,140ms);
+}
+.entry:hover, .entry:focus-visible {
+  background: var(--sheet); transform: translateX(3px);
+  box-shadow: var(--sh-1); border-color: transparent;
+}
+.entry .e-t { font-size: 16px; }
+
+.dpanel { padding: var(--s-4); }
+.dp-v { letter-spacing: -.02em; }
+
+.term { padding: var(--s-4); }
+.tbl-wrap { overflow: hidden; }
+.tbl th { background: var(--sheet-2); }
+
+.drawer { border-radius: 20px 0 0 20px; box-shadow: var(--sh-3); }
+.palette { border-radius: 18px; box-shadow: var(--sh-3); border: 1px solid var(--rule-2); }
+.pl-item { border-radius: 10px; }
+
+.era-node { transition: transform var(--dur-2,240ms) var(--ease-out,cubic-bezier(.16,1,.3,1)); }
+.era-node:hover { transform: translateX(-50%) translateY(-3px); }
+.rp-track { border-radius: 10px; transition: background-color var(--dur-1,140ms) var(--ease-in-out,cubic-bezier(.65,0,.35,1)); }
+.rp-track:hover { background: var(--sheet-2); }
+
+/* 加载骨架：呼吸式 shimmer（全站唯一允许的循环动画） */
+.skel {
+  background: linear-gradient(90deg, var(--rule-2) 25%, var(--sheet-2) 37%, var(--rule-2) 63%);
+  background-size: 400% 100%;
+  animation: ui-shimmer 1.4s ease-in-out infinite;
+  border-radius: 8px;
+}
+@keyframes ui-shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+
+/* 换页：从下方 10px 浮上来，只播一次 */
+@keyframes route-in {
+  from { opacity: 0; transform: translateY(10px) scale(.995); }
+  to { opacity: 1; transform: none; }
+}
+.route-host { animation: route-in var(--dur-2,240ms) var(--ease-out,cubic-bezier(.16,1,.3,1)); }
+
+/* 区块进场：错峰 40ms，不重播 */
+@keyframes ui-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.h-sec { animation: ui-rise var(--dur-2,240ms) var(--ease-out,cubic-bezier(.16,1,.3,1)) backwards; }
+
+@media (prefers-reduced-motion: reduce) {
+  .btn > .ripple { display: none; }
+  .skel, .route-host, .h-sec { animation: none; }
+  .entry:hover, .entry:focus-visible, .btn:hover, .rail-item:hover, .era-node:hover { transform: none; }
+}
+
+/* ---------- 首页工具箱：图标 + 标题 + 一句说明 ---------- */
+.tool-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; }
+.tool-card {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 14px; border: 1px solid var(--rule-2); border-radius: 14px;
+  background: var(--sheet); box-shadow: var(--sh-1); color: var(--ink-2);
+  transition: transform var(--dur-1,140ms) var(--ease-out,cubic-bezier(.16,1,.3,1)),
+              box-shadow var(--dur-1,140ms) var(--ease-out,cubic-bezier(.16,1,.3,1)),
+              border-color var(--dur-1,140ms) var(--ease-in-out,cubic-bezier(.65,0,.35,1));
+}
+.tool-card:hover { transform: translateY(-2px); box-shadow: var(--sh-2); border-color: var(--teal-line); text-decoration: none; }
+.tool-card .tc-ic {
+  flex: none; width: 34px; height: 34px; border-radius: 11px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--teal-soft); color: var(--teal); font-family: var(--font-mono); font-size: 18px;
+}
+.tool-card b { display: block; color: var(--ink); font-size: var(--t-small); margin-bottom: 3px; }
+.tool-card small { display: block; color: var(--ink-3); font-size: var(--t-micro); line-height: 1.55; }
+.tool-card:hover b { color: var(--teal); }
+
+/* 开关：药丸形，拨杆是圆的（Telegram 式） */
+.switch { width: 46px; height: 26px; border-radius: 999px; }
+.switch::after { width: 20px; height: 20px; top: 2px; left: 2px; border-radius: 50%; background: var(--sheet); box-shadow: var(--sh-1); }
+.switch.on { background: var(--teal); border-color: var(--teal); }
+.switch.on::after { transform: translateX(20px); background: #fff; }
+
+/* 报头图标按钮也要能承载涟漪 */
+.mh-btn { position: relative; overflow: hidden; }
