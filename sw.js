@@ -19,7 +19,7 @@
 
 'use strict';
 
-const CACHE = 'ofa-v2';                 // ← 发版时修改这个版本号
+const CACHE = 'ofa-v3';                 // ← 发版时修改这个版本号
 const CACHE_PREFIX = 'ofa-';            // activate 只清本站自己的缓存
 
 /* 应用壳：只放首屏必需、体量小的文件。data/*.json 不在其中。 */
