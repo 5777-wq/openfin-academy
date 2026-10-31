@@ -217,6 +217,7 @@
     const aid = articleIdOf(sym);
     const art = window.Content.article(aid);
     const series = await window.History.series(sid);
+    await window.Content.ensureWiki();
     // 切走了就别画了：序列是异步取的，这期间用户很可能已经跳去别的页面
     if (!view.isConnected) return;
     const st = window.Engine.instrument ? window.Engine.instrument.stats(series) : null;
@@ -279,6 +280,24 @@
         <p class="cat-desc an-trap"><b>最容易踩的坑：</b>${esc(note.trap)}</p>
       </div>` : '';
 
+    // 延伸阅读：公司沿革、创始人故事、历年大事记这类长线内容，维基百科上更完整。
+    // 链接表在 content/_meta/asset-wiki.json（_scripts/resolve-asset-wiki.mjs 逐条核对过存在性）；
+    // 外部站点，站内不对其内容负责，所以只给深链不给内嵌。
+    const wikiMap = (window.Content.assetWiki && window.Content.assetWiki()) || null;
+    const wiki = wikiMap && wikiMap[sym];
+    const wikiLinks = wiki
+      ? [
+        wiki.zh ? `<a href="${esc(wiki.zh)}" target="_blank" rel="noopener noreferrer">中文维基百科 ↗</a>` : '',
+        wiki.en ? `<a href="${esc(wiki.en)}" target="_blank" rel="noopener noreferrer">English Wikipedia ↗</a>` : '',
+      ].filter(Boolean).join('<span class="msep" aria-hidden="true">·</span>')
+      : '';
+    const wikiHtml = wikiLinks ? `
+      <div class="panel" style="margin-bottom:var(--s-6)">
+        <div class="eyebrow" style="margin-bottom:var(--s-2)">延伸阅读</div>
+        <p class="muted" style="margin:0 0 var(--s-3)">它的来龙去脉——怎么起家、中间出过什么大事、谁在掌舵——维基百科上有持续更新的完整版本：</p>
+        <p style="margin:0">${wikiLinks}</p>
+      </div>` : '';
+
     view.innerHTML = `
       <article class="art-head">
         <div class="eyebrow">标的百科</div>
@@ -303,7 +322,9 @@
             : ''}
         </div>`)}
 
-      ${(art || noteHtml) ? `<p style="margin-top:var(--s-6)"><a class="btn ghost sm" href="#/assets">看全部标的 →</a></p>` : ''}`;
+      ${wikiHtml}
+
+      ${(art || noteHtml || wikiHtml) ? `<p style="margin-top:var(--s-6)"><a class="btn ghost sm" href="#/assets">看全部标的 →</a></p>` : ''}`;
 
     // 图在容器挂载之后才填：真正写进 DOM 的只能是本视图里的那两个容器
     // （作用域查询，与回放器同一条规矩——绝不越界去别的页面找同名节点）。

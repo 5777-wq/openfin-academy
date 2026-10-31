@@ -585,6 +585,14 @@ async function main() {
   has('标的百科详情：无专文也给数据卡', noart, '真实历史读数');
   has('标的百科详情：无专文有三段短注', noart, '三段话读懂它');
   has('标的百科详情：短注含坑提示', noart, '最容易踩的坑');
+  // 延伸阅读：维基深链（asset-wiki.json，按需加载）——有词条的标的双语都挂，豁免的不挂
+  has('标的百科详情：有专文也带维基深链', adet, '延伸阅读');
+  has('标的百科详情：深链指向中文维基', adet, 'https://zh.wikipedia.org/wiki/');
+  has('标的百科详情：深链指向英文维基', adet, 'https://en.wikipedia.org/wiki/Apple_Inc.');
+  has('标的百科详情：深链新窗口打开', adet, 'rel="noopener noreferrer"');
+  has('标的百科详情：无专文标的也有深链', noart, 'zh.wikipedia.org/wiki/%E4%B8%AD%E5%9B%BD%E5%B7%A5%E5%95%86%E9%93%B6%E8%A1%8C');
+  await sandbox.AssetsView.renderDetail(view(), 'EM:171.US10Y');
+  ok('标的百科详情：豁免标的（美债10Y）不挂深链', !view().innerHTML.includes('延伸阅读'), '不该出现延伸阅读面板');
 
   // 术语页：给行情终端深链用的落地页
   sandbox.TermView.render(view(), 'gold');

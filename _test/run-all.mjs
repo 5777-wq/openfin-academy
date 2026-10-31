@@ -559,6 +559,40 @@ function loadScripts(files) {
     }
   }
 
+  /* 维基深链契约：标的清单里的每个标的，要么有确认过的词条链接，要么在豁免表里
+     （汇率对 / 国债收益率没有单一词条）。豁免表由 resolve-asset-wiki.mjs 写进 JSON，
+     页面和测试读同一份，防止新增标的悄悄漏挂链接。 */
+  {
+    const wikiSrcPath = path.join(ROOT, 'content', '_meta', 'asset-wiki.json');
+    const idsPath = path.join(ROOT, 'data', 'content', 'asset-ids.json');
+    if (existsSync(idsPath)) {
+      if (!existsSync(wikiSrcPath)) {
+        ok('asset-wiki.json 已生成（node _scripts/resolve-asset-wiki.mjs）', false, '文件不存在');
+      } else {
+        const wiki = JSON.parse(await readFile(wikiSrcPath, 'utf8'));
+        const ids = JSON.parse(await readFile(idsPath, 'utf8'));
+        const linked = new Set(Object.keys(wiki.symbols || {}));
+        const exempt = new Set(wiki.exempt || []);
+        const missing = (ids.symbols || []).filter((s) => !linked.has(s) && !exempt.has(s));
+        ok('每个标的都有维基深链或在豁免表里（没有悄悄漏挂的）', missing.length === 0,
+          missing.join('、'));
+        const stale = [...linked].filter((s) => !(ids.symbols || []).includes(s));
+        ok('维基深链里没有标的清单之外的残留', stale.length === 0, stale.join('、'));
+        const badUrl = Object.entries(wiki.symbols || {})
+          .filter(([, v]) => !v || (!String(v.zh || '').startsWith('https://zh.wikipedia.org/wiki/')
+            && !String(v.en || '').startsWith('https://en.wikipedia.org/wiki/')))
+          .map(([s]) => s);
+        ok('深链 URL 只指向 zh/en 维基百科的词条页', badUrl.length === 0, badUrl.join('、'));
+        const prodPath2 = path.join(ROOT, 'data', 'content', 'asset-wiki.json');
+        if (existsSync(prodPath2)) {
+          const prod = JSON.parse(await readFile(prodPath2, 'utf8'));
+          ok('asset-wiki 源与产物一致（跑 node _scripts/build-content.mjs）',
+            JSON.stringify(prod.symbols) === JSON.stringify(wiki.symbols));
+        }
+      }
+    }
+  }
+
   /* 数据契约：三条踩过的坑，各钉一条断言，别再复发。
        1. 财政部 CSV 的**空单元格**曾被写成 0.00% 收益率（Number('') === 0，
           Number.isFinite(0) 也是 true）——美国30年期在 2002 年从 5.40%

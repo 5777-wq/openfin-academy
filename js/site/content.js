@@ -1,11 +1,12 @@
 /* site/content.js —— 内容加载（MD 编译产物 data/content/*.json）
    首屏只拉四份文件：index.json（目录）、glossary.json（术语库）、path.json（新手路径）、asset-ids.json（标的清单）。
-   22 篇文章正文各自按需拉：打开哪篇才拉哪篇，拉过就缓存。 */
+   22 篇文章正文各自按需拉：打开哪篇才拉哪篇，拉过就缓存。
+   标的的维基百科深链（asset-wiki.json）也按需拉：只有标的页会用到。 */
 (function () {
   'use strict';
 
   const BASE = 'data/content/';
-  const idx = { list: null, byId: new Map(), articles: new Map(), glossary: null, path: null, assetIds: null, assetNotes: null };
+  const idx = { list: null, byId: new Map(), articles: new Map(), glossary: null, path: null, assetIds: null, assetNotes: null, assetWiki: null };
   const inflight = new Map();   // id → 正在进行的请求：同一篇别重复拉
   const warned = new Set();     // 已经提醒过的 id：正文没到时别刷屏
 
@@ -29,7 +30,7 @@
     idx.list = index;
     (index.items || []).forEach((it) => idx.byId.set(it.id, it));
 
-    // 三份附属文件互相不依赖，一起拉完，谁先到先谁。
+    // 四份附属文件互相不依赖，一起拉完，谁先到先谁。
     // 标的清单（94 个终端标的在本站有对应标的页）：search 要用它们的名字和代码做匹配，
     // 否则「工商银行」「600519」这类词永远搜不到。20KB，一次拉够。
     const [glossary, path, assetIds, assetNotes] = await Promise.all([
@@ -119,5 +120,20 @@
   /** 标的三段短注（没有专文的标的页用）：symbol → { what, moves, trap } */
   function assetNotes() { return (idx.assetNotes && idx.assetNotes.symbols) || null; }
 
-  window.Content = { BASE, loadAll, ensureArticle, list, meta, article, glossary, term, bySection, pathPlan, assetPages, assetNotes, idx };
+  /** 标的的维基百科深链：symbol → { zh?, en? }（标题都经 API 确认存在，见 asset-wiki.json 的 note） */
+  function assetWiki() { return (idx.assetWiki && idx.assetWiki.symbols) || null; }
+
+  /** 按需拉维基深链表（只有标的页用它，不进首屏预算）：失败按空表处理，页面就不挂链接。 */
+  let wikiP = null;
+  function ensureWiki() {
+    if (idx.assetWiki) return Promise.resolve(idx.assetWiki);
+    if (!wikiP) {
+      wikiP = loadJSON(BASE + 'asset-wiki.json')
+        .then((j) => { idx.assetWiki = j || { symbols: null }; return idx.assetWiki; })
+        .catch(() => { idx.assetWiki = { symbols: null }; return idx.assetWiki; });
+    }
+    return wikiP;
+  }
+
+  window.Content = { BASE, loadAll, ensureArticle, list, meta, article, glossary, term, bySection, pathPlan, assetPages, assetNotes, assetWiki, ensureWiki, idx };
 })();
