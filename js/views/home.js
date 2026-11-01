@@ -17,17 +17,17 @@
      ------------------------------------------------------------------ */
   const MOTION_CSS = `
 .h-sec {
-  animation: h-sec-in var(--dur-2, 240ms) var(--ease-out, cubic-bezier(.16,1,.3,1)) backwards;
-  animation-delay: calc(var(--dur-1, 140ms) * var(--h-sec-i, 0));
+  animation: h-sec-in var(--dur-3, 580ms) var(--ease-out, cubic-bezier(.16,1,.3,1)) backwards;
+  animation-delay: calc(var(--stagger, 62ms) * var(--h-sec-i, 0));
 }
 @keyframes h-sec-in {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translate3d(0, 18px, 0) scale(.996); }
   to   { opacity: 1; transform: none; }
 }
 .dpanel.dp-arrive {
-  animation: dp-arrive-in var(--dur-2, 240ms) var(--ease-out, cubic-bezier(.16,1,.3,1)) backwards;
+  animation: dp-arrive-in var(--dur-3, 580ms) var(--ease-out, cubic-bezier(.16,1,.3,1)) backwards;
 }
-@keyframes dp-arrive-in { from { opacity: 0; } }
+@keyframes dp-arrive-in { from { opacity: 0; transform: translate3d(0, 6px, 0); } }
 @media (prefers-reduced-motion: reduce) {
   .h-sec, .dpanel.dp-arrive { animation: none; }
 }
@@ -89,11 +89,25 @@
         if (k) wasWaiting.add(k);
       });
     }
+    const firstPaint = !box.dataset.painted;
     box.innerHTML = GAUGES.map((g) => gaugeCard({
       name: g.name, unit: g.unit, digits: g.digits, hot: g.hot, href: g.href, link: g.link,
       key: g.key, arrive: wasWaiting.has(g.key),
       fetch: () => G.get(g.key),
     })).join('');
+    if (firstPaint) {
+      box.dataset.painted = '1';
+      box.classList.add('is-staggered');
+      const cards = box.querySelectorAll ? box.querySelectorAll('.dpanel') : null;
+      const lastCard = cards && cards.length ? cards[cards.length - 1] : null;
+      if (lastCard && lastCard.addEventListener) {
+        lastCard.addEventListener('animationend', () => box.classList.remove('is-staggered'), { once: true });
+      }
+      // A quote refresh inside the first second can replace the observed node.
+      // This timer is the reliable one-shot guard; after it fires, polling is silent.
+      setTimeout(() => box.classList.remove('is-staggered'), 1400);
+    }
+    if (typeof paintSnapshot === 'function') paintSnapshot();
   }
 
   /** 今天是本年的第几天（本地时区；1 月 1 日算第 1 天）
@@ -119,169 +133,86 @@
     return ids[(h >>> 0) % ids.length];
   }
 
+  /* Real quote surface only. No decorative chart and no synthetic trend. */
+  function marketSnapshot() {
+    const primary = window.Quotes.get('EM:171.US10Y');
+    const price = primary ? F().num(primary.price, primary.digits) : '--';
+    const direction = primary ? F().dir(primary.pct) : 'flat';
+    const change = primary && primary.pct !== null ? F().pct(primary.pct) : '--';
+    const tried = !!(window.Quotes.state && window.Quotes.state.source);
+    const rows = GAUGES.slice(1, 4).map((g) => {
+      const q = window.Quotes.get(g.key);
+      const d = q ? F().dir(q.pct) : 'flat';
+      const names = { 'EM:101.GC00Y': 'XAU', usIXIC: 'IXIC', 'EM:102.CL00Y': 'WTI', 'EM:100.UDI': 'DXY', sh000001: 'SSE' };
+      return `<a class="snapshot-row" href="${esc(g.href)}"><span class="snapshot-code">${names[g.key]}</span><span class="snapshot-name">${esc(g.name)}</span><span class="snapshot-value">${q ? F().num(q.price, q.digits) : '--'}</span><span class="snapshot-change ${d}">${q && q.pct !== null ? F().pct(q.pct) : '--'}</span></a>`;
+    }).join('');
+    return `<section class="market-snapshot" aria-label="真实市场报价，数据可能延迟">
+      <div class="snapshot-head"><span>今日焦点</span><span class="snapshot-status">${tried ? esc(window.Quotes.freshness()) : '正在连接行情'}</span></div>
+      <a class="snapshot-primary" href="#/term/risk-free-rate"><span class="snapshot-label">美国 10 年期国债收益率 <span>US 10Y</span></span><span class="snapshot-price">${price}<small>%</small></span><span class="snapshot-primary-foot"><span>全球资产定价的锚</span><span class="${direction}">${change} 当日</span></span></a>
+      <div class="snapshot-list">${rows}</div>
+      <div class="snapshot-foot"><span>公开数据源 · 有延迟 · 非投资建议</span><a href="#/data">完整数据台账 <span aria-hidden="true">→</span></a></div>
+    </section>`;
+  }
+  function paintSnapshot() {
+    const box = document.getElementById('home-snapshot');
+    if (box) box.innerHTML = marketSnapshot();
+  }
+
+  function sectionHead(n, title, desc, href, link) {
+    return `<div class="home-section-head"><span class="section-index">${n}</span><div><h2>${esc(title)}</h2><p>${esc(desc)}</p></div>${href ? `<a class="section-link" href="${esc(href)}">${esc(link)}<span aria-hidden="true">→</span></a>` : ''}</div>`;
+  }
+
+  function storyCard(article, index) {
+    return `<a class="home-story" href="#/${esc(article.section)}/${esc(article.id)}"><div class="story-meta"><span>${index === 0 ? '历史复盘' : '生活金融'}</span><span>${article.readMinutes ? esc(article.readMinutes) + ' MIN READ' : 'READ'}</span></div><h3>${esc(article.title)}</h3><p>${esc(article.dek || '')}</p></a>`;
+  }
   function render(view) {
     const G = window.Quotes;
-
     ensureMotionCss();
-
-    // 区块进场序号：同一次渲染内递增，条件区块不出现就不占号
     let secI = 0;
     const si = () => `--h-sec-i:${secI++};`;
-
     const glossary = window.Content.glossary();
     const termIds = Object.keys(glossary);
     const pick = pickTodayTerm(termIds);
-    // 今日一词：整张卡是一个链接。
-    // 以前它是一张读得懂却点不动的卡片——读者读完想看完整解释，只能自己去搜一遍。
-    const termHtml = pick
-      ? `<a class="term-link" href="#/term/${encodeURIComponent(pick)}">
-          ${window.TermCard.render(Object.assign({ id: pick }, glossary[pick]))}
-          <span class="term-link-more">看完整解释 →</span>
-        </a>`
-      : '';
+    const termHtml = pick ? `<a class="term-link" href="#/term/${encodeURIComponent(pick)}">${window.TermCard.render(Object.assign({ id: pick }, glossary[pick]))}<span class="term-link-more">看完整解释 <span aria-hidden="true">→</span></span></a>` : '';
+    const stories = [window.Content.bySection('crisis')[0], window.Content.bySection('family')[0]].filter(Boolean);
 
-    const latestCrisis = window.Content.bySection('crisis').slice(0, 2);
-    const latestConcept = window.Content.bySection('concepts').slice(0, 3);
-    // 家庭理财：全站只有这一篇「给家里人看」的东西，
-    // 但它没有入口——左栏第 06 项埋得深，手机上更是完全找不到。
-    // 这里直接链到文章本身，不链栏目页：点了就知道会看到哪一篇。
-    const family = window.Content.list().filter((a) => a.section === 'family');
-    // 读懂财报：同样直接链文章，别让新栏目只有左栏一个入口
-    const reports = window.Content.list().filter((a) => a.section === 'reports');
-
-    view.innerHTML = `
-      <section class="panel flush open h-sec" style="${si()}border:0;background:transparent;padding:0">
-        <div class="art-head" style="margin-bottom:var(--s-5)">
-          <div class="eyebrow">${esc(F().cnDateWithWeek(F().today()))} · 第 ${dayOfYear()} 天</div>
-          <h1 style="font-size:var(--t-hero);line-height:1.32;letter-spacing:-.015em;margin-bottom:var(--s-3)">
-            把美债收益率、黄金、纳指、原油、A股<br class="hero-br">讲成你听得懂的话。
-          </h1>
-          <p class="art-dek">零后端、零密钥、零构建的金融科普站。每一句都能点开看真实数据，每一场危机都能拖动时间轴回放。</p>
-          <div style="display:flex;gap:var(--s-2);flex-wrap:wrap;margin-top:var(--s-4)">
-            <a class="btn" href="#/path">从零开始 · 8 课</a>
-            <a class="btn ghost" href="#/terms?q=PE">查一个词（试试 PE）</a>
-            <a class="btn ghost" href="#/crisis">看一场危机复盘</a>
-            <a class="btn ghost" href="#/concepts">查一个概念</a>
-          </div>
+    view.innerHTML = `<div class="home-page">
+      <section class="home-hero h-sec" style="${si()}">
+        <div class="home-copy">
+          <div class="home-kicker"><span class="system-status">Finance, explained.</span><span class="k-date">${esc(F().cnDateWithWeek(F().today()))} · DAY ${dayOfYear()}</span></div>
+          <h1>看懂金融，<br class="hero-br"><span class="hero-highlight">从一个概念开始。</span></h1>
+          <p class="art-dek">把美债收益率、黄金、纳指、原油、A股讲成你听得懂的话。用真实数据、历史复盘和可交互工具，建立你自己的金融认知。</p>
+          <div class="hero-actions"><a class="btn teal" href="#/path">从零开始 · 8 课<span aria-hidden="true">→</span></a><a class="btn ghost" href="#/crisis">探索危机复盘</a><a class="btn ghost" href="#/terms?q=PE">查一个词</a></div>
+          <div class="home-proof"><span>${termIds.length} 个金融词条</span><span>真实数据驱动</span><span>免费开放 · 无需注册</span></div>
         </div>
-        <div id="home-era"></div>
+        <div id="home-snapshot">${marketSnapshot()}</div>
       </section>
 
+      <section class="home-section h-sec" style="${si()}">${sectionHead('01', '从指标理解市场', '不只看涨跌，也看它为什么重要', '#/data', '查看数据台账')}<div class="gauges" id="home-gauges"></div><p class="home-note"><span id="gauge-src">行情来自公开数据源，可能存在延迟。读数用于理解，不构成投资建议。</span></p></section>
+
+      <section class="home-section h-sec" style="${si()}">${sectionHead('02', '今天，学一点', '每天一个概念，每周一段历史', '#/terms', '浏览术语库')}<div class="home-learn"><div class="home-term" aria-label="今日一词">${termHtml || '<div class="empty"><div class="et">今日一词正在补充</div></div>'}</div><div class="home-featured">${stories.map(storyCard).join('')}</div></div></section>
+
+      <section class="home-section h-sec" style="${si()}">${sectionHead('03', '在时间里，理解周期', '不预测明天，只看清曾经发生过什么', '#/crisis', '全部危机复盘')}<div id="home-era"></div></section>
+
+      <section class="home-section h-sec" style="${si()}">${sectionHead('04', '动手，建立自己的判断', '六个小工具，把抽象概念变成可见的关系', '', '')}
+        <div class="tool-grid">${[
+          ['01', '资产对比', '两条线放同一张图上，看相对涨跌与回撤', '#/compare'],
+          ['02', '收益率曲线', '拖动年份，看曲线形状与倒挂', '#/curve'],
+          ['03', '周期对照', '2000 与本届 AI 的六维对照', '#/analogy'],
+          ['04', '理财计算器', '通胀、定投、房贷与回本', '#/calc'],
+          ['05', '术语自测', '5 题检验理解，答错给解析', '#/quiz'],
+          ['06', '收藏与记录', '收藏、阅读历史与学习进度', '#/saved'],
+        ].map(([ic, title, desc, href]) => `<a class="tool-card" href="${href}"><span class="tc-ic">${ic}</span><span><b>${title}</b><small>${desc}</small></span></a>`).join('')}</div>
+      </section>
       ${(window.Site && window.Site.disclaimer) ? window.Site.disclaimer.GENERIC : ''}
-
-      <section class="h-sec" style="${si()}margin-top:var(--s-7)">
-        <div class="eyebrow">实时仪表 <span class="muted" id="gauge-src" style="margin-left:auto;text-transform:none;letter-spacing:0"></span></div>
-        <div class="gauges" id="home-gauges"></div>
-      </section>
-
-      <section class="h-sec" style="${si()}margin-top:var(--s-7)">
-        <div class="eyebrow">今日一词</div>
-        ${termHtml || '<div class="empty"><div class="et">术语库正在补充</div></div>'}
-      </section>
-
-      <section class="h-sec" style="${si()}margin-top:var(--s-7)">
-        <div class="eyebrow">工具箱 · 动手看，不只看</div>
-        <div class="tool-grid">
-          <a class="tool-card" href="#/compare">
-            <span class="tc-ic" aria-hidden="true">⇄</span>
-            <span><b>资产对比</b><small>两条线放同一张图上，比相对涨跌与回撤</small></span>
-          </a>
-          <a class="tool-card" href="#/curve">
-            <span class="tc-ic" aria-hidden="true">⌁</span>
-            <span><b>收益率曲线</b><small>拖动年份，看曲线形状与倒挂</small></span>
-          </a>
-          <a class="tool-card" href="#/analogy">
-            <span class="tc-ic" aria-hidden="true">≋</span>
-            <span><b>周期对照</b><small>2000 与本届 AI 的六维打分</small></span>
-          </a>
-          <a class="tool-card" href="#/calc">
-            <span class="tc-ic" aria-hidden="true">±</span>
-            <span><b>理财计算器</b><small>通胀、定投、房贷、回本</small></span>
-          </a>
-          <a class="tool-card" href="#/quiz">
-            <span class="tc-ic" aria-hidden="true">?</span>
-            <span><b>术语自测</b><small>5 题检验记住没有，答错给解析</small></span>
-          </a>
-          <a class="tool-card" href="#/saved">
-            <span class="tc-ic" aria-hidden="true">★</span>
-            <span><b>收藏与记录</b><small>收藏、最近阅读与路径进度</small></span>
-          </a>
-        </div>
-      </section>
-
-      ${family.length ? `<section class="h-sec" style="${si()}margin-top:var(--s-7)">
-        <div class="eyebrow">给家里人的那份说明书</div>
-        <div class="entries">
-          ${family.map((f) => `<a class="entry" href="#/family/${esc(f.id)}">
-            <span>
-              <span class="e-t">${esc(f.title)}</span>
-              <span class="e-d">${esc(f.dek || '')}</span>
-            </span>
-            <span class="e-m">${f.readMinutes ? f.readMinutes + ' min' : ''} 读一篇 →</span>
-          </a>`).join('')}
-        </div>
-      </section>` : ''}
-
-      ${reports.length ? `<section class="h-sec" style="${si()}margin-top:var(--s-7)">
-        <div class="eyebrow">读懂财报</div>
-        <div class="entries">
-          ${reports.map((f) => `<a class="entry" href="#/reports/${esc(f.id)}">
-            <span>
-              <span class="e-t">${esc(f.title)}</span>
-              <span class="e-d">${esc(f.dek || '')}</span>
-            </span>
-            <span class="e-m">${f.readMinutes ? f.readMinutes + ' min' : ''} 读一篇 →</span>
-          </a>`).join('')}
-        </div>
-      </section>` : ''}
-
-      <section class="h-sec" style="${si()}margin-top:var(--s-7)">
-        <div class="eyebrow">先把基础打完</div>
-        <div class="entries">
-          ${latestConcept.map((c) => entryRow(c)).join('')}
-        </div>
-      </section>
-
-      <section class="h-sec" style="${si()}margin-top:var(--s-7)">
-        <div class="eyebrow">以史为鉴</div>
-        <div class="entries">
-          ${latestCrisis.map((c) => entryRow(c)).join('')}
-        </div>
-      </section>
-
-      <section class="lens-only h-sec" style="${si()}margin-top:var(--s-7)">
-        <div class="panel" style="display:flex;gap:var(--s-4);align-items:center;flex-wrap:wrap">
-          <div style="flex:1 1 260px">
-            <div class="eyebrow">实时行情终端</div>
-            <h3 class="h3" style="margin-bottom:6px">OpenFinLens · 实时行情终端</h3>
-            <p class="small muted" style="margin:0">想看此刻的盘口、热力图和全球事件地图？去 OpenFinLens。数据同源，视角互补。</p>
-          </div>
-          <a class="btn teal" href="https://5777-wq.github.io/openfinlens/" target="_blank" rel="noopener">打开实时看板 ↗</a>
-        </div>
-      </section>`;
-
-    // 时代横轴
+      <section class="lens-only h-sec" style="${si()}"><div class="panel" style="display:flex;gap:var(--s-4);align-items:center;flex-wrap:wrap"><div style="flex:1 1 260px"><div class="eyebrow">OpenFinLens / Live terminal</div><h3 style="margin-bottom:6px">从理解金融，到观察市场。</h3><p class="small muted" style="margin:0">实时盘口、热力图、全球事件与产业链强弱。数据同源，视角互补。</p></div><a class="btn ghost" href="https://5777-wq.github.io/openfinlens/" target="_blank" rel="noopener">打开实时终端</a></div></section>
+    </div>`;
     const eraBox = document.getElementById('home-era');
     if (eraBox) window.EraTimeline.render(eraBox);
-
-    // 仪表：先画占位，行情到了再补
     paintGauges();
-
-    // 仪表数据源标注
+    paintSnapshot();
     const src = document.getElementById('gauge-src');
-    if (src && window.Quotes.state.source) {
-      src.textContent = '来源 ' + window.Quotes.state.source + ' · ' + window.Quotes.freshness();
-    }
-  }
-
-  function entryRow(c) {
-    return `<a class="entry" href="#/${c.section}/${c.id}">
-      <span>
-        <span class="e-t">${esc(c.title)}</span>
-        <span class="e-d">${esc(c.dek || '')}</span>
-      </span>
-      <span class="e-m">${c.readMinutes ? c.readMinutes + ' min' : ''} <span class="tag">${esc(c.tag || '')}</span></span>
-    </a>`;
+    if (src && window.Quotes.state.source) src.textContent = '来源 ' + window.Quotes.state.source + ' · ' + window.Quotes.freshness() + ' · 数据可能有延迟，不构成投资建议';
   }
 
   window.HomeView = { render, paintGauges, pickTodayTerm, dayOfYear };

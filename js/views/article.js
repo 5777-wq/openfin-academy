@@ -43,9 +43,13 @@
       · 数字与图表本体永不动画；动的只是容器块的 opacity 与 6px 位移。 */
   const PAGE_CSS_ID = 'article-view-css';
   const PAGE_CSS = ''
-    + '.fx-page > *{animation:fx-page-in var(--dur-2,240ms) var(--ease-out,cubic-bezier(.16,1,.3,1)) both;}'
+    + '.fx-page > *{animation:fx-page-in var(--dur-3,580ms) var(--ease-out,cubic-bezier(.16,1,.3,1)) both;}'
+    + '.fx-page > :nth-child(3){animation-delay:calc(var(--stagger,62ms) * 1);}'
+    + '.fx-page > :nth-child(4){animation-delay:calc(var(--stagger,62ms) * 2);}'
+    + '.fx-page > :nth-child(5){animation-delay:calc(var(--stagger,62ms) * 3);}'
+    + '.fx-page > :nth-child(n+6){animation-delay:calc(var(--stagger,62ms) * 4);}'
     + '.fx-page.fx-body-in > .art-head,.fx-page.fx-body-in > .disclaimer{animation:none;}'
-    + '@keyframes fx-page-in{from{opacity:0;transform:translateY(6px);}}'
+    + '@keyframes fx-page-in{from{opacity:0;transform:translate3d(0,12px,0);}}'
     + '@media (prefers-reduced-motion:reduce){.fx-page > *{animation:none;}}';
 
   function ensureCss() {

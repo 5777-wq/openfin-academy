@@ -51,8 +51,8 @@
   const MOTION_CSS = `
 /* ---- 进场（一次性，随换页重渲染触发）：节点沿轴依次显影 ---- */
 .era-node {
-  animation: era-node-in var(--dur-2, 240ms) var(--ease-out, cubic-bezier(.16,1,.3,1)) backwards;
-  animation-delay: calc(var(--dur-1, 140ms) * var(--en-i, 0) / 2);
+  animation: era-node-in var(--dur-2, 340ms) var(--ease-out, cubic-bezier(.16,1,.3,1)) backwards;
+  animation-delay: calc(var(--stagger, 62ms) * var(--en-i, 0));
 }
 @keyframes era-node-in {
   from { opacity: 0; transform: translateX(-50%) translateY(6px); }
@@ -61,7 +61,7 @@
 /* ---- 进场（一次性）：金线从左端滑到「现在」——transform 缩放，不动画宽度 ---- */
 .era-axis .axis-fill {
   transform-origin: 0 50%;
-  animation: era-fill-in var(--dur-3, 420ms) var(--ease-out, cubic-bezier(.16,1,.3,1)) backwards;
+  animation: era-fill-in var(--dur-3, 580ms) var(--ease-out, cubic-bezier(.16,1,.3,1)) backwards;
 }
 @keyframes era-fill-in { from { transform: scaleX(0); } }
 /* ---- hover / 键盘选中：金色游标滑到所指节点（指示，不表演；不循环不脉冲） ---- */

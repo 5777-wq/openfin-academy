@@ -7,6 +7,7 @@ build/
 # 本地临时
 .tmp-upstream/
 .tmpprobe/
+.tmp-ui/
 *.log
 
 # 编辑器

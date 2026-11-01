@@ -376,6 +376,10 @@
 
     const { route: r, params, query } = m;
     const path = window.Router.parse(location.hash).path;
+    if (view) {
+      view.dataset.route = r.id;
+      view.classList.toggle('reading', r.id !== 'home');
+    }
 
     // 静态骨架是"首页的样子"。深链进别的页面时先换成中性占位，
     // 否则用户会先看到一段首页内容，然后突然变成危机列表。
@@ -810,7 +814,7 @@
     document.body.setAttribute('data-theme', t);
     document.body.setAttribute('data-updown', window.Store.get('updown') === 'green' ? 'green' : 'red');
     const meta = document.querySelector('meta[name=theme-color]');
-    if (meta) meta.setAttribute('content', t === 'night' ? '#14191C' : '#F2EAE6');
+    if (meta) meta.setAttribute('content', t === 'night' ? '#08111C' : '#F4F6F9');
   }
 
   function prefersReducedMotion() {

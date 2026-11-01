@@ -27,10 +27,10 @@
       s.id = 'style-terms-motion';
       s.textContent = `
 #terms-body.terms-enter {
-  animation: terms-body-in var(--dur-2, 240ms) var(--ease-out, cubic-bezier(.16,1,.3,1)) both;
+  animation: terms-body-in var(--dur-2, 340ms) var(--ease-out, cubic-bezier(.16,1,.3,1)) both;
 }
 @keyframes terms-body-in {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 @media (prefers-reduced-motion: reduce) {

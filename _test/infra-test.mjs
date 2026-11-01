@@ -138,8 +138,8 @@ async function main() {
         try { list = vm.runInNewContext('[' + pre[1] + ']'); }
         catch (e) { ok('sw.js PRECACHE 是可求值的数组', false, e.message); }
         if (list) {
-          const want = ['./', 'index.html', 'css/tokens.css', 'css/layout.css', 'css/components.css', 'manifest.webmanifest'];
-          eq('sw.js precache 只含应用壳（6 项）', list.length, want.length);
+          const want = ['./', 'index.html', 'css/tokens.css', 'css/layout.css', 'css/components.css', 'css/aurora.css', 'css/home.css', 'css/motion.css', 'manifest.webmanifest'];
+          eq('sw.js precache 只含应用壳（9 项）', list.length, want.length);
           ok('sw.js precache 与约定逐项一致', want.every((x) => list.includes(x)), list.join(' | '));
           ok('sw.js precache 不含 data 文件', !list.some((x) => /(^|\/)data\//.test(x)));
           ok('sw.js precache 不含跨域 URL', !list.some((x) => /^https?:\/\//.test(x)));

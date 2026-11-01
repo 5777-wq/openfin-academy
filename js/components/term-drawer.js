@@ -33,10 +33,10 @@
       s.id = 'style-drawer-motion';
       s.textContent = `
 .drawer.on .drawer-body {
-  animation: drawer-body-in var(--dur-2, 240ms) var(--ease-out, cubic-bezier(.16,1,.3,1)) both;
+  animation: drawer-body-in var(--dur-2, 340ms) var(--ease-out, cubic-bezier(.16,1,.3,1)) both;
 }
 @keyframes drawer-body-in {
-  from { opacity: 0; transform: translateX(10px); }
+  from { opacity: 0; transform: translateX(14px); }
   to   { opacity: 1; transform: translateX(0); }
 }
 @media (prefers-reduced-motion: reduce) {

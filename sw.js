@@ -19,7 +19,7 @@
 
 'use strict';
 
-const CACHE = 'ofa-v4';                 // ← 发版时修改这个版本号
+const CACHE = 'ofa-v6';                 // ← 发版时修改这个版本号
 const CACHE_PREFIX = 'ofa-';            // activate 只清本站自己的缓存
 
 /* 应用壳：只放首屏必需、体量小的文件。data/*.json 不在其中。 */
@@ -29,6 +29,9 @@ const PRECACHE = [
   'css/tokens.css',
   'css/layout.css',
   'css/components.css',
+  'css/aurora.css',
+  'css/home.css',
+  'css/motion.css',
   'manifest.webmanifest',
 ];
 
