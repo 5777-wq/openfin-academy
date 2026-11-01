@@ -82,8 +82,8 @@ async function main() {
         eq('manifest short_name', m.short_name, '白话金融');
         eq('manifest start_url 是相对子路径', m.start_url, '.');
         eq('manifest display', m.display, 'standalone');
-        eq('manifest background_color', m.background_color, '#F2EAE6');
-        eq('manifest theme_color', m.theme_color, '#F2EAE6');
+        eq('manifest background_color', m.background_color, '#F2ECDF');
+        eq('manifest theme_color', m.theme_color, '#F2ECDF');
         eq('manifest lang', m.lang, 'zh-CN');
         ok('manifest description 非空', typeof m.description === 'string' && m.description.length > 10);
         ok('manifest icons 至少 1 个', Array.isArray(m.icons) && m.icons.length >= 1);

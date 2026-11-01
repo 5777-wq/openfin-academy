@@ -5,29 +5,29 @@
    ========================================================================== */
 
 :root {
-  --paper: #f4f6f9;
-  --paper-deep: #e9edf3;
-  --sheet: #ffffff;
-  --sheet-2: #f0f3f7;
-  --rule: #d8dfe8;
-  --rule-2: #e6ebf1;
-  --rule-3: #edf1f5;
-  --ink: #101c2b;
-  --ink-2: #425166;
-  --ink-3: #5b6b80;
-  --ink-4: #68788c;
-  --teal: #315b8d;
-  --teal-2: #4c79ad;
-  --teal-soft: rgba(17, 28, 43, .055);
-  --teal-line: rgba(49, 91, 141, .24);
-  --gold: #d18f2c;
-  --gold-text: #805310;
-  --gold-soft: rgba(209, 143, 44, .10);
-  --gold-line: rgba(160, 105, 22, .28);
-  --accent: #b27a2b;
+  --paper: #f2ecdf;
+  --paper-deep: #e7decd;
+  --sheet: #fcf9f2;
+  --sheet-2: #f4eee3;
+  --rule: #d7cdbb;
+  --rule-2: #e4dbca;
+  --rule-3: #eee7da;
+  --ink: #1c1a15;
+  --ink-2: #4c463b;
+  --ink-3: #6b6253;
+  --ink-4: #786e5e;
+  --teal: #365574;
+  --teal-2: #527394;
+  --teal-soft: rgba(46, 39, 27, .055);
+  --teal-line: rgba(54, 85, 116, .25);
+  --gold: #b98533;
+  --gold-text: #765018;
+  --gold-soft: rgba(185, 133, 51, .11);
+  --gold-line: rgba(118, 80, 24, .28);
+  --accent: #b57d28;
   --violet: #7465e8;
-  --aurora-ink: #07121e;
-  --aurora-panel: #0d1c2b;
+  --aurora-ink: #211d16;
+  --aurora-panel: #2a241a;
   --font-sans: Inter, "SF Pro Display", "PingFang SC", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
   --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   --t-hero: clamp(36px, 4.2vw, 62px);
@@ -42,9 +42,9 @@
   --r-1: 6px;
   --r-2: 12px;
   --r-3: 18px;
-  --sh-1: 0 1px 2px rgba(17, 28, 43, .03), 0 4px 14px rgba(17, 28, 43, .025);
-  --sh-2: 0 16px 36px -20px rgba(17, 28, 43, .18), 0 2px 8px rgba(17, 28, 43, .035);
-  --sh-3: 0 30px 80px -24px rgba(17, 28, 43, .35), 0 8px 24px rgba(17, 28, 43, .08);
+  --sh-1: 0 1px 2px rgba(71, 55, 33, .03), 0 4px 14px rgba(71, 55, 33, .025);
+  --sh-2: 0 16px 36px -20px rgba(71, 55, 33, .18), 0 2px 8px rgba(71, 55, 33, .04);
+  --sh-3: 0 30px 80px -24px rgba(45, 34, 20, .30), 0 8px 24px rgba(45, 34, 20, .08);
 }
 body[data-theme="night"] {
   --paper: #08111c;
@@ -73,7 +73,10 @@ body[data-theme="night"] {
 /* ---- Global canvas: one quiet grid, no ornamental glow around every card ---- */
 html { scroll-padding-top: calc(var(--masthead-h) + var(--ticker-h) + 24px); }
 body {
-  background: var(--paper);
+  background:
+    radial-gradient(1100px 720px at 15% -12%, color-mix(in srgb, #fffdf7 72%, transparent), transparent 65%),
+    radial-gradient(900px 560px at 100% 0%, color-mix(in srgb, var(--gold) 5%, transparent), transparent 55%),
+    var(--paper);
   font-size: 14px;
   letter-spacing: .002em;
 }
@@ -389,7 +392,7 @@ input[type="text"], input[type="search"], input[type="number"], select, textarea
 .brand-symbol::after { content: '白'; transform: translateY(-1px); }
 body[data-theme="night"] .brand-symbol { background: var(--ink); color: var(--paper); border: 1px solid var(--rule); }
 /* Final information hierarchy: no illustration, no ornamental glow. */
-body::before { display: none; }
+body[data-theme="night"] { background: var(--paper); }
 .tool-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .home-section .gauges { gap: 8px; }
 .home-section .dpanel { padding: 14px 16px; box-shadow: none; }

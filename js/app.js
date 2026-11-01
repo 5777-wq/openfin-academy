@@ -814,7 +814,7 @@
     document.body.setAttribute('data-theme', t);
     document.body.setAttribute('data-updown', window.Store.get('updown') === 'green' ? 'green' : 'red');
     const meta = document.querySelector('meta[name=theme-color]');
-    if (meta) meta.setAttribute('content', t === 'night' ? '#08111C' : '#F4F6F9');
+    if (meta) meta.setAttribute('content', t === 'night' ? '#08111C' : '#F2ECDF');
   }
 
   function prefersReducedMotion() {
