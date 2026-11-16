@@ -1,6 +1,6 @@
 /* site/content.js —— 内容加载（MD 编译产物 data/content/*.json）
    首屏只拉四份文件：index.json（目录）、glossary.json（术语库）、path.json（新手路径）、asset-ids.json（标的清单）。
-   22 篇文章正文各自按需拉：打开哪篇才拉哪篇，拉过就缓存。
+   文章正文各自按需拉：打开哪篇才拉哪篇，拉过就缓存。
    标的的维基百科深链（asset-wiki.json）也按需拉：只有标的页会用到。 */
 (function () {
   'use strict';

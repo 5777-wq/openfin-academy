@@ -26,26 +26,30 @@
   let dragHost = null; // 拖动态挂在哪个容器上：换包/离开页面时要把 rp-dragging 类摘干净
 
   /* 动效约章（全站原则在本组件的落地；随组件注入，选择器都被 .replay / 状态类限定住）：
+     —— 令牌单一来源：css/motion.css:7-15 是唯一的时长/缓动定义
+        （--dur-1=.18s / --dur-2=.34s / --ease-out / --ease-in-out）。
+        下方兜底毫秒已对齐这套 live 值，仅作 hygiene——--dur-* 恒已定义，兜底永不生效，
+        零节奏变化，不另立第二套令牌源（tokens.css 的 .14/.24/.42s 是死值，不取）。
      —— 指针拖动期间零过渡：.rp-dragging 把游标一族（金竖线 / 回撤线 / 现值点）的
         transition 一刀切断，每一帧都跟手；
      —— 松手之后的「状态切换一瞬」（点事件跳转、方向键步进、跨进/跨出回撤区间）
         才允许过渡：金竖线按 --dur-2 滑到新位置，回撤金线淡入淡出（绘制动效）；
      —— 自动播放期间同样禁过渡（.rp-playing）：数据每格 420ms 跳一次，
-        过渡只会让金线永远慢半拍、和现值点脱节；
-     —— 数据轨道（曲线、面积、基准线）永不动画；播放键只做双图标交叠淡切；
-     —— 颜色双向过渡用 --ease-in-out，位移/透明度用 --ease-out；
-        时长/缓动一律引用设计系统变量并带兜底值。
-     prefers-reduced-motion 下 layout.css:7-13 的全局关闭分支已兜底，这里再显式关一次。 */
+        过渡只会让金线永远慢半拍、和现值点脱节；游标一族（金竖线 / 回撤线 / 现值点）
+        三者一并切断，数据轨道（曲线 / 面积 / 基准线）与峰谷圈全程无动画、不做常驻动画；
+     —— 播放键只做双图标交叠淡切；数字本体（.rt-v）永不动画；
+     —— 颜色双向过渡用 --ease-in-out，位移/透明度用 --ease-out。
+     prefers-reduced-motion 下 css/motion.css:137-151 的全局关闭分支已兜底，这里再显式关一次。 */
   const MOTION_CSS = [
-    '.replay .rt-cur{transition:transform var(--dur-2,240ms) var(--ease-out,cubic-bezier(.16,1,.3,1)),opacity var(--dur-2,240ms) var(--ease-out,cubic-bezier(.16,1,.3,1))}',
-    '.replay .rt-dd{transition:opacity var(--dur-2,240ms) var(--ease-out,cubic-bezier(.16,1,.3,1))}',
-    '.replay .rp-btn .rp-ic{grid-area:1/1;transition:opacity var(--dur-1,140ms) var(--ease-out,cubic-bezier(.16,1,.3,1)),transform var(--dur-1,140ms) var(--ease-out,cubic-bezier(.16,1,.3,1))}',
+    '.replay .rt-cur{transition:transform var(--dur-2,340ms) var(--ease-out,cubic-bezier(.16,1,.3,1)),opacity var(--dur-2,340ms) var(--ease-out,cubic-bezier(.16,1,.3,1))}',
+    '.replay .rt-dd{transition:opacity var(--dur-2,340ms) var(--ease-out,cubic-bezier(.16,1,.3,1))}',
+    '.replay .rp-btn .rp-ic{grid-area:1/1;transition:opacity var(--dur-1,180ms) var(--ease-out,cubic-bezier(.16,1,.3,1)),transform var(--dur-1,180ms) var(--ease-out,cubic-bezier(.16,1,.3,1))}',
     '.replay .rp-btn .rp-ic-pause{opacity:0;transform:scale(.55)}',
     '.replay .rp-btn.playing .rp-ic-pause{opacity:1;transform:none}',
     '.replay .rp-btn.playing .rp-ic-play{opacity:0;transform:scale(.55)}',
-    '.replay .rp-event .re-d,.replay .rp-event .re-t{transition:color var(--dur-1,140ms) var(--ease-in-out,cubic-bezier(.65,0,.35,1))}',
+    '.replay .rp-event .re-d,.replay .rp-event .re-t{transition:color var(--dur-1,180ms) var(--ease-in-out,cubic-bezier(.65,0,.35,1))}',
     '.rp-dragging .rt-cur,.rp-dragging .rt-dd,.rp-dragging .rt-now{transition:none!important}',
-    '.rp-playing .rt-cur{transition:none!important}',
+    '.rp-playing .rt-cur,.rp-playing .rt-dd,.rp-playing .rt-now{transition:none!important}',
     '@media (prefers-reduced-motion: reduce){.replay .rt-cur,.replay .rt-dd,.replay .rt-now,.replay .rp-btn .rp-ic,.replay .rp-event .re-d,.replay .rp-event .re-t{transition:none}}',
   ].join('');
 

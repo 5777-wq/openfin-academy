@@ -115,7 +115,7 @@
 
   /** 已经拉到手的正文。
       正文现在是按需拉的（js/site/content.js 改成懒加载了），
-      搜索不该反过来逼着浏览器把 22 篇正文全下下来——
+      搜索不该反过来逼着浏览器把全站正文全下下来——
       所以这里只读缓存里已有的那几篇，读者逛过的文章也搜得到。 */
   function loadedBody(id) {
     const idx = window.Content && window.Content.idx;

@@ -43,7 +43,7 @@
     { path: '/assets',   label: '标的',   icon: 'M4 7h16M4 12h16M4 17h16M7 4v6' },
     { path: '/crisis',   label: '复盘',   icon: 'M3 12a9 9 0 1 0 3-6.7M3 4v5h5' },
     { path: '/chains',   label: '产业链', icon: 'M4 4v16h16M8 15l3-4 3 2 4-6' },
-    { path: '/search',   label: '搜索',   icon: 'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14M20 20l-3.5-3.5' },
+    { path: '/more',     label: '更多',   icon: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z' },
   ];
 
   let currentKey = '';
@@ -143,7 +143,7 @@
     const bar = document.getElementById('tabbar');
     if (!bar) return;
     bar.innerHTML = TABS.map((t) => `
-      <button data-path="${esc(t.path)}">
+      <button data-path="${esc(t.path)}"${t.path === '/more' ? ' aria-haspopup="dialog" aria-controls="drawer"' : ''}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="${t.icon}"/>
         </svg>
@@ -152,7 +152,8 @@
     bar.querySelectorAll('button').forEach((b) => {
       b.addEventListener('click', () => {
         const p = b.dataset.path;
-        if (p === '/search') openPalette();
+        if (p === '/more') showNav();
+        else if (p === '/search') openPalette();
         else window.Router.go(p);
       });
     });
@@ -254,7 +255,7 @@
     return map[sym] || sym;
   }
 
-  /** 这条路由要不要正文？首屏 22 篇正文全都不拉，只有真读正文时才去取 */
+  /** 这条路由要不要正文？首屏不拉任何正文，只有真读正文时才去取 */
   function bodyIdForRoute(r, params) {
     if (r.id === 'crisis-one' || (r.id === 'crisis' && params.id)) return params.id;
     if (r.id === 'asset') return assetArticleId(params.id);
@@ -703,6 +704,25 @@
         closePalette();
         if (it) it.go();
       });
+    });
+  }
+
+  /* ---------------- 全部栏目（手机底栏） ----------------
+     底栏只放最常用的 7 个入口；其余栏目和工具收进一个可滚动抽屉，
+     避免手机 / 小屏用户只能靠搜索或页脚才能找到「家庭理财」「读懂财报」「周期对照」。 */
+  function showNav() {
+    const groups = NAV_GROUPS.map((g) => {
+      const links = g.ids.map((id) => NAV.find((x) => x.id === id)).filter(Boolean).map((it) => `
+        <a class="nav-sheet-link" href="#${esc(it.path)}">
+          <span class="nsl-n">${esc(it.n)}</span>
+          <span class="nsl-t">${esc(it.label)}</span>
+        </a>`).join('');
+      return `<section class="nav-sheet-group"><h3>${esc(g.label)}</h3><div class="nav-sheet-links">${links}</div></section>`;
+    }).join('');
+    window.TermDrawer.openPanel({
+      title: '全部栏目',
+      body: `<nav class="nav-sheet" aria-label="全部栏目">${groups}</nav>`,
+      foot: '<span>选一个栏目，抽屉会自动关闭</span>',
     });
   }
 

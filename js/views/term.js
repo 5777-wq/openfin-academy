@@ -41,12 +41,20 @@
     } catch (e) { /* 注入不了就算了，过滤本身不依赖它 */ }
   })();
 
+  /** JS 侧的 reduced-motion 判断：与 app.js / era-timeline.js 同一套写法。
+      CSS 的关闭分支在注入样式里已写，这里再挡一次——省掉无意义的强制回流。 */
+  function reducedMotion() {
+    try {
+      return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    } catch (e) { return false; }
+  }
+
   /** 让过滤结果的进场动画从头播一遍。
       同一个类名摘了再加，浏览器不会重播 CSS animation——
       中间读一次 offsetWidth 强制回流一拍，把它当作「新的一段内容」。
-      reduced-motion 下动画在 CSS 里已被关掉，这里的类切换不产生任何视觉。 */
+      reduced-motion 下动画在 CSS 里已被关掉，这里连类都不切、不做回流。 */
   function replayEnter(node) {
-    if (!node || !node.classList) return;
+    if (!node || !node.classList || reducedMotion()) return;
     node.classList.remove('terms-enter');
     void node.offsetWidth;
     node.classList.add('terms-enter');
@@ -251,7 +259,7 @@
               <div class="st-label">入门三词</div>
               <div class="st-list">${starters}</div>
             </div>` : ''}
-            <div style="display:grid;gap:var(--s-3)">${rows.map(dictCard).join('')}</div>
+            <div class="term-list" style="display:grid;gap:var(--s-3)">${rows.map(dictCard).join('')}</div>
             <a class="btn ghost sm" style="margin-top:var(--s-3)" href="#/data?cat=${esc(c.id)}">这一类的速查表 →</a>
           </div>`;
         }).join('');
@@ -261,7 +269,7 @@
         if (!inCat.length) return '';
         return `<div class="cat-block">
           <div class="eyebrow" style="margin:var(--s-6) 0 var(--s-2)">${esc(c.label)} · 命中 ${inCat.length}</div>
-          <div style="display:grid;gap:var(--s-3)">${inCat.map(dictCard).join('')}</div>
+          <div class="term-list" style="display:grid;gap:var(--s-3)">${inCat.map(dictCard).join('')}</div>
         </div>`;
       }).join('');
       const cur = String(q || '').trim();
@@ -287,7 +295,7 @@
       <input id="terms-q" type="search" value="${esc(initQ)}" autocomplete="off" spellcheck="false"
         placeholder="查一个词，比如 PE、最大回撤、美联储……"
         aria-label="在术语库里查一个词：输入即过滤，按词名、别名、关键词匹配"
-        style="display:block;width:100%;box-sizing:border-box;border:1px solid var(--rule);border-left:2px solid var(--teal);border-radius:var(--r-2);background:var(--sheet);color:var(--ink);font:inherit;font-size:16px;padding:11px var(--s-4);margin:0 0 var(--s-3)">
+        style="display:block;width:100%;box-sizing:border-box;border:1px solid var(--rule);border-radius:var(--r-2);background:var(--sheet);color:var(--ink);font:inherit;font-size:16px;padding:11px var(--s-4);margin:0 0 var(--s-3)">
 
       <div id="terms-count" class="cat-desc" aria-live="polite" style="margin:0 0 var(--s-4)"></div>
       <div id="terms-body">${bodyHtml(initQ)}</div>`;
@@ -310,11 +318,8 @@
         paintCount(input.value);
         syncFilterUrl(input.value);
       });
-      // 进页面自动聚焦：这一页的主动作就是「查一个词」。
-      // 放到下一拍再聚焦——app.js 换页后会把焦点交给 #main，同步 focus 会被它盖掉。
-      setTimeout(() => {
-        try { input.focus({ preventScroll: true }); } catch (e) { try { input.focus(); } catch (e2) { /* 焦点拿不到就算了 */ } }
-      }, 0);
+      // 不自动聚焦：移动端会自动弹起键盘，桌面端也会让页面一进来就多一圈焦点环。
+      // 这一页的主操作仍然是一眼可见的搜索框，用户点一下或按 Tab 即可开始。
     }
   }
 

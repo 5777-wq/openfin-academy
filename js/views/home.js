@@ -165,6 +165,43 @@
   function storyCard(article, index) {
     return `<a class="home-story" href="#/${esc(article.section)}/${esc(article.id)}"><div class="story-meta"><span>${index === 0 ? '历史复盘' : '生活金融'}</span><span>${article.readMinutes ? esc(article.readMinutes) + ' MIN READ' : 'READ'}</span></div><h3>${esc(article.title)}</h3><p>${esc(article.dek || '')}</p></a>`;
   }
+
+  /* 首页不只做导航：把「先学什么」「还可以读什么」摆出来。
+     卡片都链到真实内容，不生成空入口。 */
+  const SECTION_LABEL = {
+    concepts: '货币与利率', crisis: '危机复盘', assets: '标的百科',
+    chains: '产业链图谱', cycles: '周期与镜鉴', family: '家庭理财', reports: '读懂财报',
+  };
+  const CONCEPT_IDS = ['risk-free-rate', 'inflation', 'inversion', 'max-drawdown', 'compounding', 'liquidity'];
+  const READING_IDS = ['interest-rate', 'three-statements', 'emergency-fund', 'rate-cycle', 'yield-curve', 'risk-volatility'];
+
+  function curriculumCard(lesson, index) {
+    const target = lesson.target && /^#\//.test(lesson.target) ? lesson.target : '#/path';
+    return `<a class="curriculum-card" href="${esc(target)}">
+      <span class="cc-top"><span class="cc-num">第 ${index + 1} 课</span><span class="cc-time">${esc(lesson.minutes || 4)} min</span></span>
+      <span class="cc-title">${esc(lesson.title || '')}</span>
+      <span class="cc-dek">${esc(lesson.dek || '')}</span>
+      <span class="cc-go">读这一课 <span aria-hidden="true">→</span></span>
+    </a>`;
+  }
+
+  function conceptCard(id, term) {
+    return `<a class="home-concept-card" href="#/term/${encodeURIComponent(id)}">
+      <span class="hc-word">${esc(term.term || id)}</span>
+      <span class="hc-one">${esc(term.one || '')}</span>
+      <span class="hc-more">看解释 <span aria-hidden="true">→</span></span>
+    </a>`;
+  }
+
+  function readingCard(article) {
+    const section = SECTION_LABEL[article.section] || article.tag || '长文';
+    return `<a class="home-reading-card" href="#/${esc(article.section)}/${encodeURIComponent(article.id)}">
+      <span class="hr-meta"><span>${esc(section)}</span><span>${article.readMinutes ? esc(article.readMinutes) + ' min' : '阅读'}</span></span>
+      <span class="hr-title">${esc(article.title)}</span>
+      <span class="hr-dek">${esc(article.dek || '')}</span>
+      <span class="hr-more">继续读 <span aria-hidden="true">→</span></span>
+    </a>`;
+  }
   function render(view) {
     const G = window.Quotes;
     ensureMotionCss();
@@ -174,7 +211,16 @@
     const termIds = Object.keys(glossary);
     const pick = pickTodayTerm(termIds);
     const termHtml = pick ? `<a class="term-link" href="#/term/${encodeURIComponent(pick)}">${window.TermCard.render(Object.assign({ id: pick }, glossary[pick]))}<span class="term-link-more">看完整解释 <span aria-hidden="true">→</span></span></a>` : '';
-    const stories = [window.Content.bySection('crisis')[0], window.Content.bySection('family')[0]].filter(Boolean);
+    const family = window.Content.bySection('family');
+    const familyStory = family.find((a) => a.id === 'money-jar') || family[0];
+    const stories = [window.Content.bySection('crisis')[0], familyStory].filter(Boolean);
+    const plan = window.Content.pathPlan && window.Content.pathPlan();
+    const lessons = plan && Array.isArray(plan.lessons) ? plan.lessons.slice(0, 4) : [];
+    const concepts = CONCEPT_IDS.map((id) => [id, glossary[id]]).filter((x) => x[1]);
+    const picks = READING_IDS.map((id) => window.Content.meta && window.Content.meta(id)).filter(Boolean);
+    const articleCount = (window.Content.list && window.Content.list().length) || 0;
+    const assetCount = (window.Content.assetPages && window.Content.assetPages().length) || 0;
+    const chainCount = (window.INDUSTRY_CHAINS || []).length;
 
     view.innerHTML = `<div class="home-page">
       <section class="home-hero h-sec" style="${si()}">
@@ -183,18 +229,22 @@
           <h1>看懂金融，<br class="hero-br"><span class="hero-highlight">从一个概念开始。</span></h1>
           <p class="art-dek">把美债收益率、黄金、纳指、原油、A股讲成你听得懂的话。用真实数据、历史复盘和可交互工具，建立你自己的金融认知。</p>
           <div class="hero-actions"><a class="btn teal" href="#/path">从零开始 · 8 课<span aria-hidden="true">→</span></a><a class="btn ghost" href="#/crisis">探索危机复盘</a><a class="btn ghost" href="#/terms?q=PE">查一个词</a></div>
-          <div class="home-proof"><span>${termIds.length} 个金融词条</span><span>真实数据驱动</span><span>免费开放 · 无需注册</span></div>
+          <div class="home-proof"><span><b>${articleCount}</b> 篇长文</span><span><b>${termIds.length}</b> 个词条</span><span><b>${assetCount}</b> 个标的页</span><span><b>${chainCount}</b> 条产业链</span></div>
         </div>
         <div id="home-snapshot">${marketSnapshot()}</div>
       </section>
 
-      <section class="home-section h-sec" style="${si()}">${sectionHead('01', '从指标理解市场', '不只看涨跌，也看它为什么重要', '#/data', '查看数据台账')}<div class="gauges" id="home-gauges"></div><p class="home-note"><span id="gauge-src">行情来自公开数据源，可能存在延迟。读数用于理解，不构成投资建议。</span></p></section>
+      ${lessons.length ? `<section class="home-section home-curriculum h-sec" style="${si()}">${sectionHead('01', '先搭一个能用的框架', '四节课，把利率、通胀、风险和定价串起来', '#/path', '完整 8 课')}<div class="curriculum-grid">${lessons.map(curriculumCard).join('')}</div></section>` : ''}
 
-      <section class="home-section h-sec" style="${si()}">${sectionHead('02', '今天，学一点', '每天一个概念，每周一段历史', '#/terms', '浏览术语库')}<div class="home-learn"><div class="home-term" aria-label="今日一词">${termHtml || '<div class="empty"><div class="et">今日一词正在补充</div></div>'}</div><div class="home-featured">${stories.map(storyCard).join('')}</div></div></section>
+      <section class="home-section h-sec" style="${si()}">${sectionHead('02', '从指标理解市场', '不只看涨跌，也看它为什么重要', '#/data', '查看数据台账')}<div class="gauges" id="home-gauges"></div><p class="home-note"><span id="gauge-src">行情来自公开数据源，可能存在延迟。读数用于理解，不构成投资建议。</span></p></section>
 
-      <section class="home-section h-sec" style="${si()}">${sectionHead('03', '在时间里，理解周期', '不预测明天，只看清曾经发生过什么', '#/crisis', '全部危机复盘')}<div id="home-era"></div></section>
+      <section class="home-section h-sec" style="${si()}">${sectionHead('03', '今天，学一点', '一个概念、两个故事，再加六个高频词', '#/terms', '浏览术语库')}<div class="home-learn"><div class="home-term" aria-label="今日一词">${termHtml || '<div class="empty"><div class="et">今日一词正在补充</div></div>'}</div><div class="home-featured">${stories.map(storyCard).join('')}</div></div>${concepts.length ? `<div class="home-mini-head"><span>再记住六个词</span><a href="#/terms">全部 ${termIds.length} 个词条 <span aria-hidden="true">→</span></a></div><div class="home-concept-rail">${concepts.map(([id, term]) => conceptCard(id, term)).join('')}</div>` : ''}</section>
 
-      <section class="home-section h-sec" style="${si()}">${sectionHead('04', '动手，建立自己的判断', '六个小工具，把抽象概念变成可见的关系', '', '')}
+      <section class="home-section h-sec" style="${si()}">${sectionHead('04', '在时间里，理解周期', '不预测明天，只看清曾经发生过什么', '#/crisis', '全部危机复盘')}<div id="home-era"></div></section>
+
+      ${picks.length ? `<section class="home-section home-reading h-sec" style="${si()}">${sectionHead('05', '继续读，把知识串起来', '利率、财报、家庭现金与加息周期，六篇新长文', '#/path', '按学习路径读')}<div class="home-reading-rail">${picks.map(readingCard).join('')}</div></section>` : ''}
+
+      <section class="home-section h-sec" style="${si()}">${sectionHead('06', '动手，建立自己的判断', '六个小工具，把抽象概念变成可见的关系', '', '')}
         <div class="tool-grid">${[
           ['01', '资产对比', '两条线放同一张图上，看相对涨跌与回撤', '#/compare'],
           ['02', '收益率曲线', '拖动年份，看曲线形状与倒挂', '#/curve'],

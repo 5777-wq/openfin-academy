@@ -579,8 +579,18 @@ async function main() {
   ok('标的百科详情：回撤没有算成 -99%', !adet.includes('-99.'), '出现了 -99% 的假回撤');
   has('标的百科详情：去终端看数据', adet, 'openfinlens/#symbol=usAAPL');
   has('标的百科详情：口径说明（未含分红）', adet, '不含分红');
-  // 没有专文的标的：真实数据 + 三段短注（不再是只有一张数据表的半空页）
-  await sandbox.AssetsView.renderDetail(view(), 'sh601398');
+  // 没有专文的标的：真实数据 + 三段短注（不再是只有一张数据表的半空页）。
+  // sh601398 现在也补了专文，站内已没有「有短注却无专文」的真实标的，
+  // 所以这里临时屏蔽它的专文，专门验证这条兜底渲染路径：
+  // 短注、维基深链、月线序列仍全部走真实数据，只把 article() 的返回置空。
+  // 取到 HTML 后立刻还原，后面的用例继续用真实 article()。
+  const realArticle = sandbox.Content.article;
+  sandbox.Content.article = (id) => (id === 'sh601398' ? null : realArticle(id));
+  try {
+    await sandbox.AssetsView.renderDetail(view(), 'sh601398');
+  } finally {
+    sandbox.Content.article = realArticle;
+  }
   const noart = view().innerHTML;
   has('标的百科详情：无专文也给数据卡', noart, '真实历史读数');
   has('标的百科详情：无专文有三段短注', noart, '三段话读懂它');

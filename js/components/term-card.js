@@ -10,13 +10,15 @@
      hover 时给一张「轻微抬起」——回答「我刚刚碰了什么」。
      规则与全站总纲对齐：
      · 只动 transform（合成器友好），不碰颜色、不加阴影动画；
-     · 时长/缓动引用全局变量并带兜底，不裸写毫秒、不造第四档；
-     · @media (hover:hover) 挡掉触屏的粘滞 hover；
+     · 时长/缓动引用全局变量并带兜底，兜底取 live --dur-1=180ms（不是
+       tokens.css 里已死的 140ms），零节奏变化；
      · prefers-reduced-motion: reduce 的关闭分支在下面显式写了一份
-       （layout.css 里的全局关闭分支是第二道网）。
-     变换挂在 .term-link（外层 <a>）而不是内层 .term 上：
-     键盘 :focus-visible 的焦点环画在 <a> 上，卡和环必须一起抬，
-     否则卡片会从自己的焦点环里探出去。
+       （layout.css / motion.css 里的全局关闭分支是第二道网）。
+     hover 的「轻抬」由 motion.css 的 `.term-link:hover .term`（内层 -2px）
+     唯一提供——这里绝不再叠一层，避免内外同抬变成 -4px 的第三层位移。
+     本块只补键盘 :focus-visible：焦点环画在外层 <a> 上，卡和环必须一起抬，
+     否则卡片会从自己的焦点环里探出去。hover 与 focus-visible 互斥，
+     两处各抬一次、不会相加。
      注入失败（极老浏览器/测试桩）不影响任何功能——动效是增强，不是功能。 */
   (function ensureMotionStyle() {
     try {
@@ -25,15 +27,12 @@
       s.id = 'style-term-card-motion';
       s.textContent = `
 .term-link {
-  transition: transform var(--dur-1, 140ms) var(--ease-out, cubic-bezier(.16,1,.3,1));
+  transition: transform var(--dur-1, 180ms) var(--ease-out, cubic-bezier(.16,1,.3,1));
 }
-@media (hover: hover) {
-  .term-link:hover,
-  .term-link:focus-visible { transform: translateY(-2px); }
-}
+/* 只抬键盘焦点态：hover 的 -2px 在 motion.css 里已有一份，不叠第二层。 */
+.term-link:focus-visible { transform: translateY(-2px); }
 @media (prefers-reduced-motion: reduce) {
   .term-link { transition: none; }
-  .term-link:hover,
   .term-link:focus-visible { transform: none; }
 }
 `;

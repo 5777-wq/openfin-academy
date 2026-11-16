@@ -2,6 +2,20 @@
    OPENFIN ACADEMY / MOTION LAYER
    One consistent motion language: scene → component → micro feedback.
    Only transform / opacity are animated. No loops, no fake loading motion.
+
+   本层 :root 是全站动效令牌的唯一来源（本文件最后加载）：
+     --dur-1 交互反馈 / --dur-2 面板与进场 / --dur-3 大表面；
+     --ease-out 默认；--ease-in-out 只给颜色的双向过渡（hover 进出、状态换色）；
+     --ease-spring 全站只有两处 live 落点——.rail-pill（下方 18-23）与
+     .tool-card .tc-ic（下方 69）。components.css 里的 .drawer / .switch::after
+     虽写有 spring，但被同文件 v3 收敛段覆盖，已不是生效声明。
+     不许再添第四档时长或多段回弹。
+   所有动效只许 transform / opacity；唯一允许的循环动画是加载骨架的呼吸
+   （components.css 的 ui-pulse，只在数据未到时存在）。
+   使用处一律写 var(--dur-*, …ms) / var(--ease-*, cubic-bezier(…)) 并带兜底值。
+   裸毫秒仅存两处 live 例外——抽屉 220ms、左栏条目换色 160ms——
+   它们在旧 .14/.24/.42s 令牌废止后没有等值令牌，为守住零节奏变化
+   保留字面值，不静默改档。
    ========================================================================== */
 
 :root {

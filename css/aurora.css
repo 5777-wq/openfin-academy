@@ -15,7 +15,9 @@
   --ink: #1c1a15;
   --ink-2: #4c463b;
   --ink-3: #6b6253;
-  --ink-4: #786e5e;
+  /* 占位灰由 #786e5e 加深至此：对暖纸 #f2ecdf 4.61:1、对卡底 #fcf9f2 5.16:1，
+     均 ≥4.5；亮度仍高于 --ink-3，层级不乱。夜色 --ink-4 在下方单独定义，不动。 */
+  --ink-4: #726957;
   --teal: #365574;
   --teal-2: #527394;
   --teal-soft: rgba(46, 39, 27, .055);
@@ -408,4 +410,364 @@ body[data-theme="night"] { background: var(--paper); }
   .home-section .dpanel .dp-v { font-size: 23px; }
   .home-section .dpanel .dp-k { min-height: 0; }
   .tool-grid { grid-template-columns: 1fr; }
+}
+
+/* ==========================================================================
+   DETAIL PASS · 去线收口
+   页面原来把「边界」几乎全部交给 1px 线：背景网格、竖栏线、卡片描边、
+   表格行线、区块标题下划线叠在一起，读起来像线框稿。这一层只做减法：
+   · 结构性线条保留：图表坐标轴、时间轴、输入框、按钮、焦点环、表头分隔；
+   · 装饰性线条去掉：全屏网格、左栏竖线、卡片外框、面板标题线、术语行虚线；
+   · 层级改用留白、纸面色差和极浅阴影表达，暗色皮肤同样生效。
+   本层位于 aurora.css 末尾，后续 home.css 只补首页专属细节。
+   ========================================================================== */
+
+/* 1. 纸面：撤掉满屏网格，只留几乎看不见的暖色光晕。 */
+body::before { content: none; }
+
+/* 2. 顶栏与报价条：合成一个连续表面，只在最底部留一条发丝线。 */
+.masthead { border-bottom: 0; }
+.ticker { border-bottom: 1px solid color-mix(in srgb, var(--rule) 70%, transparent); }
+.mh-btn {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--sheet) 42%, transparent);
+  box-shadow: none;
+}
+.mh-btn:hover { border-color: var(--rule); background: var(--sheet); }
+.mh-btn .kbd {
+  border: 0; border-radius: 5px; padding: 2px 5px;
+  background: var(--sheet-2); color: var(--ink-3);
+}
+.ticker-in {
+  gap: 21px; padding-right: 38px;
+  -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 32px), transparent 100%);
+  mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 32px), transparent 100%);
+}
+.tk { border: 0; padding: 0; }
+.tk:first-child { padding-left: 0; }
+.tk.src-note { margin-left: auto; }
+
+/* 3. 左栏和页脚：用留白分隔，不再画通高的竖线 / 横线。 */
+.rail::after { display: none; }
+.footer {
+  border-top: 0;
+  background: linear-gradient(180deg,
+    transparent 0,
+    color-mix(in srgb, var(--sheet) 40%, transparent) 34%,
+    color-mix(in srgb, var(--sheet) 58%, transparent) 100%);
+}
+.footer-in { padding-top: 34px; }
+
+/* 4. 卡片：外框全部退成透明，靠纸面、圆角和阴影分层。 */
+.panel, .dpanel, .chain, .replay, .tbl-wrap, .rail-sister,
+.home-story, .tool-card, .market-snapshot, .entries, .disclaimer {
+  border-color: transparent;
+}
+.panel, .dpanel, .chain, .replay, .tbl-wrap, .entries { box-shadow: var(--sh-1); }
+.term {
+  border: 0;
+  box-shadow: var(--sh-1);
+}
+.panel-title { border-bottom: 0; padding-bottom: 0; }
+.dpanel .dp-f { border-top: 0; padding-top: 0; }
+.dpanel.hot::before { display: none; }
+.dpanel.hot .dp-k::before,
+.dpanel.hot .dp-k > .hot-mark {
+  content: ''; width: 5px; height: 5px; border-radius: 50%;
+  background: var(--gold); display: inline-block; flex: none;
+}
+
+/* 5. 术语卡：拆掉左侧强调线和每行虚线，改用细分的小标签与行距。 */
+.term { padding: var(--s-5); }
+.term + .term { margin-top: var(--s-4); }
+.term-parts { gap: 2px; }
+.term-part { border-top: 0; padding: 9px 0; }
+.term-part.pit {
+  margin: 6px -9px 0; padding: 10px 9px;
+  border-radius: 8px;
+}
+.term-part .tp-k { letter-spacing: .08em; }
+
+/* 6. 文章与工具栏：去掉标题下、元信息上下、跨站按钮上下的整宽横线。 */
+.art-meta { border-top: 0; padding-top: 0; }
+.prose h2 {
+  border-top: 0; padding-top: 0; margin-top: var(--s-7);
+}
+.prose h2::before {
+  position: static; display: inline-block; width: 18px; height: 2px;
+  margin-right: 9px; vertical-align: middle; top: auto; left: auto;
+}
+.term-cross { border: 0; padding: 6px 0; }
+
+/* 7. 列表与表格：只留下必要的行分隔，并让最后一行不再多画一条。 */
+.entries { background: var(--sheet); border-radius: 10px; }
+.entry { border-color: color-mix(in srgb, var(--rule) 42%, transparent) !important; }
+.entries > a.entry:last-of-type { border-bottom-color: transparent !important; }
+.entry-tagrow { background: transparent; margin-top: -7px; }
+.disclaimer {
+  border: 0;
+  background: color-mix(in srgb, var(--warn-soft) 78%, transparent);
+}
+.ds-tabs { border-bottom: 0; padding-bottom: 0; }
+.ds thead th { border-bottom-color: color-mix(in srgb, var(--rule) 58%, transparent); }
+.ds td { border-bottom-color: var(--rule-3); }
+.ds tbody tr:last-child td { border-bottom: 0; }
+.starter { border-color: transparent; background: color-mix(in srgb, var(--sheet) 54%, transparent); }
+.tbl-wrap { overflow-x: auto; overflow-y: hidden; }
+.tbl th { border-bottom-color: color-mix(in srgb, var(--rule) 60%, transparent); }
+.tbl td { border-bottom-color: var(--rule-3); }
+
+/* 8. 标的页数据卡：去掉顶部粗线、格线与空网格底色，改成一组小小的读数模块。 */
+body .stats-card { border-top: 0 !important; }
+body .stats-card > .eyebrow { border-bottom: 0; padding-bottom: 0; }
+.stat-grid {
+  gap: 8px; background: transparent; border: 0;
+}
+.stat {
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--sheet-2) 56%, transparent);
+  padding: 14px;
+}
+.stat.is-now { background: var(--gold-soft); }
+body .an-panel .cat-desc { border-top: 0; padding: 9px 0; }
+body .an-panel .cat-desc b { margin-bottom: 4px; }
+
+/* 9. 回放器：保留图表坐标线，去掉外框与标题、图例的装饰性横线。 */
+.replay-head { border-bottom: 0; background: var(--sheet-2); }
+.rp-legend { border-bottom: 0; padding-bottom: 0; }
+.rp-events { border-top: 0; }
+.rp-event { border-bottom-color: var(--rule-3); }
+.rp-track { border-bottom-color: var(--rule-3); }
+
+/* 10. 表单：不再给输入框画左缘的青色粗线，只保留一个柔和焦点环。 */
+#terms-q, .calc-field input { border-left-width: 1px !important; }
+#terms-q:focus, .calc-field input:focus {
+  border-color: var(--ink-4) !important;
+  box-shadow: 0 0 0 3px var(--teal-soft) !important;
+}
+
+/* 11. 移动端：浮动底栏用阴影而不是描边；速查表改成无框的纸片行。 */
+@media (max-width: 860px) {
+  .ticker-in { gap: 16px; padding-right: 32px; }
+  .tabbar {
+    border-color: transparent;
+    box-shadow: 0 18px 48px -18px rgba(45, 34, 20, .34), 0 3px 12px rgba(45, 34, 20, .08);
+  }
+  .ds tbody tr {
+    display: block; margin: 0 0 8px; padding: 12px;
+    border-radius: 10px; border-bottom: 0;
+    background: color-mix(in srgb, var(--sheet) 64%, transparent);
+  }
+  .ds td { padding-top: 0; padding-bottom: 6px; }
+  .ds td:last-child { padding-bottom: 0; }
+  body[data-theme="night"] .tabbar {
+    box-shadow: 0 18px 48px -18px rgba(0, 0, 0, .7), 0 3px 12px rgba(0, 0, 0, .25);
+  }
+}
+
+@media (max-width: 560px) {
+  .stat-grid { gap: 6px; }
+  .stat { padding: 12px; }
+  .stat .s-v { font-size: 15px; }
+  .mh-btn { background: transparent; }
+}
+
+/* 12. 窄屏术语卡：长别名 / 编号不能把卡片撑出正文栏。 */
+.cat-block > div { min-width: 0; }
+.term-link, .term { min-width: 0; max-width: 100%; }
+.term-head { flex-wrap: wrap; min-width: 0; }
+.term-head .tt,
+.term-head .tag,
+.term-head .tid { min-width: 0; }
+.term-head .tag {
+  height: auto; min-height: 20px; white-space: normal;
+  overflow-wrap: anywhere; line-height: 1.45; padding-top: 2px; padding-bottom: 2px;
+}
+.term-head .tid { margin-left: auto; overflow-wrap: anywhere; }
+.term-parts, .term-part, .term-part .tp-v { min-width: 0; }
+
+/* 13. 夜间选中态：一块干净的面，不再描边或叠左侧金线。 */
+body[data-theme="night"] .rail-pill {
+  border: 0; box-shadow: none;
+  background: color-mix(in srgb, var(--teal) 15%, var(--sheet-2));
+}
+
+/* 14. 尾轮收口：标签与焦点卡不再描边；速查表改用浅色行带而不是横线。 */
+.dpanel.hot { border-color: transparent; }
+.tag,
+.tag.teal,
+.tag.gold,
+.tag.up,
+.tag.down { border-color: transparent; background: color-mix(in srgb, var(--sheet-2) 78%, transparent); }
+.tag:hover { border-color: transparent; }
+.home-kicker .k-date { border-left: 0; }
+.ds thead th { border-bottom: 0; padding-bottom: 8px; }
+.ds td { border-bottom: 0; padding-top: 15px; padding-bottom: 15px; }
+.ds tbody tr:nth-child(odd) { background: color-mix(in srgb, var(--sheet) 44%, transparent); }
+.ds tbody tr:hover { background: color-mix(in srgb, var(--sheet) 68%, transparent); }
+@media (max-width: 760px) {
+  .ds td { padding-top: 0; padding-bottom: 6px; }
+  .ds tbody tr:nth-child(odd),
+  .ds tbody tr:hover { background: color-mix(in srgb, var(--sheet) 64%, transparent); }
+}
+
+/* 15. hover 不再把刚撤掉的卡片描边又画回来，只加深阴影。 */
+.panel:hover, .dpanel:hover { border-color: transparent; box-shadow: var(--sh-2); }
+.starter:hover { border-color: transparent; background: color-mix(in srgb, var(--sheet) 72%, transparent); }
+
+/* ==========================================================================
+   TABLET RESPONSIVE PASS
+   —— 861–1100px 不再强塞桌面左栏：内容获得完整横向空间，
+      导航收成居中的浮动 Dock；768px 等窄平板也不会出现被拉长的底栏。
+   ========================================================================== */
+@media (max-width: 1100px) {
+  .masthead-in,
+  .ticker-in { padding-left: 24px; padding-right: 24px; }
+  .shell {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0; padding: 0 24px;
+  }
+  .rail { display: none; }
+  .main { padding: 28px 0 118px; }
+  .footer-in {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0; padding: 28px 24px 128px;
+  }
+  .footer-text { grid-column: 1; }
+
+  .tabbar {
+    display: flex; position: fixed; left: 50%; right: auto;
+    bottom: 12px; width: min(560px, calc(100% - 24px));
+    transform: translateX(-50%); z-index: var(--z-rail);
+    background: color-mix(in srgb, var(--sheet) 96%, transparent);
+    -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+    border: 0; border-radius: 16px;
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+    box-shadow: 0 18px 48px -18px rgba(45, 34, 20, .34), 0 3px 12px rgba(45, 34, 20, .08);
+  }
+  .tabbar button {
+    flex: 1 1 0; min-width: 0; min-height: 44px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3px; padding: 5px 2px; border: 0; border-radius: 10px;
+    background: none; color: var(--ink-3); font-size: 10px;
+    transition: color var(--dur-1,140ms) var(--ease-in-out,cubic-bezier(.65,0,.35,1)),
+                background-color var(--dur-1,140ms) var(--ease-in-out,cubic-bezier(.65,0,.35,1));
+  }
+  .tabbar button.on {
+    background: var(--paper-deep); color: var(--ink);
+  }
+  .tabbar svg { width: 18px; height: 18px; }
+  body[data-theme="night"] .tabbar {
+    box-shadow: 0 18px 48px -18px rgba(0, 0, 0, .72), 0 3px 12px rgba(0, 0, 0, .28);
+  }
+  body[data-theme="night"] .tabbar button.on {
+    background: color-mix(in srgb, var(--teal) 16%, var(--sheet-2));
+    color: var(--ink);
+  }
+}
+
+/* 宽屏术语列表：两列并排，减少长行，也避免 293 个词形成一条过长的单列。 */
+@media (min-width: 980px) {
+  #view[data-route="terms"] .term-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+
+@media (max-width: 1100px) {
+  .to-top { bottom: 84px; right: 18px; }
+}
+
+/* ==========================================================================
+   TABLET NAVIGATION · 600–1100px
+   手机继续用底部 Dock；平板改为首屏下方的横向栏目带：
+   不遮正文、不需要先打开搜索，也能直接到家庭理财 / 财报 / 周期 / 工具。
+   ========================================================================== */
+@media (min-width: 600px) and (max-width: 1100px) {
+  .shell { display: block; padding: 0 24px; }
+  .rail {
+    display: flex; align-items: center; gap: 4px;
+    position: sticky; top: calc(var(--masthead-h) + var(--ticker-h));
+    z-index: 30; width: 100%; max-height: none;
+    margin: 0 0 10px; padding: 6px 24px 6px 0;
+    overflow-x: auto; overflow-y: hidden;
+    scrollbar-width: none; overscroll-behavior-inline: contain;
+    background: color-mix(in srgb, var(--paper) 94%, transparent);
+    -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 22px), transparent 100%);
+    mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 22px), transparent 100%);
+    -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  }
+  .rail::-webkit-scrollbar { display: none; }
+  .rail-pill { display: none; }
+  .rail-group {
+    display: flex; flex: none; align-items: center; gap: 4px; margin: 0 !important;
+  }
+  .rail-group + .rail-group { margin-left: 8px !important; }
+  .rail-label { display: none; }
+  .rail-item {
+    display: inline-flex; flex: none; min-height: 38px;
+    margin: 0; padding: 8px 10px; border-radius: 7px;
+    font-size: 11px; line-height: 1.2; white-space: nowrap;
+  }
+  .rail-item .ri-n,
+  .rail-item .ri-c { display: none; }
+  .rail-item .ri-t { flex: none; }
+  .rail-item.on {
+    background: var(--ink); color: var(--paper); font-weight: 600;
+  }
+  .rail-item.on:hover { background: var(--ink); color: var(--paper); }
+  body[data-theme="night"] .rail-item.on {
+    background: var(--sheet-2); color: var(--ink);
+  }
+  body[data-theme="night"] .rail-item.on:hover {
+    background: var(--sheet-2); color: var(--ink);
+  }
+  .rail-sister { display: none; }
+
+  .tabbar { display: none; }
+  .main { padding: 24px 0 64px; }
+  .footer-in { padding: 26px 0 46px; grid-template-columns: 1fr; }
+  .footer-text { grid-column: 1; }
+  .to-top { bottom: 18px; right: 18px; }
+}
+
+/* 手机底栏的「更多」抽屉：所有栏目一眼可见，不靠猜。 */
+.nav-sheet { display: grid; gap: 18px; }
+.nav-sheet-group h3 {
+  margin: 0 0 8px; color: var(--ink-4);
+  font: 500 10px var(--font-mono); letter-spacing: .12em; text-transform: uppercase;
+}
+.nav-sheet-links {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px;
+}
+.nav-sheet-link {
+  display: flex; align-items: center; gap: 8px;
+  min-height: 40px; padding: 9px 10px; border-radius: 8px;
+  background: var(--sheet-2); color: var(--ink); text-decoration: none;
+  font-size: 12px; transition: background-color var(--dur-1,140ms) var(--ease-in-out,cubic-bezier(.65,0,.35,1)),
+              color var(--dur-1,140ms) var(--ease-in-out,cubic-bezier(.65,0,.35,1));
+}
+.nav-sheet-link:hover { background: var(--teal-soft); color: var(--teal); text-decoration: none; }
+.nsl-n { font: 10px var(--font-mono); color: var(--ink-4); min-width: 15px; }
+.nsl-t { min-width: 0; }
+@media (min-width: 600px) { .nav-sheet-links { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+@media (max-width: 360px) {
+  .tabbar { width: calc(100% - 8px); bottom: 6px; }
+  .tabbar button { font-size: 9px; }
+}
+
+/* 列表行：标题和摘要必须是两块，不能因为都是 span 就挤成一行。 */
+.entry .e-t,
+.entry .e-d { display: block; }
+
+/* 手机页面标题：列表页有 inline font-size，必须提高优先级；
+   同时用 balance 避免「数」这种单字孤行。 */
+@media (max-width: 560px) {
+  .art-head h1 {
+    font-size: clamp(28px, 8.4vw, 32px) !important;
+    line-height: 1.24;
+    letter-spacing: -.025em;
+    text-wrap: balance;
+  }
 }

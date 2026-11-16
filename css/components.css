@@ -223,9 +223,9 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
   /* 关着的抽屉必须真正移出可聚焦序列：只 translate 出去的话，
      里面的「关闭」按钮和上次的词条链接还能被 Tab 到，焦点圈会跑到视口外。 */
   visibility: hidden;
-  /* 缓动用 --ease-spring——全站两处可用清单之一（另一处是 .switch::after
-     的拨杆）。开合是状态切换的一瞬，允许这一点点收尾的「落定」感；
-     关出方向越过 100% 的部分都在视口外，看不见。 */
+  /* 本段 spring 声明已被下方 v3 收敛段的 transition 覆盖，不是生效值。
+     全站 spring 的 live 落点只有 motion.css 的 .rail-pill 与 .tool-card .tc-ic。
+     当前抽屉开合走下方 220ms 的 --ease-out，不做回弹。 */
   transition: transform var(--dur-3, 420ms) var(--ease-spring, cubic-bezier(.34, 1.56, .64, 1)),
               visibility var(--dur-3, 420ms);
   display: flex; flex-direction: column; box-shadow: var(--sh-3);
@@ -634,8 +634,9 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
 .switch::after {
   content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px;
   background: var(--ink-3);
-  /* 拨杆是 --ease-spring 两处清单之一（另一处是 .drawer 开合）：
-     拨动是状态切换的一瞬，一点落定感；换色仍走颜色双向的 --ease-in-out。 */
+  /* 本段 spring 声明已被下方 v3 收敛段的 transition 覆盖，不是生效值。
+     全站 spring 的 live 落点只有 motion.css 的 .rail-pill 与 .tool-card .tc-ic。
+     当前拨杆走下方 var(--dur-1) 的 --ease-out，换色仍是颜色双向的 --ease-in-out。 */
   transition: transform var(--dur-2, 240ms) var(--ease-spring, cubic-bezier(.34, 1.56, .64, 1)),
               background-color var(--dur-1, 140ms) var(--ease-in-out, cubic-bezier(.65, 0, .35, 1));
 }
@@ -897,12 +898,8 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
 }
 @keyframes ui-shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
 
-/* 换页：从下方 10px 浮上来，只播一次 */
-@keyframes route-in {
-  from { opacity: 0; transform: translateY(10px) scale(.995); }
-  to { opacity: 1; transform: none; }
-}
-.route-host { animation: route-in var(--dur-2,240ms) var(--ease-out,cubic-bezier(.16,1,.3,1)); }
+/* 换页进场的 @keyframes route-in 与 .route-host 定义已迁到 index.html 的
+   内联样式（head 中后置加载，同特异性覆盖此处旧声明），本层不再重复定义。 */
 
 /* 区块进场：错峰 40ms，不重播 */
 @keyframes ui-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
@@ -946,10 +943,10 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
 /* ============================================================
    动效收敛 v3：按 Telegram 的节奏来
    —— 列表 hover 只换底色，不位移；按钮不缩放；
-      换页只淡入 140ms；区块不做错峰进场；
+      换页淡入交给 index.html 内联的 .route-host（本层旧定义已删）；
+      区块不做错峰进场；
       大表面（抽屉）220ms 平滑落定，不用回弹。
    ============================================================ */
-.route-host { animation: route-in 140ms var(--ease-out, cubic-bezier(.16,1,.3,1)); }
 .h-sec { animation: none; }
 
 .btn:hover, .btn:active { transform: none; }
@@ -964,11 +961,14 @@ body[data-theme="night"] .btn.gold { color: #14191C; }
 
 .rail-item::before, .tabbar button::before { display: none; }
 
+/* v3 节奏例外：抽屉 220ms 是 live 值，无等值令牌（--dur-2 现为 .34s）。
+   换 var(--dur-2,220ms) 会跳到 340ms，为守住零节奏变化保留字面值。
+   拨杆 180ms 则恰好等于 live --dur-1（.18s），换成 var 零变化。 */
 .drawer {
   transition: transform 220ms var(--ease-out, cubic-bezier(.16,1,.3,1)),
               visibility 220ms;
 }
-.switch::after { transition: transform 180ms var(--ease-out, cubic-bezier(.16,1,.3,1)); }
+.switch::after { transition: transform var(--dur-1,180ms) var(--ease-out, cubic-bezier(.16,1,.3,1)); }
 
 /* 骨架只做呼吸，不做流光 */
 .skel {

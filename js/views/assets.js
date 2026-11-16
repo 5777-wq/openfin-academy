@@ -29,22 +29,19 @@
 
   /* —— 标的详情页的视觉层级（纯静态样式，无动效）——
      两块面板各有各的身份，长一个样的话读者分不清哪块是数、哪块是话：
-      · 数据卡 = 展品：2px 墨线压顶（报刊图表的 exhibit 语法），表头下加一条淡界线，
+      · 数据卡 = 展品：读数拆成一组留白清楚的小模块，不再用整宽框线；
         「最新」一格铺金箔底——金色只做指示：这一格是"现在"，其余都是历史。
       · 三段短注 = 解读：次级纸底（sheet-2，与文章页「本文要点」同一种纸），
         三个小标用金色等宽字竖着排，「坑」的小标用警示色——颜色都在纸底 ≥4.5:1 的那套里。 */
   const PAGE_CSS_ID = 'assets-view-css';
   const PAGE_CSS = ''
-    + '.stats-card{border-top:2px solid var(--ink);}'
-    + '.stats-card > .eyebrow{padding-bottom:var(--s-3);border-bottom:1px solid var(--rule-2);}'
     + '.stat.is-now{background:var(--gold-soft);}'
     + '.an-panel{background:var(--sheet-2);}'
-    + '.an-panel .cat-desc{margin:0;padding:var(--s-3) 0;border-top:1px solid var(--rule-2);'
-    + 'font-size:var(--t-small);color:var(--ink-2);}'
-    + '.an-panel .cat-desc:first-of-type{border-top:0;padding-top:0;}'
+    + '.an-panel .cat-desc{margin:0;padding:9px 0;font-size:var(--t-small);color:var(--ink-2);}'
+    + '.an-panel .cat-desc:first-of-type{padding-top:0;}'
     + '.an-panel .cat-desc:last-of-type{padding-bottom:0;}'
     + '.an-panel .cat-desc b{display:block;font-family:var(--font-mono);font-size:var(--t-eyebrow);'
-    + 'font-weight:600;letter-spacing:.14em;color:var(--gold-text);margin-bottom:5px;}'
+    + 'font-weight:600;letter-spacing:.14em;color:var(--gold-text);margin-bottom:4px;}'
     + '.an-panel .cat-desc.an-trap b{color:var(--warn);}';
     // 走势与回撤两块图：纸底、细界线、等宽数字，图表不自己造一套配色。
     + '.chart-panel{margin-bottom:var(--s-6);}'
@@ -121,6 +118,42 @@
   /* 终端的 symbol → 站内专文 id（已写过专文的） */
   const ARTICLE_OF = {
     'EM:101.GC00Y': 'gold',
+    'EM:100.FCHI': 'FCHI',
+    'EM:100.FTSE': 'FTSE',
+    'EM:100.GDAXI': 'GDAXI',
+    'EM:100.KS11': 'KS11',
+    'EM:100.N225': 'N225',
+    'EM:100.SENSEX': 'SENSEX',
+    'EM:100.UDI': 'UDI',
+    'EM:101.HG00Y': 'HG00Y',
+    'EM:101.SI00Y': 'SI00Y',
+    'EM:102.CL00Y': 'CL00Y',
+    'EM:102.NG00Y': 'NG00Y',
+    'EM:103.ZC00Y': 'ZC00Y',
+    'EM:119.EURUSD': 'EURUSD',
+    'EM:119.GBPUSD': 'GBPUSD',
+    'EM:119.USDHKD': 'USDHKD',
+    'EM:119.USDJPY': 'USDJPY',
+    'EM:133.USDCNH': 'USDCNH',
+    'EM:171.CN10Y': 'CN10Y',
+    'EM:171.CN2Y': 'CN2Y',
+    'EM:171.CN30Y': 'CN30Y',
+    'EM:171.CN5Y': 'CN5Y',
+    'EM:171.DE10Y': 'DE10Y',
+    'EM:171.JP10Y': 'JP10Y',
+    'EM:171.US10Y': 'US10Y',
+    'EM:171.US2Y': 'US2Y',
+    'EM:171.US30Y': 'US30Y',
+    'EM:171.US3M': 'US3M',
+    'EM:171.US5Y': 'US5Y',
+    'hkHSI': 'HSI',
+    'hkHSTECH': 'HSTECH',
+    'sh000001': 'SH000001',
+    'sh000688': 'SH000688',
+    'sz399001': 'SZ399001',
+    'sz399006': 'SZ399006',
+    'usDJI': 'DJIA',
+    'usINX': 'SPX',
   };
 
   const GROUP_LABEL = {
