@@ -14,7 +14,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-19",
+      "dataAsOfActual": "2026-11-20",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/CL00Y.md"
@@ -34,7 +34,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-19",
+      "dataAsOfActual": "2026-11-20",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/CN10Y.md"
@@ -54,7 +54,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-19",
+      "dataAsOfActual": "2026-11-20",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/CN2Y.md"
@@ -74,7 +74,7 @@
       ],
       "readMinutes": 7,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-19",
+      "dataAsOfActual": "2026-11-20",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/CN30Y.md"
@@ -94,7 +94,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-19",
+      "dataAsOfActual": "2026-11-20",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/CN5Y.md"
@@ -114,7 +114,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-19",
+      "dataAsOfActual": "2026-11-20",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/DE10Y.md"
@@ -133,7 +133,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/DJIA.md"
@@ -152,7 +152,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-19",
+      "dataAsOfActual": "2026-11-20",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/EURUSD.md"
@@ -171,7 +171,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/FCHI.md"
@@ -190,7 +190,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/FTSE.md"
@@ -209,7 +209,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-19",
+      "dataAsOfActual": "2026-11-20",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/GBPUSD.md"
@@ -228,7 +228,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/GDAXI.md"
@@ -266,7 +266,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-19",
+      "dataAsOfActual": "2026-11-20",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/HG00Y.md"
@@ -285,7 +285,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/hk00005.md"
@@ -304,7 +304,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/hk00016.md"
@@ -323,7 +323,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/hk00027.md"
@@ -342,7 +342,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/hk00291.md"
@@ -361,7 +361,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/hk00386.md"
@@ -380,7 +380,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-10-21",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-10-21",
       "file": "assets/hk00700.md"
@@ -399,7 +399,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/hk00857.md"
@@ -418,7 +418,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/hk00883.md"
@@ -437,7 +437,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/hk00939.md"
@@ -456,7 +456,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/hk00941.md"
@@ -475,7 +475,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/hk01024.md"
@@ -494,7 +494,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/hk01113.md"
@@ -513,7 +513,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/hk01299.md"
@@ -532,7 +532,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/hk01398.md"
@@ -551,7 +551,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/hk01810.md"
@@ -570,7 +570,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/hk02020.md"
@@ -589,7 +589,7 @@
       ],
       "readMinutes": 7,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/hk02318.md"
@@ -608,7 +608,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/hk03690.md"
@@ -627,7 +627,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/hk03988.md"
@@ -646,7 +646,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/hk06618.md"
@@ -665,7 +665,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/hk06862.md"
@@ -684,7 +684,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/hk09618.md"
@@ -703,7 +703,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-10-21",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 3,
       "updatedAt": "2026-10-21",
       "file": "assets/hk09988.md"
@@ -722,7 +722,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/hk09999.md"
@@ -741,7 +741,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/HSI.md"
@@ -760,7 +760,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/HSTECH.md"
@@ -779,7 +779,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/IXIC.md"
@@ -799,7 +799,7 @@
       ],
       "readMinutes": 7,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-19",
+      "dataAsOfActual": "2026-11-20",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/JP10Y.md"
@@ -818,7 +818,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-20",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/KS11.md"
@@ -837,7 +837,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-20",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/N225.md"
@@ -856,7 +856,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-19",
+      "dataAsOfActual": "2026-11-20",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/NG00Y.md"
@@ -875,7 +875,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/SENSEX.md"
@@ -894,7 +894,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/SH000001.md"
@@ -913,7 +913,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/SH000688.md"
@@ -932,7 +932,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/sh600028.md"
@@ -951,7 +951,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/sh600030.md"
@@ -970,7 +970,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/sh600036.md"
@@ -989,7 +989,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/sh600276.md"
@@ -1008,7 +1008,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-10-21",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-10-21",
       "file": "assets/sh600519.md"
@@ -1027,7 +1027,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/sh600900.md"
@@ -1046,7 +1046,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/sh601012.md"
@@ -1065,7 +1065,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/sh601088.md"
@@ -1084,7 +1084,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/sh601138.md"
@@ -1103,7 +1103,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/sh601288.md"
@@ -1122,7 +1122,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/sh601318.md"
@@ -1141,7 +1141,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/sh601398.md"
@@ -1160,7 +1160,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/sh601857.md"
@@ -1179,7 +1179,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/sh601888.md"
@@ -1199,7 +1199,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/sh601899.md"
@@ -1218,7 +1218,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/sh601988.md"
@@ -1237,7 +1237,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/sh603288.md"
@@ -1257,7 +1257,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/sh688981.md"
@@ -1276,7 +1276,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-19",
+      "dataAsOfActual": "2026-11-20",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/SI00Y.md"
@@ -1295,7 +1295,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/SPX.md"
@@ -1314,7 +1314,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/sz000002.md"
@@ -1333,7 +1333,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/sz000333.md"
@@ -1352,7 +1352,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/sz000725.md"
@@ -1371,7 +1371,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/sz000858.md"
@@ -1390,7 +1390,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/sz002415.md"
@@ -1409,7 +1409,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/sz002475.md"
@@ -1428,7 +1428,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/sz002594.md"
@@ -1447,7 +1447,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/sz300059.md"
@@ -1466,7 +1466,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-10-21",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 3,
       "updatedAt": "2026-10-21",
       "file": "assets/sz300750.md"
@@ -1485,7 +1485,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/sz300760.md"
@@ -1504,7 +1504,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/SZ399001.md"
@@ -1523,7 +1523,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/SZ399006.md"
@@ -1542,7 +1542,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-19",
+      "dataAsOfActual": "2026-11-20",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/UDI.md"
@@ -1562,7 +1562,7 @@
       ],
       "readMinutes": 7,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/US10Y.md"
@@ -1582,7 +1582,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/US2Y.md"
@@ -1602,7 +1602,7 @@
       ],
       "readMinutes": 7,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/US30Y.md"
@@ -1622,7 +1622,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/US3M.md"
@@ -1642,7 +1642,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/US5Y.md"
@@ -1661,7 +1661,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-10-21",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-10-21",
       "file": "assets/usAAPL.md"
@@ -1680,7 +1680,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/usAMD.md"
@@ -1699,7 +1699,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-10-21",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-10-21",
       "file": "assets/usAMZN.md"
@@ -1718,7 +1718,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/usAVGO.md"
@@ -1737,7 +1737,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/usBA.md"
@@ -1756,7 +1756,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/usCOIN.md"
@@ -1775,7 +1775,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-19",
+      "dataAsOfActual": "2026-11-20",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/USDCNH.md"
@@ -1794,7 +1794,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-19",
+      "dataAsOfActual": "2026-11-20",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/USDHKD.md"
@@ -1813,7 +1813,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/usDIS.md"
@@ -1832,7 +1832,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-19",
+      "dataAsOfActual": "2026-11-20",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/USDJPY.md"
@@ -1852,7 +1852,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-10-21",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-10-21",
       "file": "assets/usGOOG.md"
@@ -1871,7 +1871,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/usINTC.md"
@@ -1890,7 +1890,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/usIXIC.md"
@@ -1909,7 +1909,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/usJPM.md"
@@ -1929,7 +1929,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-10-21",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-10-21",
       "file": "assets/usMETA.md"
@@ -1949,7 +1949,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-10-21",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-10-21",
       "file": "assets/usMSFT.md"
@@ -1968,7 +1968,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/usMU.md"
@@ -1987,7 +1987,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/usNFLX.md"
@@ -2006,7 +2006,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-10-21",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-10-21",
       "file": "assets/usNVDA.md"
@@ -2025,7 +2025,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/usORCL.md"
@@ -2044,7 +2044,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/usPFE.md"
@@ -2063,7 +2063,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/usPLTR.md"
@@ -2082,7 +2082,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/usQCOM.md"
@@ -2101,7 +2101,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-10-21",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 3,
       "updatedAt": "2026-10-21",
       "file": "assets/usTSLA.md"
@@ -2120,7 +2120,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-10-21",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 3,
       "updatedAt": "2026-10-21",
       "file": "assets/usTSM.md"
@@ -2139,7 +2139,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/usV.md"
@@ -2158,7 +2158,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 1,
       "updatedAt": "2026-11-16",
       "file": "assets/usWMT.md"
@@ -2177,7 +2177,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/usXOM.md"
@@ -2196,7 +2196,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-17",
+      "dataAsOfActual": "2026-11-18",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/VIX.md"
@@ -2215,7 +2215,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-18",
+      "dataAsOfActual": "2026-11-19",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/ZC00Y.md"
