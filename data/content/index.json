@@ -14,7 +14,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-20",
+      "dataAsOfActual": "2026-11-23",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/CL00Y.md"
@@ -34,7 +34,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-20",
+      "dataAsOfActual": "2026-11-23",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/CN10Y.md"
@@ -54,7 +54,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-20",
+      "dataAsOfActual": "2026-11-23",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/CN2Y.md"
@@ -74,7 +74,7 @@
       ],
       "readMinutes": 7,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-20",
+      "dataAsOfActual": "2026-11-23",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/CN30Y.md"
@@ -94,7 +94,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-20",
+      "dataAsOfActual": "2026-11-23",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/CN5Y.md"
@@ -114,7 +114,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-20",
+      "dataAsOfActual": "2026-11-23",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/DE10Y.md"
@@ -152,7 +152,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-20",
+      "dataAsOfActual": "2026-11-23",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/EURUSD.md"
@@ -209,7 +209,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-20",
+      "dataAsOfActual": "2026-11-23",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/GBPUSD.md"
@@ -266,7 +266,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-20",
+      "dataAsOfActual": "2026-11-23",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/HG00Y.md"
@@ -799,7 +799,7 @@
       ],
       "readMinutes": 7,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-20",
+      "dataAsOfActual": "2026-11-23",
       "difficulty": 3,
       "updatedAt": "2026-11-16",
       "file": "assets/JP10Y.md"
@@ -856,7 +856,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-20",
+      "dataAsOfActual": "2026-11-23",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/NG00Y.md"
@@ -1276,7 +1276,7 @@
       ],
       "readMinutes": 5,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-20",
+      "dataAsOfActual": "2026-11-23",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/SI00Y.md"
@@ -1542,7 +1542,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-20",
+      "dataAsOfActual": "2026-11-23",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/UDI.md"
@@ -1775,7 +1775,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-20",
+      "dataAsOfActual": "2026-11-23",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/USDCNH.md"
@@ -1794,7 +1794,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-20",
+      "dataAsOfActual": "2026-11-23",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/USDHKD.md"
@@ -1832,7 +1832,7 @@
       ],
       "readMinutes": 6,
       "dataAsOf": "2026-11-16",
-      "dataAsOfActual": "2026-11-20",
+      "dataAsOfActual": "2026-11-23",
       "difficulty": 2,
       "updatedAt": "2026-11-16",
       "file": "assets/USDJPY.md"
